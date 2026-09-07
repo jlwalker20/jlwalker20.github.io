@@ -1,1 +1,201 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>walkerwagoner.com</title>
+<meta name="description" content="A small corner of the web. Currently home to a houseplant collection." />
+<meta name="theme-color" content="#3F5B41" />
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'%3E%3Crect width='512' height='512' fill='%233F5B41'/%3E%3Cpath d='M256 400 C256 300, 250 240, 232 190' stroke='%23EFF1EA' stroke-width='14' fill='none' stroke-linecap='round'/%3E%3Cpath d='M240 250 C160 250, 120 200, 118 138 C190 130, 236 170, 240 250 Z' fill='%23EFF1EA'/%3E%3Cpath d='M268 300 C348 300, 392 252, 394 190 C322 182, 272 222, 268 300 Z' fill='%23C9D6BF'/%3E%3Cpath d='M254 200 C254 132, 286 92, 330 74 C346 132, 314 186, 254 200 Z' fill='%23EFF1EA'/%3E%3C/svg%3E" />
+<style>
+  :root {
+    --paper: #EFF1EA;
+    --sheet: #F8F9F4;
+    --ink: #17251C;
+    --moss: #3F5B41;
+    --sage: #8B9C84;
+    --rule: #CFD5C6;
+    --label: #34556E;
+    --serif: 'Iowan Old Style', 'Palatino Linotype', Palatino, Georgia, serif;
+    --sans: 'Inter', 'Helvetica Neue', Helvetica, Arial, sans-serif;
+  }
+
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+
+  body {
+    background: var(--paper);
+    color: var(--ink);
+    font-family: var(--sans);
+    -webkit-font-smoothing: antialiased;
+    min-height: 100vh;
+    display: grid;
+    grid-template-columns: 340px 1fr;
+  }
+
+  /* The moss panel, echoing the card deck's cover */
+  .mark {
+    background: var(--moss);
+    padding: 48px 40px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+  }
+
+  .mark svg { width: 56px; height: 56px; display: block; }
+
+  .wordmark {
+    font-family: var(--serif);
+    font-size: 38px;
+    line-height: 1.05;
+    color: var(--paper);
+    margin: 0;
+  }
+
+  .mark p {
+    font-size: 13px;
+    color: #C9D6BF;
+    margin: 10px 0 0;
+    line-height: 1.5;
+  }
+
+  main {
+    padding: 56px 48px;
+    max-width: 620px;
+  }
+
+  .lede {
+    font-family: var(--serif);
+    font-size: 23px;
+    line-height: 1.45;
+    margin: 0 0 10px;
+  }
+
+  .sub {
+    font-size: 15px;
+    color: var(--moss);
+    line-height: 1.6;
+    margin: 0 0 40px;
+  }
+
+  h2 {
+    font-family: var(--sans);
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--sage);
+    margin: 0 0 14px;
+  }
+
+  .card {
+    display: block;
+    background: var(--sheet);
+    border: 1px solid var(--rule);
+    border-radius: 4px;
+    padding: 20px 22px;
+    margin-bottom: 12px;
+    text-decoration: none;
+    color: inherit;
+    transition: border-color 140ms ease, transform 140ms ease;
+  }
+
+  .card:hover,
+  .card:focus-visible {
+    border-color: var(--moss);
+    transform: translateY(-1px);
+    outline: none;
+  }
+
+  .card h3 {
+    font-family: var(--serif);
+    font-size: 21px;
+    margin: 0 0 5px;
+    font-weight: 400;
+  }
+
+  .card p {
+    font-size: 14px;
+    color: var(--moss);
+    line-height: 1.55;
+    margin: 0;
+  }
+
+  .card span {
+    display: inline-block;
+    font-size: 13px;
+    color: var(--label);
+    margin-top: 12px;
+  }
+
+  footer {
+    margin-top: 48px;
+    padding-top: 20px;
+    border-top: 1px solid var(--rule);
+    font-size: 12px;
+    color: var(--sage);
+  }
+
+  @media (max-width: 760px) {
+    body { grid-template-columns: 1fr; }
+    .mark { padding: 32px 24px; }
+    .mark svg { width: 44px; height: 44px; margin-bottom: 24px; }
+    .wordmark { font-size: 30px; }
+    main { padding: 32px 24px 56px; }
+    .lede { font-size: 20px; }
+    .sub { margin-bottom: 32px; }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .card { transition: none; }
+    .card:hover { transform: none; }
+  }
+</style>
+</head>
+<body>
+
+  <div class="mark">
+    <svg viewBox="0 0 512 512" aria-hidden="true">
+      <path d="M256 400 C256 300, 250 240, 232 190" stroke="#EFF1EA" stroke-width="14" fill="none" stroke-linecap="round"/>
+      <path d="M240 250 C160 250, 120 200, 118 138 C190 130, 236 170, 240 250 Z" fill="#EFF1EA"/>
+      <path d="M268 300 C348 300, 392 252, 394 190 C322 182, 272 222, 268 300 Z" fill="#C9D6BF"/>
+      <path d="M254 200 C254 132, 286 92, 330 74 C346 132, 314 186, 254 200 Z" fill="#EFF1EA"/>
+    </svg>
+    <div>
+      <h1 class="wordmark">walker<br />wagoner</h1>
+      <p>walkerwagoner.com</p>
+    </div>
+  </div>
+
+  <main>
+    <p class="lede">A small corner of the web, currently given over to houseplants.</p>
+    <p class="sub">
+      Nothing here is trying to sell you anything. Just a catalogue we keep for ourselves, and a few of the plants
+      we're happy to show off.
+    </p>
+
+    <h2>What's here</h2>
+
+    <a class="card" href="/plants/">
+      <h3>The Living Collection</h3>
+      <p>
+        Our plant catalogue — one card per plant, with photos, care notes, and whatever is currently rooting on the
+        windowsill. Sign-in required.
+      </p>
+      <span>Open the collection &rarr;</span>
+    </a>
+
+    <a class="card" href="/plants/#/garden">
+      <h3>The public view</h3>
+      <p>
+        A handful of plants we've chosen to share. Photos and names, no sign-in, nothing you need an account for.
+      </p>
+      <span>Have a look &rarr;</span>
+    </a>
+
+    <footer>
+      Built and maintained by hand. Hosted on GitHub Pages.
+    </footer>
+  </main>
+
+</body>
+</html>
 
