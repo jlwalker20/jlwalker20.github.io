@@ -1,0 +1,978 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Monstera: a working care guide</title>
+<meta name="description" content="A practical reference for growing Monstera indoors: starting forms, moss poles, light, water, and a cultivar list with reversion risk.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600;9..144,700&family=Karla:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --ink:#16271E;
+    --ink-soft:#3D5648;
+    --paper:#E8ECE1;
+    --paper-2:#F3F6EC;
+    --cream:#F8F5E5;
+    --accent:#7E9C16;
+    --accent-bright:#AFC733;
+    --bark:#7C6B57;
+    --line:rgba(22,39,30,.16);
+    --line-strong:rgba(22,39,30,.35);
+    --measure:66ch;
+  }
+
+  *{box-sizing:border-box}
+
+  html{scroll-behavior:smooth;scroll-padding-top:1.5rem}
+  @media (prefers-reduced-motion:reduce){
+    html{scroll-behavior:auto}
+    *{animation:none !important;transition:none !important}
+  }
+
+  body{
+    margin:0;
+    background:var(--paper);
+    color:var(--ink);
+    font-family:Karla,system-ui,-apple-system,"Segoe UI",sans-serif;
+    font-size:17px;
+    line-height:1.62;
+    -webkit-font-smoothing:antialiased;
+  }
+
+  a{color:var(--ink);text-decoration:underline;text-decoration-thickness:1px;text-underline-offset:3px;text-decoration-color:var(--accent-bright)}
+  a:hover{text-decoration-color:var(--ink)}
+  :focus-visible{outline:2px solid var(--accent);outline-offset:3px;border-radius:2px}
+
+  h1,h2,h3,h4{font-family:Fraunces,Georgia,serif;font-weight:600;line-height:1.12;margin:0}
+  h2{font-size:clamp(1.7rem,3.4vw,2.35rem);letter-spacing:-.01em}
+  h3{font-size:1.22rem;font-weight:600;margin:2.4rem 0 .45rem}
+  h4{font-size:1.02rem;font-family:Karla,sans-serif;font-weight:700;margin:1.5rem 0 .3rem}
+  p{margin:0 0 1rem;max-width:var(--measure)}
+  ul,ol{max-width:var(--measure);padding-left:1.15rem;margin:0 0 1rem}
+  li{margin-bottom:.42rem}
+  strong{font-weight:700}
+  code{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:.88em;background:var(--paper-2);padding:.08em .32em;border-radius:2px}
+
+  /* ---------- hero ---------- */
+  .hero{
+    position:relative;
+    overflow:hidden;
+    border-bottom:1px solid var(--line);
+    background:linear-gradient(180deg,var(--paper-2),var(--paper));
+  }
+  .hero-inner{
+    max-width:1180px;margin:0 auto;
+    padding:clamp(3rem,7vw,5.5rem) clamp(1.15rem,4vw,3rem) clamp(2.5rem,5vw,4rem);
+    position:relative;z-index:2;
+  }
+  .hero h1{
+    font-size:clamp(2.8rem,8.5vw,5.6rem);
+    font-weight:700;
+    letter-spacing:-.035em;
+    max-width:12ch;
+  }
+  .about{padding-top:3rem}
+  .about h2{font-size:clamp(1.25rem,2.2vw,1.5rem)}
+  .about p{font-size:.92rem;color:var(--ink-soft);max-width:56ch;margin-bottom:.85rem}
+  .leaf-art{
+    position:absolute;top:50%;right:-10%;
+    width:min(400px,54vw);height:auto;
+    color:var(--ink);opacity:.11;
+    z-index:1;pointer-events:none;
+    transform:translateY(-50%) rotate(10deg);
+  }
+  @media (min-width:900px){
+    .leaf-art{opacity:.92;color:#2E4A36;right:4%;width:min(330px,28vw);transform:translateY(-50%) rotate(-8deg)}
+  }
+
+  /* ---------- shell ---------- */
+  .shell{max-width:1180px;margin:0 auto;padding:0 clamp(1.15rem,4vw,3rem) 5rem;display:block}
+  @media (min-width:1000px){
+    .shell{display:grid;grid-template-columns:210px minmax(0,1fr);gap:clamp(2rem,5vw,4.5rem)}
+  }
+
+  /* ---------- nav ---------- */
+  .toc{padding:2rem 0 0}
+  .toc-title{font-family:Fraunces,serif;font-size:.95rem;color:var(--ink-soft);margin-bottom:.7rem}
+  .toc ol{list-style:none;padding:0;margin:0;counter-reset:sec}
+  .toc li{margin:0;counter-increment:sec}
+  .toc a{
+    display:flex;gap:.6rem;align-items:baseline;
+    padding:.34rem 0;text-decoration:none;font-size:.94rem;color:var(--ink-soft);
+    border-bottom:1px solid transparent;
+  }
+  .toc a::before{content:counter(sec,decimal-leading-zero);font-size:.72rem;color:var(--line-strong);font-variant-numeric:tabular-nums}
+  .toc a:hover{color:var(--ink)}
+  .toc a.current{color:var(--ink);font-weight:700}
+  .toc a.current::before{color:var(--accent)}
+  @media (min-width:1000px){
+    .toc{position:sticky;top:1.5rem;align-self:start;max-height:calc(100vh - 3rem);overflow:auto;padding-top:3.2rem}
+  }
+  @media (max-width:999px){
+    .toc{border-bottom:1px solid var(--line);padding-bottom:1.4rem;margin-bottom:1rem}
+    .toc ol{columns:2;column-gap:1.5rem}
+  }
+
+  .toc-all{
+    font:inherit;font-size:.8rem;color:var(--ink-soft);
+    background:none;border:0;padding:.2rem 0;margin:.15rem 0 .8rem;
+    cursor:pointer;text-decoration:underline;
+    text-decoration-color:var(--accent-bright);text-underline-offset:3px;
+  }
+  .toc-all:hover{color:var(--ink)}
+
+  /* ---------- sections ---------- */
+  section{padding-top:2.6rem;scroll-margin-top:1rem}
+  section:first-of-type{padding-top:2.2rem}
+  details.sec{border:0}
+  summary.sec-head{
+    display:flex;align-items:center;gap:.9rem;
+    cursor:pointer;list-style:none;
+    padding:.25rem 0;margin-bottom:.9rem;
+    color:var(--ink);
+  }
+  summary.sec-head::-webkit-details-marker{display:none}
+  summary.sec-head h2{flex:none}
+  summary.sec-head .rule-fill{flex:1;height:1px;background:var(--line);min-width:1.5rem}
+  summary.sec-head .chev{
+    flex:none;width:22px;height:22px;color:var(--ink-soft);
+    transition:transform .18s ease;
+  }
+  details.sec[open] > summary.sec-head .chev{transform:rotate(180deg)}
+  summary.sec-head:hover .rule-fill{background:var(--line-strong)}
+  summary.sec-head:hover .chev{color:var(--ink)}
+  summary.sec-head:focus-visible{outline:2px solid var(--accent);outline-offset:4px}
+  .lede{font-size:1.06rem;color:var(--ink-soft);max-width:60ch;margin-bottom:1.6rem}
+
+  /* ---------- glance ---------- */
+  .glance{
+    background:var(--cream);
+    border:1px solid var(--line);
+    padding:1.3rem 1.4rem .4rem;
+    margin:1.2rem 0 2rem;
+    max-width:var(--measure);
+  }
+  .glance dl{margin:0;display:grid;grid-template-columns:auto 1fr;gap:.15rem 1.2rem}
+  .glance dt{font-weight:700;font-size:.9rem;white-space:nowrap}
+  .glance dd{margin:0 0 .55rem;font-size:.95rem;color:var(--ink-soft)}
+
+  /* ---------- callouts ---------- */
+  .note{
+    border-left:3px solid var(--accent-bright);
+    padding:.15rem 0 .15rem 1rem;
+    margin:1.3rem 0;max-width:var(--measure);
+    color:var(--ink-soft);font-size:.97rem;
+  }
+  .note p:last-child{margin-bottom:0}
+  .note strong{color:var(--ink)}
+
+  /* ---------- form cards (starting points) ---------- */
+  .stack{display:grid;gap:1px;background:var(--line);border:1px solid var(--line);margin:1.4rem 0 0}
+  .stack > article{background:var(--paper-2);padding:1.25rem 1.35rem}
+  .stack h3{margin:0 0 .1rem;font-size:1.16rem}
+  .stack .tag{font-size:.78rem;color:var(--bark);display:block;margin-bottom:.6rem;font-weight:700}
+  .stack p:last-child,.stack ul:last-child{margin-bottom:0}
+
+  /* ---------- recipe ---------- */
+  .recipe{
+    display:grid;grid-template-columns:auto 1fr;gap:.1rem 1.1rem;
+    max-width:var(--measure);margin:1rem 0 1.4rem;
+    padding:1.15rem 1.3rem;background:var(--paper-2);border:1px solid var(--line);
+  }
+  .recipe dt{font-family:Fraunces,serif;font-size:1.05rem;font-weight:600;white-space:nowrap}
+  .recipe dd{margin:0 0 .5rem;font-size:.94rem;color:var(--ink-soft)}
+
+  /* ---------- cultivar list ---------- */
+  .filters{display:flex;flex-wrap:wrap;gap:.5rem;margin:1.4rem 0 1.6rem}
+  .filters button{
+    font:inherit;font-size:.86rem;
+    background:transparent;color:var(--ink-soft);
+    border:1px solid var(--line-strong);border-radius:999px;
+    padding:.32rem .85rem;cursor:pointer;
+  }
+  .filters button:hover{color:var(--ink);border-color:var(--ink)}
+  .filters button[aria-pressed="true"]{background:var(--ink);color:var(--paper-2);border-color:var(--ink)}
+
+  .cv-head{
+    display:none;
+    font-size:.75rem;font-weight:700;color:var(--bark);
+    padding:0 0 .5rem;border-bottom:1px solid var(--line-strong);
+  }
+  .cv{border-bottom:1px solid var(--line);padding:1.1rem 0}
+  .cv[hidden]{display:none}
+  .cv .name{font-family:Fraunces,serif;font-size:1.1rem;font-weight:600;margin:0 0 .1rem}
+  .cv .common{display:block;font-family:Karla,sans-serif;font-size:.83rem;font-weight:400;color:var(--bark)}
+  .cv p{margin:.5rem 0 0;font-size:.94rem;max-width:none}
+  .cv .label{display:block;font-size:.72rem;font-weight:700;color:var(--bark);margin-top:.75rem}
+  @media (min-width:760px){
+    .cv-head,.cv{display:grid;grid-template-columns:1.15fr 1.4fr 1.4fr .8fr;gap:1.4rem;align-items:start}
+    .cv .label{display:none}
+    .cv p{margin-top:0}
+  }
+
+  .rev{display:flex;align-items:center;gap:.45rem;margin-top:.15rem}
+  .rev i{width:9px;height:9px;border:1px solid var(--line-strong);border-radius:50%;display:block}
+  .rev i.on{background:var(--ink);border-color:var(--ink)}
+  .rev .word{font-size:.82rem;color:var(--ink-soft);margin-left:.15rem}
+  .rev.none i{display:none}
+
+  /* ---------- gift card ---------- */
+  .gift{
+    background:var(--cream);
+    border:1.5px dashed var(--line-strong);
+    padding:1.5rem 1.6rem;
+    max-width:var(--measure);
+    margin:1.6rem 0;
+  }
+  .gift h3{margin-top:0;font-size:1.15rem}
+  .gift ol{margin-bottom:0}
+  .gift li{font-size:.95rem}
+
+  hr.rule{border:0;height:1px;background:var(--line);margin:3rem 0 0}
+
+  footer{
+    max-width:1180px;margin:0 auto;
+    padding:2rem clamp(1.15rem,4vw,3rem) 4rem;
+    font-size:.85rem;color:var(--ink-soft);
+  }
+  footer p{max-width:60ch}
+  footer .credit{margin-top:.9rem;font-size:.8rem;color:var(--bark)}
+
+  @media print{
+    .toc,.filters,.leaf-art{display:none}
+    summary.sec-head .chev,summary.sec-head .rule-fill{display:none}
+    body{background:#fff;font-size:11pt}
+    .shell{display:block;max-width:none}
+    section{page-break-inside:avoid;padding-top:1.4rem}
+    .cv{page-break-inside:avoid}
+  }
+</style>
+</head>
+<body>
+
+<header class="hero">
+  <svg class="leaf-art" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+    <path fill="currentColor" d="M95.5498047,55.3132324c-0.2248535-4.4223022,2.0386353-8.9437256,0.6774902-13.1573486 c-0.0026855-0.0083618-0.0053711-0.0167236-0.0081177-0.0250854c-0.4665527-1.4284668-1.6181641-2.5278931-3.0585327-2.9561157 c-0.7294922-0.2168579-1.3753052-0.4158325-1.5335083-0.4611206c-1.2627563-0.3613892-2.5084229-0.7819214-3.7677612-1.1558228 c-2.2804565-0.677002-4.5539551-1.3826904-6.8530884-1.9905396c-2.2176514-0.5863037-4.4711304-1.0333252-6.7488403-1.3255615 c-2.7918091-0.3582153-5.5889282-0.6751099-8.3811035-1.0306396c-0.3583374-0.0455933-0.7268066-0.1602783-1.0477295-0.3269653 c-0.4512329-0.2342529-0.5047607-0.6791382-0.1277466-1.0202026c0.3691406-0.3339233,0.8290405-0.4373779,1.2973022-0.5095825 c1.7503052-0.2700195,7.937561-0.6485596,16.0799561,0.994873c2.4017944,0.4848022,5.0345459,1.4013672,7.3085327,2.2842407 c1.0632935,0.4129028,2.6660767,0.6022339,5.0593872,3.2319946c-0.7463989-2.3721313-0.923645-4.911438-1.3781128-7.3701172 c-0.5283203-2.8582153-1.5720825-5.8294678-3.9041138-7.5645142c-0.0054932-0.0040894-0.0109863-0.0081787-0.0164795-0.012207 c-0.9858398-0.729126-2.1861572-1.1104736-3.4123535-1.1072388c-1.1663208,0.0029907-2.3181152-0.0046387-2.4854736,0.013855 c-0.4386597,0.0485229-0.8849487,0.0325317-1.3280029,0.0349731c-2.6967773,0.0150757-5.3661499,0.34729-8.0366821,0.6772461 c-2.4682617,0.3050537-4.9385376,0.5944824-7.4101562,0.8710938c-0.3973389,0.0444336-0.8084106,0.0079346-1.2089844-0.0322266 c-0.2935791-0.02948-0.6130371-0.1109009-0.7264404-0.4266357c-0.1158447-0.3223877,0.0651245-0.6038818,0.2891846-0.8117676 c0.2244263-0.208252,0.4798584-0.4087524,0.7579346-0.5286865c0.7263794-0.3132935,1.463562-0.6073608,2.2128296-0.8603516 c1.2442017-0.420166,2.4939575-0.8272705,3.7545776-1.1947021c2.1074219-0.6142578,4.2290649-1.1702881,6.4552612-1.0953979 c0.0931396,0.0031128,0.1860352,0.0123901,0.2790527,0.0187988c1.3612671,0.0587769,5.5689087,0.682373,7.4083252,1.2142334 c-0.2506104-0.4891357-0.4628906-1.003479-0.6723022-1.5099487c-1.1243286-2.7192383-2.3587036-5.473938-4.4125977-7.5809937 c-2.0539551-2.1070557-5.111084-3.4691162-7.9668579-2.7599487C72.6005249,7.8517456,72.5563965,7.8632202,72.5123291,7.875 c-0.6749268,0.180481-1.3259888,0.4401245-1.9467773,0.7606201c-1.3843994,0.7148438-3.6417847,2.1889648-3.9136963,2.3782349 c-1.0396118,0.7236938-2.0950317,1.4246216-3.1370239,2.1448975c-0.4534912,0.3135376-0.8781128,0.6690674-1.3345337,0.9778442 c-0.7776489,0.526123-1.5622559,1.0430298-2.3599243,1.5380249c-0.3444824,0.2138062-0.7435913,0.2643433-1.1502075,0.184082 c-0.5209351-0.1028442-0.8343506-0.4290771-0.9136963-0.9556885c-0.0935669-0.6213379,0.1370239-1.1477661,0.4962769-1.6275635 c0.9016724-1.2043457,1.9945068-2.2141113,3.1865234-3.124939c0.8760986-0.6694946,1.7793579-1.2919922,2.8573608-1.583252 c0.4979858-0.1345825,2.4464111-0.8555908,4.8659058-0.8968506c-1.1288452-0.9188843-1.7928467-2.708374-2.9157104-3.8060913 c-1.8798218-1.8375854-4.6359253-1.4925537-7.3450317-0.8463135c-0.9776001,0.2332764-1.9490967,0.5056763-2.8710938,0.7289429 c-1.6234131,0.3931274-3.2996826,0.5982666-4.8646851,1.1818848c-4.7843018,1.7841797-8.7451172,8.378479-7.5726318,13.3481445 c0.5217896,2.2114868,3.5615845,8.2036133,2.3693848,8.253418c-0.9186401,0.0383911-1.6413574-1.3621216-2.0448608-2.1882935 c-2.2780151-4.6644287-3.8156128-6.8876953-6.4875488-9.5046387c-2.4407959-2.3905029-6.2022705-3.3361206-9.4833374-2.3840332 c-2.6870117,0.7797241-5.0562744,2.7199707-7.852356,2.821228c-2.0909424,0.0756836-4.1930542-0.3607788-6.0975952,0.5056152 C3.5834351,20.5178223,2.8833008,31.7767944,5.0947876,37.8614502c4.730896-5.9653931,12.4215698-9.4581299,20.0265503-9.0951538 c0.9694214,0.0462646,2.2053833,0.4146729,2.2492065,1.3842163c0.039978,0.8863525-0.9713135,1.3953857-1.8135376,1.6744995 c-4.6420288,1.5383301-9.2840576,3.0766602-13.9260864,4.6149902c-3.2473145,1.0761108-6.911499,2.5498657-7.9970703,5.7939453 c-0.9785156,2.9240723,0.6008911,6.0649414,2.4151001,8.5582275c1.4009399,1.925354,3.0196533,3.8294678,3.8822021,6.0030518 c0.6483154-3.0317993,4.5719604-11.005127,14.5910034-15.947876c0.7838135-0.3866577,1.6392212-0.6574097,2.4536743-1.0032349 c0.9869995-0.4191284,1.9630737-0.8656616,2.9611816-1.2561035c0.2784424-0.1089478,0.6574097-0.1991577,0.9638672-0.2432861 c0.2194824-0.0315552,0.4434204-0.0246582,0.6593628,0.0258789c0.0355835,0.0083618,0.0707397,0.0177612,0.1054077,0.0289307 c0.4085693,0.1322632,0.585144,0.4215088,0.5125732,0.8443604c-0.0614014,0.3577271-0.2415771,0.6586304-0.5031738,0.9013062 c-0.2445068,0.2268066-0.5,0.4453125-0.770813,0.6394043c-0.9662476,0.6925659-12.1113281,8.6364746-14.1155396,10.7652588 c-5.7935791,6.1537476-6.2578125,9.6035767-6.0082397,10.7504883c0.3591919,1.6508179,1.4165649,3.0543823,2.5064087,4.3452759 c2.7079468,3.2075195,5.7980957,6.0921021,9.1841431,8.5730591c0.8706055-5.3094482,1.7590332-10.6812744,3.8950806-15.6195068 c2.1359863-4.9381714,5.6838989-9.4771118,10.5848999-11.6972046c-1.0888672,3.3980713-3.5562134,6.1403809-5.5922852,9.0706787 c-3.579834,5.1522827-5.9360352,11.1488037-6.821106,17.3599243c-0.1959229,1.3745728-0.3092651,2.8353882,0.2689209,4.0978394 c0.4888916,1.0674438,1.4158325,1.8639526,2.3562012,2.5670166c3.2132568,2.4025269,6.9249268,4.1353149,10.8300171,5.0560913 c-0.8329468-8.6117554,0.2255249-17.4013672,3.0792236-25.5691528c0.9971924-2.8540649,2.5640869-5.9588623,5.4765015-6.7699585 c0.7650146-0.2130127,1.6565552-0.2207031,2.276001,0.2761841c1.3265991,1.0641479,0.3907471,3.1689453-0.5518799,4.5844727 c-5.3303223,8.0043945-8.4232788,17.4819946-8.8404541,27.0897217c-0.0563354,1.2959595-0.0366211,2.6911621,0.7103271,3.751709 c0.5770874,0.8192139,1.5026245,1.3104248,2.4019165,1.7524414c3.8831177,1.9085693,7.9405518,3.4621582,12.1053467,4.6350708 c-3.2286377-8.6261597-3.8354492-18.2141113-1.7201538-27.1785278c0.2717285-1.1515503,1.1060181-2.5942383,2.2216797-2.2001343 c1.0247192,0.3619995,0.9277344,1.8250122,0.6574707,2.8776245c-1.2869873,5.0120239-1.9857788,10.1748047-2.0775146,15.3486328 c-0.0617065,3.4785156,0.2306519,7.1940918,2.3254395,9.9718628c2.0947876,2.77771,6.5702515,3.9857788,9.1091309,1.6070557 c-4.546814-3.6207275-4.5128174-10.413269-4.0715332-16.2088013c0.0718994-0.944519,0.6403809-2.239624,1.5442505-1.8313599 c0.2000732,0.0903931,0.3604736,0.2496948,0.4689331,0.4405518c2.5706177,4.5240479,2.6812134,9.9556885,4.0557861,14.9579468 c0.1682129,0.6123047,0.3793335,1.2556763,0.8687744,1.6602783c0.9301147,0.7689209,2.3026733,0.3208618,3.4786377,0.0499878 c2.3748779-0.5471191,4.9515381-0.1630249,7.0635986,1.0529175c0.255188-3.2654419,1.9468384-6.3927612,4.5401611-8.3934326 c0.6842041-0.527832,1.4584351-1.0166016,1.8329468-1.7953491c0.6885986-1.4318237-0.262085-3.0846558-1.2272339-4.3466187 c-2.7977295-3.6581421-6.0536499-6.9644775-9.6618042-9.8259888c-1.812439-1.4373779-4.0255737-2.5217285-5.7476196-4.0339966 c-2.1890869-1.9223633-0.0933838-3.5112305,2.1732788-2.6090088c7.6953125,3.0629883,13.9295654,9.5990601,16.6255493,17.430481 c3.1112671-2.038147,4.3432007-5.9761353,4.8671875-9.6585083c0.5239868-3.682312,0.5986328-7.5432739,2.2802124-10.8609009 c0.6154175-1.2141724,1.4619751-2.5473633,1.0024414-3.8287354c-0.2218018-0.6185303-0.7177124-1.0921021-1.1972656-1.5413818 c-2.5209351-2.3617554-5.0418701-4.7235718-7.5628052-7.0853271C89.9464722,50.7592773,93.1176758,52.6898804,95.5498047,55.3132324 z M39.6226196,34.1881104c0.2821045-0.3139038,0.5908203-0.5953979,0.992981-0.7515869 c0.2819824-0.1094971,0.5716553-0.1503906,0.8662109-0.0647583c0.3816528,0.1109009,0.5372314,0.3944702,0.3718872,0.751709 c-0.09021,0.1950073-0.2370605,0.3963623-0.4127808,0.5129395c-0.44104,0.2924805-0.9491577,0.4073486-1.4440308,0.4299316 c-0.2606201-0.0472412-0.5358887-0.0244751-0.6274414-0.2911377C39.2857666,34.5315552,39.4730835,34.3546143,39.6226196,34.1881104 z M42.3098145,44.2015991c-0.5374146,0.2901001-1.1223145,0.5115356-1.7605591,0.4509888 c-0.4331665-0.0410767-0.8432007-0.1591797-1.0214233-0.6100464c-0.1819458-0.4604492-0.0730591-0.9019165,0.242981-1.2615967 c0.2492676-0.2837524,0.5685425-0.5046387,0.8360596-0.7739868c0.4373779-0.4404297,0.8303833-0.9284668,1.2927246-1.3395386 c0.5263672-0.4679565,1.0933228-0.8947754,1.6708374-1.2991333c0.4257812-0.2980957,0.9344482-0.3634644,1.517395-0.3330688 c0.1105347,0.0250854,0.2888184,0.0509644,0.4573364,0.1063843c0.7226562,0.2377319,1.0748901,0.8372803,0.9293823,1.5823975 c-0.1462402,0.7491455-0.553772,1.3466187-1.1873779,1.7437744C44.3143921,43.0775146,43.3200684,43.656189,42.3098145,44.2015991z M48.3175659,50.9415894c-0.7056885,0.3513794-1.4633179,0.4021606-2.2161865,0.1152344 c-0.4658813-0.1775513-0.6428833-0.4819336-0.6165771-0.9787598c0.0303955-0.5723877,0.3606567-1.0018311,0.6895752-1.4225464 c0.5223389-0.6679688,1.1943359-1.1480713,1.9784546-1.4698486c0.0856323-0.0351562,0.1765747-0.0603027,0.2672119-0.0802002 c0.9140625-0.2001953,1.5240479,0.3201904,1.4573975,1.3955688C49.6386719,49.3848267,49.3689575,50.4180298,48.3175659,50.9415894z M56.8000488,33.7127686c-0.3812866,0.2617188-0.8179932,0.3164673-1.4105835,0.2959595 c-0.1345825-0.0424805-0.4116821-0.0983887-0.6602783-0.2149048c-0.5010986-0.2349243-0.5389404-0.7555542-0.0759888-1.0655518 c0.5019531-0.3359985,1.0685425-0.3986816,1.652832-0.2879028c0.1569214,0.0297241,0.3143921,0.0917969,0.4541016,0.1702271 C57.2467041,32.8838501,57.2654419,33.3934326,56.8000488,33.7127686z M63.7422485,41.4649658 c0.2470093-0.1308594,0.5374146-0.2102051,0.8165894-0.2438965c0.8189697-0.0986938,1.6281128-0.0187378,2.4248047,0.2042847 c1.1297607,0.3162842,2.2858887,0.5466919,3.3660889,1.0234375c0.7039185,0.31073,1.4107666,0.6173706,2.0983887,0.9616699 c0.4074097,0.2039795,0.7854004,0.4693604,1.166687,0.722229c0.3619995,0.2400513,0.7122803,0.4979858,1.0647583,0.7521973 c0.078064,0.0562744,0.1434326,0.1300659,0.2146606,0.1958008c-0.008667,0.0281982-0.0172729,0.0563965-0.0258789,0.0845947 c-0.1026001,0.0026245-0.2069092,0.0187378-0.3074341,0.0058594c-1.2155762-0.15625-2.4391479-0.2150269-3.6418457-0.5123901 c-1.6739502-0.4138794-3.3751221-0.7166138-5.0601196-1.0873413c-0.5296631-0.1165771-1.0559692-0.2697144-1.5621948-0.4628906 c-0.2724609-0.1039429-0.5343628-0.2940063-0.7384644-0.5056152C63.1971436,42.2285767,63.2830811,41.708252,63.7422485,41.4649658z M77.1568604,59.6268921c-0.3787231-0.0516968-0.7589111-0.163269-1.1135254-0.3088989 c-1.6246948-0.6672974-3.239502-1.3587036-4.8601685-2.0358887c-1.3407593-0.5601807-2.6947632-1.0900269-4.0239868-1.6762695 c-0.9108276-0.4017334-1.7772827-0.9014893-2.5455933-1.5428467c-0.7825317-0.6531372-0.5756836-1.7089844,0.3865967-2.0438232 c0.1525879-0.0530396,0.315918-0.0823975,0.4768066-0.102478c0.1611938-0.0200806,0.3255005-0.0148315,0.4490356-0.0192261 c0.829834,0.0863647,1.5838013,0.3097534,2.2924805,0.6552734c1.026001,0.5002441,2.0396729,1.0268555,3.0477905,1.5626221 c1.3942261,0.7409058,2.7622681,1.5317383,4.0313721,2.47229c0.6461182,0.4788818,1.2388916,1.0350952,1.8200073,1.5935669 c0.2214966,0.2128906,0.3757935,0.5154419,0.5023193,0.8028564C77.8036499,59.4013672,77.6030884,59.6878052,77.1568604,59.6268921z"/>
+  </svg>
+
+  <div class="hero-inner">
+    <h1>Monstera, from plug to ceiling</h1>
+  </div>
+</header>
+
+<div class="shell">
+
+  <nav class="toc" aria-label="Sections">
+    <p class="toc-title">Contents</p>
+    <button type="button" class="toc-all" data-state="open">Collapse all</button>
+    <ol>
+      <li><a href="#glance">At a glance</a></li>
+      <li><a href="#forms">Starting forms</a></li>
+      <li><a href="#potting">Potting &amp; poles</a></li>
+      <li><a href="#light">Light</a></li>
+      <li><a href="#water">Water</a></li>
+      <li><a href="#habits">Placement &amp; habits</a></li>
+      <li><a href="#varieties">Varieties</a></li>
+      <li><a href="#cuttings">Gifting cuttings</a></li>
+      <li><a href="#about">About this page</a></li>
+    </ol>
+  </nav>
+
+  <main>
+
+  <!-- ================= AT A GLANCE ================= -->
+  <section id="glance">
+    <details class="sec" open>
+      <summary class="sec-head">
+        <h2>At a glance</h2>
+        <span class="rule-fill"></span>
+        <svg class="chev" viewBox="0 0 20 20" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7.5 L10 13 L16 7.5"/></svg>
+      </summary>
+      <div class="sec-body">
+    <p class="lede">Monsteras are hemiepiphytes. In the wild they germinate on the forest floor, crawl toward the darkest thing they can find, then climb it into the canopy. Almost every care decision below follows from that one fact.</p>
+
+    <div class="glance">
+      <dl>
+        <dt>Light</dt><dd>Bright indirect. 10,000–20,000 lux, or 150–300 PPFD at the top leaf, 12 hours a day.</dd>
+        <dt>Water</dt><dd>Drench when the top 2–3 inches are dry. Never on a fixed schedule.</dd>
+        <dt>Mix</dt><dd>Chunky and airy. Bark-dominant, never straight potting soil.</dd>
+        <dt>Humidity</dt><dd>Happy at 50–60%. Survives 40%. Below 35% the new leaves come out small and crisp at the edges.</dd>
+        <dt>Temp</dt><dd>65–85&deg;F. Damage starts below 50&deg;F. Keep away from cold glass in a Michigan January.</dd>
+        <dt>Food</dt><dd>Balanced fertilizer at quarter strength with most waterings, spring through early fall.</dd>
+        <dt>Support</dt><dd>A moss pole is not decoration. It is what makes the leaves get large and split.</dd>
+        <dt>Caution</dt><dd>Calcium oxalate crystals in all parts. Irritating to cats, dogs and small humans who chew.</dd>
+      </dl>
+    </div>
+
+    <h3>What makes a leaf split</h3>
+    <p>Fenestration is a maturity response, not a health response. You get it by giving the plant three things at once: enough light, something to climb, and time. A Monstera kept on a shelf with nothing to grab will hold juvenile, unsplit leaves for years no matter how well you water it. The same plant on a pole in good light will start splitting a few leaves in and add fenestrations with every leaf after that.</p>
+    <p>Each new leaf should be larger than the one before it. That is the single metric worth tracking. If leaf size stalls or reverses, the limiting factor is almost always light, then root space, then food, in that order.</p>
+      </div>
+    </details>
+  </section>
+
+  <hr class="rule">
+
+  <!-- ================= FORMS ================= -->
+  <section id="forms">
+    <details class="sec" open>
+      <summary class="sec-head">
+        <h2>Starting forms</h2>
+        <span class="rule-fill"></span>
+        <svg class="chev" viewBox="0 0 20 20" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7.5 L10 13 L16 7.5"/></svg>
+      </summary>
+      <div class="sec-body">
+    <p class="lede">What you do in the first month depends entirely on how the plant arrives. A deflasked tissue culture plant and a five-gallon mature specimen want opposite things.</p>
+
+    <div class="stack">
+
+      <article>
+        <h3>Tissue culture, in flask</h3>
+        <span class="tag">Hardest start. Highest failure rate. Cheapest per plant.</span>
+        <p>These come as a sealed jar or bag of sterile agar with several tiny plantlets inside. They have never met a fungus, a dry breeze, or a fertilizer salt. Deflasking is the whole job.</p>
+        <ul>
+          <li>Open the flask and lift the clump out gently. Separate plantlets by hand, teasing rather than pulling.</li>
+          <li>Rinse every trace of agar off the roots in room-temperature water. Leftover agar is sugar, and sugar in your pot means mold within days.</li>
+          <li>Plant into damp, fine substrate: milled sphagnum, or fine bark and perlite. Small pots or a communal tray.</li>
+          <li>Put them in a sealed humidity chamber near 100% humidity. A clear tub, a propagator, or a bagged tray all work.</li>
+          <li>Bright indirect light, no direct sun, warm (72–80&deg;F). Bottom heat helps.</li>
+          <li>No fertilizer for the first three weeks. Then a very dilute feed.</li>
+          <li>Harden off over four to six weeks by cracking the lid wider each few days. Rushing this is the usual cause of death.</li>
+        </ul>
+        <p>Expect losses. If you deflask ten and keep seven, that is a normal result.</p>
+      </article>
+
+      <article>
+        <h3>Plug</h3>
+        <span class="tag">A rooted liner in a coir or peat plug, usually 1–2 inches.</span>
+        <p>A plug is a tissue culture plant that someone else has already deflasked and hardened off. This is the sweet spot for buying rare cultivars cheaply without the deflasking risk.</p>
+        <ul>
+          <li>Pot into a 3 or 4 inch pot. Do not bury the plug deeper than it sat.</li>
+          <li>Use a finer version of your normal mix. Bark chunks that are too large leave air pockets a small root ball cannot bridge.</li>
+          <li>Keep evenly moist, not wet, for the first month. Plug media dries faster than the mix around it, so check the plug itself, not just the surface.</li>
+          <li>Elevated humidity for two to three weeks helps but is not mandatory. A cloche or an open bag over the top is enough.</li>
+          <li>Give it four to eight weeks to fill the pot before you expect visible new growth.</li>
+        </ul>
+      </article>
+
+      <article>
+        <h3>Starter, 2 to 3 inch</h3>
+        <span class="tag">Two or three juvenile leaves, an established root ball.</span>
+        <p>Straightforward. The main mistake here is overpotting out of enthusiasm.</p>
+        <ul>
+          <li>Move up one pot size only, roughly two inches of added diameter. A small root ball in a big pot of wet mix rots.</li>
+          <li>Now is the moment to switch it out of whatever dense nursery soil it came in.</li>
+          <li>Hold off on a pole until it has five or six leaves and a visible aerial root. Before that there is nothing to attach.</li>
+          <li>Feed lightly. Young plants respond fast to a quarter-strength balanced feed.</li>
+        </ul>
+      </article>
+
+      <article>
+        <h3>4 inch pot</h3>
+        <span class="tag">The standard garden centre and online purchase.</span>
+        <p>Usually grown fast in peat-heavy nursery mix under high light and high feed, then shipped. It will look worse for a few weeks before it looks better.</p>
+        <ul>
+          <li>Quarantine away from your other plants for two to three weeks and check the leaf undersides and petiole crevices twice. Thrips arrive this way.</li>
+          <li>Let it acclimate for two weeks before repotting, unless the roots are circling badly or the mix stays soggy.</li>
+          <li>When you do repot, tease the outer roots free and remove maybe half the old peat. Do not power-wash the root ball unless you are treating a rot problem.</li>
+          <li>Go up one size, add the pole at the same time, and expect the first new leaf in three to six weeks.</li>
+          <li>The oldest one or two leaves may yellow after the move. That is normal transition, not a watering error, as long as new growth continues.</li>
+        </ul>
+      </article>
+
+      <article>
+        <h3>Mature plant</h3>
+        <span class="tag">Six inch pot and up, split leaves, thick stem.</span>
+        <p>You are buying a structure, not a seedling. Decide what shape you want before you touch it, because a mature Monstera is hard to redirect later.</p>
+        <ul>
+          <li>Inspect hard before it enters the house. Mature plants are the most common way a serious pest problem gets introduced.</li>
+          <li>Check whether it is one plant or several stems potted together for fullness. Nurseries do this constantly. Multiple stems can be separated at repotting if you want a single clean climber.</li>
+          <li>Plan the pole first. Getting a pole down into an established root ball means either doing it at repotting or accepting root damage.</li>
+          <li>Expect it to be rootbound. Look for roots circling the drainage holes.</li>
+          <li>Weight matters. A four foot Monstera in a tall pole is top-heavy. Use a heavy ceramic pot, or drop the nursery pot into a weighted cachepot.</li>
+          <li>Prune the ugliest one or two lower leaves rather than trying to save everything. The plant will put the energy into new growth.</li>
+        </ul>
+      </article>
+
+      <article>
+        <h3>Unrooted cutting</h3>
+        <span class="tag">How most rare cultivars change hands, and how you'll pass yours on.</span>
+        <p>Covered in full under <a href="#cuttings">gifting cuttings</a>. The short version: what you need is a node, ideally with an aerial root nub and one leaf. A leaf with no node will live in water for months and never root.</p>
+      </article>
+
+    </div>
+      </div>
+    </details>
+  </section>
+
+  <hr class="rule">
+
+  <!-- ================= POTTING ================= -->
+  <section id="potting">
+    <details class="sec" open>
+      <summary class="sec-head">
+        <h2>Potting and the moss pole</h2>
+        <span class="rule-fill"></span>
+        <svg class="chev" viewBox="0 0 20 20" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7.5 L10 13 L16 7.5"/></svg>
+      </summary>
+      <div class="sec-body">
+    <p class="lede">A Monstera in an aroid mix on a damp pole behaves like a different plant from the same Monstera in potting soil on a shelf. This is the highest-leverage thing on the page.</p>
+
+    <h3>The mix</h3>
+    <p>Roots need air. Standard potting soil compacts, holds water against the roots, and slowly suffocates them. Build something chunky enough that water runs straight through and you can see gaps between particles.</p>
+
+    <dl class="recipe">
+      <dt>4 parts</dt><dd>Medium orchid bark. The structural backbone.</dd>
+      <dt>2 parts</dt><dd>Perlite or pumice. Pumice is heavier, does not float to the top, and is worth the extra cost for tall plants.</dd>
+      <dt>1 part</dt><dd>Coco coir or peat. Holds just enough moisture. Coir is easier to re-wet once it dries out.</dd>
+      <dt>1 part</dt><dd>Horticultural charcoal. Optional. Helps keep the mix sweet over long stretches between repots.</dd>
+      <dt>A handful</dt><dd>Worm castings, for slow background nutrition.</dd>
+    </dl>
+
+    <p>If you would rather not mix your own, any bagged aroid or orchid mix will do, and cutting a bagged houseplant soil 50/50 with bark and perlite is a real improvement over using it neat. For a plug or a small starter, sift out the biggest bark chunks so the mix is finer.</p>
+
+    <div class="note">
+      <p><strong>Pot choice.</strong> Terracotta plus a chunky mix dries very fast and will have you watering twice a week. Plastic or glazed ceramic pairs better with an airy mix. Drainage holes are not optional, and neither is skipping the layer of gravel at the bottom, which does not improve drainage and just raises the saturated zone into the roots.</p>
+    </div>
+
+    <h3>Choosing a pole</h3>
+    <ul>
+      <li><strong>Sphagnum moss pole.</strong> The best option. Aerial roots penetrate it, grip, and drink from it. This is what triggers the size jump in new leaves. Needs to be kept damp.</li>
+      <li><strong>Plastic mesh tube stuffed with sphagnum.</strong> The practical version of the above, and the one I'd build. Stackable, so you can add a section every time the plant reaches the top, and you can top up the moss from the side.</li>
+      <li><strong>Coco coir pole.</strong> Cheap and widely sold, but roots grip the surface poorly and rarely penetrate. Fine as a stake. Not the same plant response.</li>
+      <li><strong>Wooden plank or cork slab.</strong> For shinglers like <em>M. dubia</em>, which want to press flat against a surface rather than wrap a cylinder.</li>
+      <li><strong>Bamboo stakes or a trellis.</strong> Mechanical support only. Keeps a plant upright, does nothing for leaf size.</li>
+    </ul>
+
+    <h3>Installing it</h3>
+    <ol>
+      <li>Pick a pole taller than you think. Extending later is easy with a stackable pole and awkward with anything else. Two feet of pole above the current top leaf is a reasonable buffer.</li>
+      <li>Set the pole first, before the plant. Push it down to the bottom of the pot, against the back wall, so it braces on the base rather than floating in the mix.</li>
+      <li>Position the plant so that the aerial roots and the growth point face the pole. Aerial roots emerge on the side opposite the leaf, so the stem naturally has a front and a back.</li>
+      <li>Backfill, tapping the pot rather than pressing down hard. You want the mix settled, not compacted.</li>
+      <li>Tie the stem to the pole at each node with soft plant ties, velcro strips, or strips of old t-shirt. Snug, never tight. Wire or twist ties cut into the stem as it thickens.</li>
+      <li>Tuck each aerial root toward the moss and pin it with a floral pin or a bent paperclip. Roots that touch damp moss will attach in a few weeks. Roots waving in dry air will not.</li>
+      <li>Water the pole itself every few days, or top-water into the open top of a mesh pole so it wicks down. A dry pole is just a stick.</li>
+    </ol>
+
+    <div class="note">
+      <p><strong>If the plant is already large and leaning.</strong> You can add a pole to an established plant without repotting by setting the pole beside the stem and tying it in over several weeks, easing the stem upright a little at a time rather than forcing it. Aerial roots that have already hardened off in the air may never attach. New ones will.</p>
+    </div>
+
+    <h3>Repotting cadence</h3>
+    <p>Every 18 to 24 months, or when roots come out of the drainage holes and water runs straight through without wetting anything. Go up one pot size. Spring is easiest because the plant recovers fastest, but with grow lights the season matters less than you'd think.</p>
+      </div>
+    </details>
+  </section>
+
+  <hr class="rule">
+
+  <!-- ================= LIGHT ================= -->
+  <section id="light">
+    <details class="sec" open>
+      <summary class="sec-head">
+        <h2>Light</h2>
+        <span class="rule-fill"></span>
+        <svg class="chev" viewBox="0 0 20 20" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7.5 L10 13 L16 7.5"/></svg>
+      </summary>
+      <div class="sec-body">
+    <p class="lede">"Bright indirect light" is the most useless phrase in houseplant care. Here is what it means in numbers, and how to hit those numbers in a room that has no useful window.</p>
+
+    <h3>The target</h3>
+    <p>Aim for <strong>10,000 to 20,000 lux</strong> at the top leaves for a good part of the day, which is roughly 150 to 300 PPFD under white light, or about 1,000 to 1,900 foot-candles. A free phone lux meter app gets you within about 20 percent, which is plenty accurate for this decision.</p>
+    <p>For calibration: a bright room that feels well lit to you is often only 500 to 2,000 lux, which is a survival ration for a Monstera and nowhere near enough for large split leaves. Direct summer sun through glass runs 50,000 lux and up, which will scorch the leaves and bleach any variegation.</p>
+
+    <h3>Rooms with good natural light</h3>
+    <ul>
+      <li><strong>East window.</strong> Ideal. Gentle direct morning sun, bright the rest of the day. Set the plant within a few feet of the glass.</li>
+      <li><strong>South window.</strong> The most light available, but the midday sun in summer is too strong at close range. Pull the plant back 4 to 8 feet, or diffuse it with a sheer curtain.</li>
+      <li><strong>West window.</strong> Workable. Harsh late afternoon sun, so treat it like a south window and set back or diffuse.</li>
+      <li><strong>North window.</strong> Not enough on its own through a Michigan winter. Directly on the sill it will hold, but it will not push large leaves. Supplement.</li>
+    </ul>
+    <p>Light falls off much faster than it looks. Moving a plant from one foot to five feet from a window can cut the light it receives by three quarters. The nearest usable spot to the glass is almost always the right one, short of leaves touching cold panes.</p>
+
+    <h3>Rooms without useful light</h3>
+    <p>You can grow a genuinely excellent Monstera under artificial light. Ceiling fixtures and lamps contribute effectively nothing, so the light has to be dedicated and close.</p>
+
+    <h4>What to buy</h4>
+    <ul>
+      <li><strong>LED bar or strip fixtures</strong> are the best match for a climbing plant. Mounted vertically beside the pole, or two bars flanking it, they light the whole column instead of just the top. Overhead, they cover a shelf evenly.</li>
+      <li><strong>Panels or quantum boards</strong> suit a group of plants or one large specimen. A 60 to 100 watt board covers roughly a 2 by 2 foot area well.</li>
+      <li><strong>Screw-in bulbs</strong> only make sense for a single small plant, and only the higher-output ones. Most are far weaker than their marketing implies.</li>
+      <li><strong>Spectrum:</strong> full-spectrum white, 3500K to 4000K, CRI 90 or better. Skip the blurple ones. The output difference is negligible and they make the room and the plant look bad, which means you'll move them and stop using them.</li>
+      <li>Ignore "equivalent wattage" claims. Look at actual draw and, where published, PPF or PPFD at distance.</li>
+    </ul>
+
+    <h4>Setting it up</h4>
+    <ul>
+      <li><strong>Distance:</strong> 12 to 24 inches above or beside the canopy for most home fixtures. Closer bleaches leaves, and white variegated tissue burns before green tissue does.</li>
+      <li><strong>Photoperiod:</strong> 12 hours a day on a cheap outlet timer. Consistency beats intensity. Longer than 14 hours gives no benefit.</li>
+      <li><strong>Measure, then adjust.</strong> Put the meter where the newest leaf sits, not at the pot. Raise or lower the fixture until you're in range.</li>
+      <li><strong>Follow the plant up.</strong> A climbing Monstera moves toward the light source. A fixture at a fixed height will be at leaf level for a while, then behind it. Plan for re-hanging.</li>
+      <li>In a windowless room, adding light does not remove the need for airflow. A small fan on low for a few hours a day prevents the stagnant, fungus-friendly conditions that come with an enclosed grow space.</li>
+    </ul>
+
+    <div class="note">
+      <p><strong>Variegated plants are not low-light plants.</strong> White tissue has no chlorophyll and contributes nothing to the plant's energy. A heavily variegated Monstera has less working leaf surface than a green one, so it needs at least as much light, and often more, just to run. It also burns more easily. Bright, indirect, and not close to the bulb.</p>
+    </div>
+      </div>
+    </details>
+  </section>
+
+  <hr class="rule">
+
+  <!-- ================= WATER ================= -->
+  <section id="water">
+    <details class="sec" open>
+      <summary class="sec-head">
+        <h2>Water</h2>
+        <span class="rule-fill"></span>
+        <svg class="chev" viewBox="0 0 20 20" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7.5 L10 13 L16 7.5"/></svg>
+      </summary>
+      <div class="sec-body">
+    <p class="lede">More Monsteras are killed by a watering schedule than by neglect. Check first, then water thoroughly or not at all.</p>
+
+    <h3>The method</h3>
+    <ol>
+      <li>Push a finger 2 to 3 inches into the mix. If it is dry at that depth, water. If it is damp, come back in three days. In a chunky mix, lifting the pot to feel its weight is faster and just as reliable once you learn the plant.</li>
+      <li>Water at the sink or in the tub, slowly, until at least 10 to 20 percent of the volume runs out the bottom. Partial watering leaves dry pockets and concentrates fertilizer salts.</li>
+      <li>Let it drain completely. Never leave the pot standing in a saucer of water.</li>
+      <li>Water the pole at the same time, so it is damp for the aerial roots.</li>
+    </ol>
+    <p>In a bark-heavy mix under good light, this typically lands somewhere between every 5 and 10 days in summer and every 10 to 20 in winter. Those are descriptions, not instructions. Check before every watering.</p>
+
+    <h3>Water quality</h3>
+    <p>Monsteras are not fussy. Tap water is fine in most of the country. If yours is heavily chlorinated, letting it stand overnight is enough. Softened water is the one to avoid, since the sodium accumulates in the mix. If you see a white crust on the surface or the leaf tips brown consistently, flush the pot with several volumes of plain water to clear the salts.</p>
+
+    <h3>Reading the plant</h3>
+    <ul>
+      <li><strong>Yellow lower leaf, mix stays wet, stem soft near the base.</strong> Overwatering. Stop, check the roots, repot into fresh airy mix if they are mushy or smell sour.</li>
+      <li><strong>Crisp brown edges, drooping that recovers within hours of watering.</strong> Underwatering, or humidity too low.</li>
+      <li><strong>Brown crispy tips only, otherwise healthy.</strong> Usually low humidity or salt buildup. Cosmetic.</li>
+      <li><strong>Small new leaves with no splits.</strong> Not a water problem. Light or support.</li>
+      <li><strong>Fungus gnats.</strong> The surface is staying wet too long. Let it dry further between waterings, and cover the surface with a layer of coarse bark.</li>
+      <li><strong>Yellow leaf with a dark, wet-looking patch spreading from the edge.</strong> Bacterial or fungal, usually from wet leaves plus no airflow. Remove the leaf, increase circulation.</li>
+    </ul>
+
+    <div class="note">
+      <p><strong>On moisture meters.</strong> The cheap two-prong probes read conductivity, not moisture, and in a chunky bark mix they mostly read whatever air pocket they landed in. A finger or the weight of the pot is more reliable.</p>
+    </div>
+      </div>
+    </details>
+  </section>
+
+  <hr class="rule">
+
+  <!-- ================= HABITS ================= -->
+  <section id="habits">
+    <details class="sec" open>
+      <summary class="sec-head">
+        <h2>Placement and habits</h2>
+        <span class="rule-fill"></span>
+        <svg class="chev" viewBox="0 0 20 20" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7.5 L10 13 L16 7.5"/></svg>
+      </summary>
+      <div class="sec-body">
+    <p class="lede">The small recurring things. None of these are dramatic on their own and together they are most of the difference between a nice plant and an impressive one.</p>
+
+    <h3>Where in the room</h3>
+    <ul>
+      <li>As close to the window as you can manage without the leaves touching cold glass in winter. Corners and interior walls are decorative placements, not growing placements.</li>
+      <li>Keep it out of the path of forced air vents, radiators, and the draft from an exterior door. Dry moving air and cold blasts both cause edge browning.</li>
+      <li>Leave real clearance. A mature deliciosa leaf can be two feet across, and leaves that repeatedly rub a wall or a curtain get damaged and tear.</li>
+      <li>Think about the eventual footprint before you commit to a spot. These get big, and a plant on a pole is not easy to shuffle around once it is 5 feet tall and top-heavy.</li>
+    </ul>
+
+    <h3>Rotating</h3>
+    <p>Give the pot a quarter turn every two or three weeks. Monsteras lean hard toward their light source, and a plant that never rotates ends up one-sided with all its leaves facing the window and a bare back. Rotation does not confuse a climbing plant or make it let go of the pole. It just evens out the growth.</p>
+    <p>The exception is a plant you are deliberately training flat against a wall or a plank, where a consistent orientation is the point.</p>
+
+    <h3>Feeding</h3>
+    <p>A balanced liquid fertilizer, something like a 20-20-20 or a 3-1-2 ratio, at quarter strength with most waterings during active growth. Alternatively, full strength once a month. Chunky bark mixes hold very few nutrients, so regular light feeding beats occasional heavy feeding. Back off in late fall and winter unless the plant is under lights and still pushing leaves.</p>
+
+    <h3>Grooming</h3>
+    <ul>
+      <li>Wipe the leaves with a damp cloth every few weeks. Dust measurably reduces the light reaching the leaf, and wiping is also how you find pests early.</li>
+      <li>Remove yellow or badly damaged leaves at the petiole. The plant will not repair them, and they cost energy.</li>
+      <li>Do not cut off aerial roots as a habit. They feed the plant. If one is genuinely in the way, redirect it into the pot or the pole first, and trim only as a last resort.</li>
+      <li>Prune to control size by cutting just above a node. Everything you cut off is a potential cutting.</li>
+    </ul>
+
+    <h3>Pests</h3>
+    <p>Thrips are the main threat to Monsteras and the hardest to clear. They leave silvery scarring and tiny black specks, and deform new leaves as they emerge. Spider mites show as fine stippling and webbing in dry air. Mealybugs sit as white cottony clumps in the petiole crevices and on aerial roots.</p>
+    <ul>
+      <li>Quarantine every new plant for two to three weeks, without exception. This prevents more problems than any treatment.</li>
+      <li>Treat early with insecticidal soap or a horticultural oil, covering leaf undersides and stem joints, and repeat every 5 to 7 days for at least three rounds to catch newly hatched eggs.</li>
+      <li>For a stubborn thrips infestation, a systemic granule or predatory mites are more effective than sprays, because thrips shelter inside the furled new leaf where spray never reaches.</li>
+      <li>Isolate the affected plant while you treat it, and check its neighbours.</li>
+    </ul>
+
+    <h3>Humidity</h3>
+    <p>50 to 60 percent is the comfortable range. They tolerate normal indoor air, but growth is visibly better with more humidity, and a Michigan winter with the heat running can drop a room below 30 percent. A small humidifier near the plant is worth far more than misting, which raises humidity for about four minutes and mainly encourages leaf spotting. Pebble trays do almost nothing.</p>
+
+    <h3>Safety</h3>
+    <p>Every part of the plant contains calcium oxalate crystals. Chewing causes intense mouth and throat irritation in pets and children. It is not usually dangerous beyond that, but it is genuinely painful, so worth mentioning to anyone you hand a cutting to who has a cat.</p>
+      </div>
+    </details>
+  </section>
+
+  <hr class="rule">
+
+  <!-- ================= VARIETIES ================= -->
+  <section id="varieties">
+    <details class="sec" open>
+      <summary class="sec-head">
+        <h2>Varieties</h2>
+        <span class="rule-fill"></span>
+        <svg class="chev" viewBox="0 0 20 20" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7.5 L10 13 L16 7.5"/></svg>
+      </summary>
+      <div class="sec-body">
+    <p class="lede">Everything below wants the same core care: chunky mix, bright indirect light, a pole, and water when the top few inches dry. The notes cover only where a plant departs from that.</p>
+
+    <p><strong>How to read the reversion column.</strong> Variegation comes in two flavours. <em>Chimeric</em> variegation means the plant carries two genetically different cell lines side by side, and which one ends up in the growing tip is luck. Those plants can revert to all green, or push all-white growth that starves, and every cutting is a fresh roll of the dice. <em>Stable</em> or tissue-cultured variegation is carried by every cell, so it repeats identically on every leaf and every cutting. Filled circles below mean higher risk of losing the pattern.</p>
+
+    <div class="filters" role="group" aria-label="Filter varieties">
+      <button type="button" data-filter="all" aria-pressed="true">All</button>
+      <button type="button" data-filter="common" aria-pressed="false">Everyday</button>
+      <button type="button" data-filter="collector" aria-pressed="false">Collector</button>
+      <button type="button" data-filter="variegated" aria-pressed="false">Variegated</button>
+      <button type="button" data-filter="lookalike" aria-pressed="false">Not actually Monstera</button>
+    </div>
+
+    <div class="cv-head" aria-hidden="true">
+      <div>Plant</div><div>What sets it apart</div><div>Care difference</div><div>Reversion risk</div>
+    </div>
+
+    <div id="cvlist">
+
+      <div class="cv" data-group="common">
+        <p class="name">Monstera deliciosa<span class="common">Swiss cheese plant, split-leaf philodendron (wrongly)</span></p>
+        <div><span class="label">What sets it apart</span><p>The default. Enormous heart-shaped leaves that develop both edge splits and interior holes with age. Given room and years, leaves reach two feet or more.</p></div>
+        <div><span class="label">Care difference</span><p>None. The baseline. Wants the biggest pole and the most floor space of anything here.</p></div>
+        <div><span class="label">Reversion risk</span><div class="rev none"><span class="word">Not variegated</span></div></div>
+      </div>
+
+      <div class="cv" data-group="common">
+        <p class="name">M. deliciosa 'Borsigiana'<span class="common">Often sold simply as deliciosa</span></p>
+        <div><span class="label">What sets it apart</span><p>A smaller, faster, tighter-noded form. Leaves stay under about 18 inches and the stem climbs more quickly. Mature deliciosa develops ruffled bumps where the petiole meets the stem; borsigiana stays smooth.</p></div>
+        <div><span class="label">Care difference</span><p>Same care, less space. The better choice for a normal-sized room, and the parent of most variegated deliciosa forms.</p></div>
+        <div><span class="label">Reversion risk</span><div class="rev none"><span class="word">Not variegated</span></div></div>
+      </div>
+
+      <div class="cv" data-group="common">
+        <p class="name">M. adansonii<span class="common">Swiss cheese vine, monkey mask</span></p>
+        <div><span class="label">What sets it apart</span><p>Smaller leaves with oval holes fully enclosed inside the blade rather than splits cutting in from the edge. Sold in narrow, wide and round forms, which differ in leaf shape and hole ratio. Vines or climbs.</p></div>
+        <div><span class="label">Care difference</span><p>Thinner leaves dry out faster, so it is less forgiving of a missed watering and appreciates higher humidity. Grow it up a pole rather than trailing if you want the leaves to size up.</p></div>
+        <div><span class="label">Reversion risk</span><div class="rev none"><span class="word">Not variegated</span></div></div>
+      </div>
+
+      <div class="cv" data-group="collector">
+        <p class="name">M. dubia<span class="common">Shingle plant</span></p>
+        <div><span class="label">What sets it apart</span><p>Juvenile leaves press dead flat against a surface like roof shingles, small and silver-mottled. Once it climbs high enough it transforms completely into large, dark, fenestrated adult leaves.</p></div>
+        <div><span class="label">Care difference</span><p>Wants a flat surface, not a round pole. Use a cork or wood plank. Needs contact to shingle, so pin the stem tight to the board. High humidity while establishing.</p></div>
+        <div><span class="label">Reversion risk</span><div class="rev none"><span class="word">Not variegated. The silver juvenile pattern is normal and is lost on adult growth.</span></div></div>
+      </div>
+
+      <div class="cv" data-group="collector">
+        <p class="name">M. siltepecana<span class="common">Silver Monstera</span></p>
+        <div><span class="label">What sets it apart</span><p>Lance-shaped juvenile leaves with a metallic silver wash and dark veins, which is what most people buy it for. The 'El Salvador' form has more pronounced silver.</p></div>
+        <div><span class="label">Care difference</span><p>Easy and fast. The catch: as it climbs and matures, leaves turn plain dark green and fenestrate, losing the silver entirely. If you want the silver look, keep it trailing and juvenile.</p></div>
+        <div><span class="label">Reversion risk</span><div class="rev none"><span class="word">Not variegated. Silver fades with maturity, which is development, not reversion.</span></div></div>
+      </div>
+
+      <div class="cv" data-group="collector">
+        <p class="name">Monstera 'Peru'<span class="common">M. karstenianum</span></p>
+        <div><span class="label">What sets it apart</span><p>Thick, stiff, deeply puckered leaves with a glossy reptilian texture. Never fenestrates at any age. Compact and well-behaved.</p></div>
+        <div><span class="label">Care difference</span><p>Those succulent-thick leaves store water, so it wants to dry out more than the others. The most drought-tolerant plant on this list and the easiest to overwater.</p></div>
+        <div><span class="label">Reversion risk</span><div class="rev none"><span class="word">Not variegated</span></div></div>
+      </div>
+
+      <div class="cv" data-group="collector">
+        <p class="name">M. standleyana<span class="common">Often sold as Philodendron cobra</span></p>
+        <div><span class="label">What sets it apart</span><p>Long, glossy, oval leaves that never split or perforate. Compact climber, tolerant of less light than most.</p></div>
+        <div><span class="label">Care difference</span><p>The most shade-tolerant here, and forgiving overall. Stays narrow, so a slim pole is enough.</p></div>
+        <div><span class="label">Reversion risk</span><div class="rev none"><span class="word">Not variegated in the plain green form</span></div></div>
+      </div>
+
+      <div class="cv" data-group="collector">
+        <p class="name">Monstera 'Esqueleto'<span class="common">Long sold as M. epipremnoides</span></p>
+        <div><span class="label">What sets it apart</span><p>Reads like an adansonii scaled up enormously. Mature leaves can pass a metre long, so perforated that they look like a leaf skeleton, on long green petiole sheaths.</p></div>
+        <div><span class="label">Care difference</span><p>Needs real height and light before it shows its adult form. Young plants look unremarkable. Thin leaves want humidity above 60 percent to avoid crisping.</p></div>
+        <div><span class="label">Reversion risk</span><div class="rev none"><span class="word">Not variegated</span></div></div>
+      </div>
+
+      <div class="cv" data-group="collector">
+        <p class="name">M. pinnatipartita</p>
+        <div><span class="label">What sets it apart</span><p>Shows two lives: juvenile leaves are solid, glossy and shingle against a surface, then adult growth splits deeply all the way to the midrib into a feathered shape.</p></div>
+        <div><span class="label">Care difference</span><p>The transformation requires climbing. Without a pole it will hold the plain juvenile form indefinitely and you'll wonder why you bought it.</p></div>
+        <div><span class="label">Reversion risk</span><div class="rev none"><span class="word">Not variegated</span></div></div>
+      </div>
+
+      <div class="cv" data-group="collector">
+        <p class="name">M. lechleriana</p>
+        <div><span class="label">What sets it apart</span><p>Large, leathery, wavy-edged leaves with modest oval fenestrations. Understated and underrated.</p></div>
+        <div><span class="label">Care difference</span><p>Vigorous and tough. Handles slightly lower light than deliciosa. Nothing special required.</p></div>
+        <div><span class="label">Reversion risk</span><div class="rev none"><span class="word">Not variegated</span></div></div>
+      </div>
+
+      <div class="cv" data-group="collector">
+        <p class="name">M. acuminata<span class="common">Shingle Monstera</span></p>
+        <div><span class="label">What sets it apart</span><p>Small, tidy, slightly stiff leaves with modest holes. Fast climber that shingles when young. There is a mottled variegated form in circulation.</p></div>
+        <div><span class="label">Care difference</span><p>Compact enough for a shelf with a short pole. Otherwise standard.</p></div>
+        <div><span class="label">Reversion risk</span><div class="rev none"><span class="word">Not variegated in the standard form</span></div></div>
+      </div>
+
+      <div class="cv" data-group="collector">
+        <p class="name">M. subpinnata</p>
+        <div><span class="label">What sets it apart</span><p>Leaves divided into separate finger-like leaflets down to the midrib, closer to a palm frond than a typical Monstera.</p></div>
+        <div><span class="label">Care difference</span><p>Slower and fussier than most. Wants consistently high humidity and does not appreciate drying out hard.</p></div>
+        <div><span class="label">Reversion risk</span><div class="rev none"><span class="word">Not variegated</span></div></div>
+      </div>
+
+      <div class="cv" data-group="collector">
+        <p class="name">M. obliqua<span class="common">The one that is almost never what it says</span></p>
+        <div><span class="label">What sets it apart</span><p>Paper-thin leaves that are mostly hole, sometimes 90 percent open. Genuinely rare in cultivation. The overwhelming majority of plants sold under this name are narrow-form adansonii.</p></div>
+        <div><span class="label">Care difference</span><p>For advanced growers with a controlled enclosure. Needs near-saturated humidity, spreads by runners, and grows extremely slowly. If you are offered one cheaply, it is an adansonii.</p></div>
+        <div><span class="label">Reversion risk</span><div class="rev none"><span class="word">Not variegated</span></div></div>
+      </div>
+
+      <div class="cv" data-group="variegated">
+        <p class="name">M. deliciosa 'Thai Constellation'<span class="common">Stable, tissue-cultured</span></p>
+        <div><span class="label">What sets it apart</span><p>Fine cream and butter-yellow speckling and marbling scattered across the whole leaf, like stars. Every leaf looks broadly like every other leaf, because the mutation is carried in every cell rather than in a competing cell line.</p></div>
+        <div><span class="label">Care difference</span><p>Slower than green deliciosa, so be patient and do not overfeed to compensate. Cream tissue scorches easily, so no direct sun and no close grow lights. Under-lit plants push greener, duller leaves without truly reverting. Only propagates from stem cuttings with nodes, and every cutting matches the parent.</p></div>
+        <div><span class="label">Reversion risk</span><div class="rev"><i class="on"></i><i></i><i></i><i></i><span class="word">Very low</span></div></div>
+      </div>
+
+      <div class="cv" data-group="variegated">
+        <p class="name">M. deliciosa 'Albo Variegata'<span class="common">Albo borsigiana, half-moon</span></p>
+        <div><span class="label">What sets it apart</span><p>Hard-edged sectors of pure white against deep green, often splitting a leaf clean down the middle. The dramatic one, and the reason the prices exist.</p></div>
+        <div><span class="label">Care difference</span><p>Chimeric and unpredictable. Manage it actively: if it starts producing all-green leaves, cut back to the last node that showed variegation and let it push a new growth point. If it produces an all-white leaf, do the same in reverse, because white tissue cannot feed itself and a fully white section will eventually die back. Aim for roughly a quarter to a half white per leaf. White sectors burn and brown at the edges more readily, so give it bright light without any direct sun, and be conservative with water since less green tissue means slower uptake.</p></div>
+        <div><span class="label">Reversion risk</span><div class="rev"><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><span class="word">Very high</span></div></div>
+      </div>
+
+      <div class="cv" data-group="variegated">
+        <p class="name">M. deliciosa 'Aurea'<span class="common">Marmorata, yellow variegated</span></p>
+        <div><span class="label">What sets it apart</span><p>The same chimeric mechanism as Albo but in yellow and lime rather than white, often in a marbled rather than blocky pattern.</p></div>
+        <div><span class="label">Care difference</span><p>Handled exactly like Albo, with the same pruning discipline. The yellow tissue holds a little chlorophyll, so it scorches marginally less readily than pure white, but the pattern swings just as wildly between leaves.</p></div>
+        <div><span class="label">Reversion risk</span><div class="rev"><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><span class="word">Very high</span></div></div>
+      </div>
+
+      <div class="cv" data-group="variegated">
+        <p class="name">M. deliciosa 'Mint'</p>
+        <div><span class="label">What sets it apart</span><p>Pale mint-green and cream sectors instead of stark white, giving a softer, hazier look. Rare and expensive.</p></div>
+        <div><span class="label">Care difference</span><p>The least predictable of the variegated deliciosas and the slowest grower. Same cut-back-to-a-good-node management. Verify a seller carefully; mislabelling is common at this price point.</p></div>
+        <div><span class="label">Reversion risk</span><div class="rev"><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><span class="word">Very high</span></div></div>
+      </div>
+
+      <div class="cv" data-group="variegated">
+        <p class="name">M. deliciosa variegata, large form<span class="common">Sometimes sold as 'Sport'</span></p>
+        <div><span class="label">What sets it apart</span><p>Variegation on true large-form deliciosa rather than borsigiana. Bigger leaves, wider node spacing, and often a more evenly distributed pattern than borsigiana albo.</p></div>
+        <div><span class="label">Care difference</span><p>Still chimeric and still needs pruning management, but tends to hold a moderate variegation ratio a little more steadily. Needs serious space.</p></div>
+        <div><span class="label">Reversion risk</span><div class="rev"><i class="on"></i><i class="on"></i><i class="on"></i><i></i><span class="word">High</span></div></div>
+      </div>
+
+      <div class="cv" data-group="variegated">
+        <p class="name">M. adansonii variegata<span class="common">Albo, aurea and mint forms</span></p>
+        <div><span class="label">What sets it apart</span><p>Swiss cheese leaves with white or yellow sectors. Faster growing than variegated deliciosa, which makes the pattern shift more often.</p></div>
+        <div><span class="label">Care difference</span><p>Thin leaves plus non-photosynthetic tissue is a demanding combination. Keep humidity high, light bright but never direct, and prune back to a variegated node the moment a vine runs all green, because adansonii reverts fast and then outgrows the variegated growth.</p></div>
+        <div><span class="label">Reversion risk</span><div class="rev"><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><span class="word">Very high</span></div></div>
+      </div>
+
+      <div class="cv" data-group="variegated">
+        <p class="name">M. adansonii 'Archipelago'</p>
+        <div><span class="label">What sets it apart</span><p>Variegated adansonii with a finer, more evenly scattered pattern, produced through tissue culture and noticeably more consistent leaf to leaf than the chimeric albo forms.</p></div>
+        <div><span class="label">Care difference</span><p>Adansonii care with a little more light. Far less pruning management than an albo adansonii, though it can still throw the occasional greener leaf under poor light.</p></div>
+        <div><span class="label">Reversion risk</span><div class="rev"><i class="on"></i><i class="on"></i><i></i><i></i><span class="word">Low to moderate</span></div></div>
+      </div>
+
+      <div class="cv" data-group="variegated">
+        <p class="name">M. standleyana 'Albo Variegata'</p>
+        <div><span class="label">What sets it apart</span><p>Solid glossy leaves streaked and speckled with cream and white. Compact, and the most affordable genuinely variegated Monstera.</p></div>
+        <div><span class="label">Care difference</span><p>Easy. The variegation is streaky rather than sectored, which makes wholesale reversion less common, though individual leaves vary a lot in how much cream they carry. Tolerates lower light than any other variegated plant here.</p></div>
+        <div><span class="label">Reversion risk</span><div class="rev"><i class="on"></i><i class="on"></i><i></i><i></i><span class="word">Low to moderate</span></div></div>
+      </div>
+
+      <div class="cv" data-group="variegated">
+        <p class="name">Variegated 'Peru' and other rare sports</p>
+        <div><span class="label">What sets it apart</span><p>Variegated versions of the less common species appear periodically and command high prices. Almost all are spontaneous chimeric sports rather than stabilised lines.</p></div>
+        <div><span class="label">Care difference</span><p>Assume chimeric until proven otherwise, and assume the pattern will drift. Buy an established plant with several variegated leaves rather than a single node, and manage it like an Albo.</p></div>
+        <div><span class="label">Reversion risk</span><div class="rev"><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><span class="word">Very high</span></div></div>
+      </div>
+
+      <div class="cv" data-group="lookalike">
+        <p class="name">Rhaphidophora tetrasperma<span class="common">Sold as "mini Monstera"</span></p>
+        <div><span class="label">What sets it apart</span><p>Not a Monstera and not a philodendron. Small deeply split leaves on a fast, wiry vine. Reaches its adult split-leaf look at a fraction of the size.</p></div>
+        <div><span class="label">Care difference</span><p>Faster and thirstier than a Monstera, with thinner stems that need tying in early. Excellent choice for someone who wants the look in an apartment.</p></div>
+        <div><span class="label">Reversion risk</span><div class="rev none"><span class="word">Not variegated in the common form</span></div></div>
+      </div>
+
+      <div class="cv" data-group="lookalike">
+        <p class="name">Epipremnum pinnatum 'Cebu Blue'</p>
+        <div><span class="label">What sets it apart</span><p>A pothos relative with narrow blue-silver leaves that fenestrate impressively once mature and climbing, which is why it gets mistaken for a Monstera.</p></div>
+        <div><span class="label">Care difference</span><p>Tougher and more drought-tolerant than any Monstera. Needs a pole to reach the split-leaf adult form, same principle as everything else here.</p></div>
+        <div><span class="label">Reversion risk</span><div class="rev none"><span class="word">Not variegated in the common form</span></div></div>
+      </div>
+
+      <div class="cv" data-group="lookalike">
+        <p class="name">Philodendron bipinnatifidum<span class="common">Sold as "split-leaf philodendron"</span></p>
+        <div><span class="label">What sets it apart</span><p>The name most often misapplied to deliciosa. It is a genuine philodendron with lobed leaves that split from the edge and never form interior holes. Grows as a self-heading rosette rather than a climbing vine.</p></div>
+        <div><span class="label">Care difference</span><p>No pole needed and none wanted. Grows wide rather than tall and takes more direct sun than a Monstera.</p></div>
+        <div><span class="label">Reversion risk</span><div class="rev none"><span class="word">Not variegated</span></div></div>
+      </div>
+
+    </div>
+      </div>
+    </details>
+  </section>
+
+  <hr class="rule">
+
+  <!-- ================= CUTTINGS ================= -->
+  <section id="cuttings">
+    <details class="sec" open>
+      <summary class="sec-head">
+        <h2>Gifting cuttings</h2>
+        <span class="rule-fill"></span>
+        <svg class="chev" viewBox="0 0 20 20" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7.5 L10 13 L16 7.5"/></svg>
+      </summary>
+      <div class="sec-body">
+    <p class="lede">The best reason to grow a climbing plant is that pruning it produces presents.</p>
+
+    <h3>What makes a viable cutting</h3>
+    <p>The node is everything. It is the slightly raised band on the stem where a leaf attaches, usually with a brown nub of aerial root opposite the leaf. All new roots and all new growth come from there. A leaf with a length of petiole and no node will sit in water looking fine for months and never root.</p>
+    <ul>
+      <li>Cut with something clean and sharp, half an inch to an inch below the node.</li>
+      <li>One node with one leaf is the ideal gift. Two nodes is more robust and roots faster.</li>
+      <li>An aerial root already attached to the node is a large head start.</li>
+      <li>Let the cut surface dry for an hour before it goes into water or moss. This reduces rot at the cut.</li>
+      <li>If you are cutting from a variegated plant, take from a node carrying good variegation. An all-green node produces an all-green plant, and an all-white node produces a plant that cannot feed itself.</li>
+    </ul>
+
+    <h3>Rooting it</h3>
+    <ul>
+      <li><strong>Water.</strong> Easiest to watch and the friendliest for a beginner. Node submerged, leaf out. Change the water weekly. Roots appear in two to four weeks. Water roots are brittle and need a transition, so pot up once roots reach two or three inches, no longer.</li>
+      <li><strong>Sphagnum moss.</strong> Damp, wrung-out moss in a loosely closed container. Roots come out stronger and transplant with less shock. Check for mold and vent it every couple of days.</li>
+      <li><strong>Perlite and water.</strong> An inch of water in the bottom of a cup of perlite. My preference. It combines the humidity of moss with the visibility of water, and the roots that form are already adapted to an airy medium.</li>
+      <li>Warmth and bright indirect light in all cases. A cutting has no roots and cannot support high light or direct sun.</li>
+    </ul>
+
+    <h3>Handing it over</h3>
+    <p>Give a friend a cutting that is already rooted rather than a fresh cut. It roughly triples the odds they succeed, and their first experience of the plant is a leaf unfurling rather than a stem going soft. Wrap the roots in damp moss inside a zip bag if it is travelling, and keep it out of a cold car.</p>
+
+    <div class="gift">
+      <h3>The card to send with it</h3>
+      <ol>
+        <li>Put it somewhere bright but out of direct sun. Within a few feet of a window is right. The middle of a room is not.</li>
+        <li>Water when the top two inches feel dry, then water thoroughly until it runs out of the bottom. Never let it sit in a saucer of water.</li>
+        <li>When it has four or five leaves, give it a moss pole. This is what makes the leaves get big and develop holes.</li>
+        <li>New leaves should keep getting bigger. If they get smaller, it needs more light.</li>
+        <li>A yellow bottom leaf every so often is normal. Several at once means it is too wet.</li>
+        <li>Keep it away from cats, dogs and toddlers who chew. The sap is an irritant.</li>
+        <li>Text me a photo when it puts out a new leaf.</li>
+      </ol>
+    </div>
+      </div>
+    </details>
+  </section>
+
+  <hr class="rule">
+
+  <!-- ================= ABOUT ================= -->
+  <section id="about" class="about">
+    <details class="sec" open>
+      <summary class="sec-head">
+        <h2>About this page</h2>
+        <span class="rule-fill"></span>
+        <svg class="chev" viewBox="0 0 20 20" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7.5 L10 13 L16 7.5"/></svg>
+      </summary>
+      <div class="sec-body">
+    <p>Everything I've settled on for growing them indoors: how to start one from whatever form you bought it in, how to build a pole it will actually climb, how much light it really needs, and which cultivars hold their variegation.</p>
+    <p>A working reference. Kept at walkerwagoner.com and updated when I learn I was wrong.</p>
+      </div>
+    </details>
+  </section>
+
+  </main>
+</div>
+
+<footer>
+  <p>Personal notes, not horticultural gospel. Conditions in your room beat any number on this page. Last revised September 2026.</p>
+  <p class="credit">Monstera Leaf by Arif Arisandi from <a href="https://thenounproject.com/browse/icons/term/monstera-leaf/" target="_blank" rel="noopener" title="Monstera Leaf Icons">Noun Project</a> (CC BY 3.0)</p>
+</footer>
+
+<script>
+(function(){
+  // active section highlighting
+  var links = Array.prototype.slice.call(document.querySelectorAll('.toc a'));
+  var map = {};
+  links.forEach(function(a){
+    var id = a.getAttribute('href').slice(1);
+    var el = document.getElementById(id);
+    if (el) map[id] = a;
+  });
+
+  if ('IntersectionObserver' in window) {
+    var obs = new IntersectionObserver(function(entries){
+      entries.forEach(function(e){
+        if (e.isIntersecting) {
+          links.forEach(function(l){ l.classList.remove('current'); });
+          var a = map[e.target.id];
+          if (a) a.classList.add('current');
+        }
+      });
+    }, { rootMargin: '-10% 0px -70% 0px', threshold: 0 });
+    Object.keys(map).forEach(function(id){ obs.observe(document.getElementById(id)); });
+  }
+
+  // collapse / expand all
+  var details = Array.prototype.slice.call(document.querySelectorAll('details.sec'));
+  var allBtn = document.querySelector('.toc-all');
+  if (allBtn) {
+    allBtn.addEventListener('click', function(){
+      var collapsing = allBtn.dataset.state === 'open';
+      details.forEach(function(d){ d.open = !collapsing; });
+      allBtn.dataset.state = collapsing ? 'closed' : 'open';
+      allBtn.textContent = collapsing ? 'Expand all' : 'Collapse all';
+    });
+  }
+
+  // a contents link should open the section it points at
+  links.forEach(function(a){
+    a.addEventListener('click', function(){
+      var el = document.getElementById(a.getAttribute('href').slice(1));
+      if (!el) return;
+      var d = el.querySelector('details.sec');
+      if (d) d.open = true;
+    });
+  });
+
+  // print with everything visible, then put it back
+  window.addEventListener('beforeprint', function(){
+    details.forEach(function(d){
+      if (!d.open) { d.setAttribute('data-reopen',''); d.open = true; }
+    });
+  });
+  window.addEventListener('afterprint', function(){
+    details.forEach(function(d){
+      if (d.hasAttribute('data-reopen')) { d.open = false; d.removeAttribute('data-reopen'); }
+    });
+  });
+
+  // variety filter
+  var buttons = Array.prototype.slice.call(document.querySelectorAll('.filters button'));
+  var rows = Array.prototype.slice.call(document.querySelectorAll('#cvlist .cv'));
+  buttons.forEach(function(btn){
+    btn.addEventListener('click', function(){
+      var f = btn.dataset.filter;
+      buttons.forEach(function(b){ b.setAttribute('aria-pressed', String(b === btn)); });
+      rows.forEach(function(r){
+        r.hidden = !(f === 'all' || r.dataset.group === f);
+      });
+    });
+  });
+})();
+</script>
+
+</body>
+</html>
