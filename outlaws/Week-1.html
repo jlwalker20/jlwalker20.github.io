@@ -1,0 +1,282 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="robots" content="noindex">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="dark">
+<title>Week 1 power rankings v9</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Condensed:wght@400;500;600;700&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --deep:#14181f; --panel:#1b212b; --raise:#222a36; --line:#2e3846;
+  --ink:#e6eaf1; --mute:#8a97aa; --dim:#5f6b7d;
+  --rb:#4fb286; --wr:#e0a04a; --te:#9184d8; --qb:#5c9be0; --flat:#6b7788;
+  --hot:#e0665c; --good:#4fb286;
+  --cond:"IBM Plex Sans Condensed",system-ui,-apple-system,sans-serif;
+  --body:"IBM Plex Sans",system-ui,-apple-system,sans-serif;
+}
+*{box-sizing:border-box}
+html,body{margin:0;padding:0}
+body{
+  padding-bottom:66px;
+  background:var(--deep); color:var(--ink);
+  font-family:var(--body); font-size:15px; line-height:1.5;
+  font-variant-numeric:tabular-nums; -webkit-font-smoothing:antialiased;
+}
+.wrap{max-width:820px;margin:0 auto;padding:26px 18px 40px}
+h1{font-family:var(--cond);font-size:26px;font-weight:600;margin:0 0 3px;letter-spacing:.01em}
+.ver{font-size:15px;font-weight:500;color:var(--dim);margin-left:4px}
+.sub{color:var(--mute);font-size:14px;margin:0 0 6px;max-width:62ch}
+.stamp{color:var(--dim);font-family:var(--cond);font-size:13px;margin:0 0 22px}
+
+.stack{display:flex;flex-direction:column;gap:12px}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:4px}
+
+summary{
+  cursor:pointer;list-style:none;padding:13px 15px;display:grid;
+  grid-template-columns:30px 1fr auto;gap:12px;align-items:center;min-height:56px;
+}
+summary::-webkit-details-marker{display:none}
+summary:focus-visible{outline:2px solid var(--qb);outline-offset:-2px}
+details[open] > summary{border-bottom:1px solid var(--line)}
+.rk{font-family:var(--cond);font-size:21px;font-weight:600;color:var(--dim);text-align:center}
+details[open] .rk{color:var(--ink)}
+.tm{font-family:var(--cond);font-size:17px;font-weight:600;line-height:1.2}
+.tm small{display:block;font-size:12.5px;font-weight:400;color:var(--dim);margin-top:2px}
+.gr{font-family:var(--cond);font-size:19px;font-weight:700;padding:3px 11px;border-radius:3px;
+    min-width:48px;text-align:center}
+.gA{background:rgba(79,178,134,.16);color:#5ec99a;border:1px solid rgba(79,178,134,.5)}
+.gB{background:rgba(92,155,224,.15);color:#6fa8e6;border:1px solid rgba(92,155,224,.45)}
+.gC{background:rgba(224,160,74,.15);color:var(--wr);border:1px solid rgba(224,160,74,.45)}
+.gD{background:rgba(224,102,92,.15);color:var(--hot);border:1px solid rgba(224,102,92,.5)}
+
+.sup{display:flex;gap:8px;align-items:baseline;padding:10px 12px;margin:0 0 13px;
+  background:var(--raise);border-left:3px solid var(--qb);border-radius:3px}
+.sup .st{font-family:var(--cond);font-size:15px;font-weight:600;color:var(--ink);white-space:nowrap}
+.sup .sw{font-size:12.5px;color:var(--dim);line-height:1.4}
+@media(max-width:560px){.sup{flex-direction:column;gap:3px}.sup .st{white-space:normal}}
+.body{padding:14px 15px}
+.note{color:var(--mute);font-size:14px;margin:0 0 14px}
+.lbl{font-family:var(--cond);font-size:12px;color:var(--dim);letter-spacing:.04em;
+     text-transform:uppercase;margin:0 0 7px}
+.lineup{display:flex;flex-direction:column;gap:4px;margin-bottom:14px}
+.pl{display:grid;grid-template-columns:38px 1fr auto;gap:9px;align-items:baseline;
+    background:var(--raise);border-left:3px solid var(--flat);border-radius:3px;padding:7px 10px;
+    font-family:var(--cond);font-size:15px}
+.pl .p{font-size:12px;font-weight:700}
+.pl .v{font-size:13px;color:var(--dim)}
+.pRB{border-left-color:var(--rb)} .pWR{border-left-color:var(--wr)}
+.pTE{border-left-color:var(--te)} .pQB{border-left-color:var(--qb)}
+.pFLEX{border-left-color:var(--flat)}
+.cRB{color:var(--rb)} .cWR{color:var(--wr)} .cTE{color:var(--te)} .cQB{color:var(--qb)}
+
+.meter{height:5px;background:var(--line);border-radius:3px;overflow:hidden;margin:0 0 14px}
+.meter i{display:block;height:100%;background:linear-gradient(90deg,var(--qb),var(--good))}
+.kv{display:grid;grid-template-columns:auto 1fr;gap:5px 12px;font-size:13.5px;margin-bottom:12px}
+.kv dt{font-family:var(--cond);color:var(--dim)}
+.kv dd{margin:0;color:var(--mute)}
+.kv b{color:var(--ink);font-weight:600}
+.kv b.pos{color:var(--good)} .kv b.neg{color:var(--hot)}
+.mu{display:grid;grid-template-columns:1fr auto;gap:6px 10px;align-items:baseline;
+    padding:11px 0;border-bottom:1px solid var(--line)}
+.mu:last-child{border-bottom:0}
+.mu .t{font-family:var(--cond);font-size:15.5px}
+.mu .t.w{font-weight:600;color:var(--good)}
+.mu .s{font-family:var(--cond);font-size:14px;color:var(--dim);text-align:right}
+.mu .pick{grid-column:1/-1;font-size:13px;color:var(--mute);margin-top:2px}
+.tagrow{display:flex;flex-wrap:wrap;gap:6px}
+.tag{font-family:var(--cond);font-size:13px;padding:3px 9px;border-radius:3px;
+     background:var(--raise);border:1px solid var(--line);color:var(--mute)}
+.tag.good{color:var(--good);border-color:rgba(79,178,134,.4)}
+.tag.bad{color:var(--hot);border-color:rgba(224,102,92,.4)}
+.pad{padding:14px 15px}
+.pad h2{font-family:var(--cond);font-size:15px;font-weight:600;color:var(--mute);margin:0 0 10px}
+.pad p{margin:0 0 11px;font-size:14px;color:var(--mute)}
+.pad p:last-child{margin-bottom:0}
+.pad strong{color:var(--ink);font-weight:600}
+.nav{position:fixed;left:0;right:0;bottom:0;z-index:30;display:flex;
+  background:var(--panel);border-top:1px solid var(--line)}
+.nav a{flex:1;text-align:center;padding:14px 4px;color:var(--mute);text-decoration:none;
+  font-family:var(--cond);font-size:14.5px;font-weight:500;min-height:54px;
+  display:flex;align-items:center;justify-content:center;border-right:1px solid var(--line)}
+.nav a:last-child{border-right:0}
+.nav a:hover,.nav a:active{background:var(--raise);color:var(--ink)}
+.nav a:focus-visible{outline:2px solid var(--qb);outline-offset:-3px}
+section{scroll-margin-top:12px}
+.sechd{font-family:var(--cond);font-size:13px;color:var(--dim);letter-spacing:.05em;
+  text-transform:uppercase;margin:26px 0 10px}
+.sechd:first-child{margin-top:0}
+.sechdrow{display:flex;align-items:center;justify-content:space-between;gap:12px;
+  flex-wrap:wrap;margin:26px 0 10px}
+.sechdrow .sechd{margin:0}
+.ctl{display:flex;gap:6px}
+.ctl button{font-family:var(--cond);font-size:13.5px;font-weight:500;color:var(--mute);
+  background:var(--panel);border:1px solid var(--line);border-radius:3px;
+  padding:8px 12px;min-height:40px;cursor:pointer}
+.ctl button:hover{color:var(--ink);border-color:var(--dim)}
+.ctl button:focus-visible{outline:2px solid var(--qb);outline-offset:2px}
+.mcard{background:var(--panel);border:1px solid var(--line);border-radius:4px;
+  padding:14px 15px;margin-bottom:12px}
+.mrow{display:grid;grid-template-columns:1fr auto;gap:4px 10px;align-items:baseline}
+.mrow .t{font-family:var(--cond);font-size:16.5px}
+.mrow .t.w{font-weight:600;color:var(--good)}
+.mrow .s{font-family:var(--cond);font-size:15px;color:var(--dim);text-align:right}
+.verdict{font-family:var(--cond);font-size:13.5px;color:var(--mute);
+  margin:9px 0 0;padding-top:9px;border-top:1px solid var(--line)}
+.verdict b{color:var(--ink)}
+.msum{font-size:13.5px;color:var(--mute);margin:9px 0 0}
+.wgrid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:8px}
+@media(max-width:560px){.wgrid{grid-template-columns:1fr;gap:10px}}
+.wside{min-width:0}
+.wname{font-family:var(--cond);font-size:13px;color:var(--mute);font-weight:600;
+  margin:0 0 6px;padding-bottom:5px;border-bottom:1px solid var(--line);
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.watch{display:flex;flex-wrap:wrap;gap:5px}
+.wch{font-family:var(--cond);font-size:13.5px;padding:3px 9px;border-radius:3px;
+  background:var(--raise);border-left:3px solid var(--flat)}
+.wch em{font-style:normal;font-size:11px;font-weight:700;margin-right:5px}
+footer{color:var(--dim);font-size:12.5px;font-family:var(--cond);margin-top:22px;line-height:1.6}
+
+@media(max-width:560px){
+  .wrap{padding:16px 12px 30px}
+  h1{font-size:21px}
+  summary{grid-template-columns:26px 1fr auto;gap:9px;padding:12px 12px}
+  .tm{font-size:16px}
+  .body{padding:12px}
+  .kv{grid-template-columns:1fr}
+  .kv dt{margin-top:5px}
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Week 1 power rankings <span class="ver">v9</span></h1>
+  <p class="sub">Post-draft standing for the ten-team half-PPR league, scored on each roster's best starting nine using Ringer half-PPR values adjusted for Week 1 news. Bench counted at a third, since only nine start.</p>
+  <p class="stamp">Archived after the draft &middot; before Week 1 kickoff</p>
+
+  <section id="s-grades">
+    <div class="sechdrow">
+      <p class="sechd">Draft grades</p>
+      <div class="ctl">
+        <button type="button" id="expandAll">Expand all</button>
+        <button type="button" id="collapseAll">Collapse all</button>
+      </div>
+    </div>
+    <div class="stack" id="teams"></div>
+  </section>
+
+  <div class="card" style="margin-top:12px">
+    <div class="pad">
+      <h2>League notes</h2>
+      <p><strong>The tight end cliff decided more than anything else.</strong> Bowers, McBride, Loveland and Warren all went inside the first 33 picks. The gap between owning one of those four and not is the largest single positional edge in the league.</p>
+      <p><strong>Discipline against ADP tracked with quality.</strong> The three teams that gained the most ground versus average draft position all finished in the top five here; the team that gave up the most finished last.</p>
+      <p><strong>Treat the gaps as small.</strong> Six of the ten teams project within five points a week of each other. Over a fourteen-game season that is roughly a one-game spread, which is well inside the noise of a fantasy season.</p>
+    </div>
+  </div>
+
+
+  <section id="s-week1">
+    <p class="sechd">Week 1 matchups</p>
+    <div id="week1"></div>
+    <p style="font-size:12.5px;color:var(--dim);margin:2px 0 0">Projections are Yahoo's own. Weekly scores swing roughly 22 points either side, so anything inside a six-point margin is close to a coin flip.</p>
+  </section>
+
+  <footer>
+    Values are Ringer half-PPR auction dollars adjusted for injury and depth-chart news as of the draft.<br>
+    Composite = starting nine + 35% of bench. Grades are relative to this league only.
+  </footer>
+</div>
+
+<nav class="nav" aria-label="Jump to section">
+  <a href="#s-grades">Draft grades</a>
+  <a href="#s-week1">Week 1 matchups</a>
+</nav>
+
+<script>
+const T = [{"slot":8,"team":"Tight Ends Colonoscopy Co.","start":221.7,"bench":61.3,"total":283.0,"starters":[["Trevor Lawrence","QB",13],["Christian McCaffrey","RB",49.4],["Saquon Barkley","RB",49],["A.J. Brown","WR",36],["Ladd McConkey","WR",29],["Tyler Warren","TE",21],["Emeka Egbuka","WR",24.3]],"best":[[28,"Mike Evans",88],[25,"Emeka Egbuka",68],[17,"Quentin Johnston",108]],"worst":[[9,"Rhamondre Stevenson",53],[15,"Tyler Warren",33],[23,"Sam Darnold",128]],"grade":"A","rank":1,"composite":243.2,"note":"Best starting nine in the league, and the deepest bench behind it. McCaffrey and Barkley is the only elite back pair drafted, and the middle rounds delivered \u2014 Egbuka 25 picks late, Evans 28 late.","adp_edge":21,"mu":112.3744,"rec":"8-6","proj_pts":112.4,"sup":"Best starting nine","supwhy":"$221.7 of starter value, most in the league"},{"slot":1,"team":"Lion Ass Bitches","start":218.4,"bench":59.0,"total":277.4,"starters":[["Jayden Daniels","QB",17],["Jahmyr Gibbs","RB",65],["D'Andre Swift","RB",15.6],["Nico Collins","WR",34],["Jaylen Waddle","WR",26],["Brock Bowers","TE",35],["Tee Higgins","WR",25.8]],"best":[[36,"Terry McLaurin",81],[29,"Brian Thomas Jr.",101],[26,"De'Zhaun Stribling",120]],"worst":[[0,"Jahmyr Gibbs",1],[1,"D'Andre Swift",41],[4,"Jayden Daniels",61]],"grade":"A","rank":2,"composite":239.1,"note":"Gibbs, Bowers and a receiver room six deep. Won more ground against ADP than anyone. The distance between RB1 and RB2 is the widest of any contender.","adp_edge":35,"mu":111.6484,"rec":"8-6","proj_pts":111.6,"sup":"Best value against the market","supwhy":"+35 picks of ADP surplus across the starting nine"},{"slot":2,"team":"Monday Night Jason","start":202.2,"bench":53,"total":255.2,"starters":[["Caleb Williams","QB",13],["Bijan Robinson","RB",63],["Derrick Henry","RB",44],["DJ Moore","WR",22],["Garrett Wilson","WR",18],["Harold Fannin Jr.","TE",8],["Ashton Jeanty","RB",34.2]],"best":[[26,"Christian Watson",79],[17,"Bo Nix",119],[7,"Jameson Williams",59]],"worst":[[5,"DJ Moore",42],[9,"Caleb Williams",62],[12,"Mark Andrews",122]],"grade":"B+","rank":3,"composite":220.8,"note":"Bijan, Henry and Jeanty is the strongest backfield anyone assembled. Tight end is where the ceiling gets capped.","adp_edge":-5,"mu":108.0844,"rec":"8-6","proj_pts":108.1,"sup":"Deepest backfield","supwhy":"$141 of running back value, 43% more than anyone else"},{"slot":3,"team":"Kevanescence","start":198.6,"bench":59.5,"total":258.1,"starters":[["Justin Herbert","QB",14],["Jonathan Taylor","RB",46],["Chase Brown","RB",41],["Chris Olave","WR",35.6],["DeVonta Smith","WR",30],["Isaiah Likely","TE",3],["Tetairoa McMillan","WR",29]],"best":[[39,"Michael Pittman Jr.",143],[34,"Rome Odunze",83],[25,"Carnell Tate",98]],"worst":[[5,"Isaiah Likely",118],[11,"Justin Herbert",63],[28,"Brenton Strange",138]],"grade":"B+","rank":4,"composite":219.4,"note":"Taylor and Chase Brown alongside Olave, DeVonta Smith and McMillan. The only roster in the league that came out exactly level against average draft position \u2014 no reaches, no bargains, straight off the board.","adp_edge":0,"mu":107.2924,"rec":"7-7","proj_pts":107.3,"sup":"Straight off the board","supwhy":"the only roster dead even against ADP, at exactly zero"},{"slot":9,"team":"End Around Chris","start":192.4,"bench":45,"total":237.4,"starters":[["Lamar Jackson","QB",24],["Kenneth Walker III","RB",39],["Jadarian Price","RB",15.4],["Jaxon Smith-Njigba","WR",51],["Zay Flowers","WR",21],["Colston Loveland","TE",22],["Luther Burden III","WR",20]],"best":[[28,"Luther Burden III",72],[26,"Chris Godwin Jr.",109],[25,"Josh Downs",112]],"worst":[[7,"Chig Okonkwo",149],[14,"Jaxson Dart",92],[21,"Lamar Jackson",29]],"grade":"B","rank":5,"composite":208.2,"note":"Smith-Njigba, Lamar, Loveland and Kenneth Walker. Sensibly built, and the second-biggest value haul against ADP.","adp_edge":29,"mu":105.9284,"rec":"7-7","proj_pts":105.9,"sup":"Most evenly built","supwhy":"smallest gap between best and worst starter of any winning roster"},{"slot":4,"team":"End Zone Christina","start":201,"bench":13.0,"total":214.0,"starters":[["Drake Maye","QB",23],["De'Von Achane","RB",36],["Travis Etienne Jr.","RB",18],["Amon-Ra St. Brown","WR",50],["Rashee Rice","WR",33],["Trey McBride","TE",32],["Rico Dowdle","RB",9]],"best":[[44,"Courtland Sutton",144],[21,"Rashee Rice",57],[16,"Rico Dowdle",97]],"worst":[[18,"Jordan Love",104],[24,"Juwan Johnson",117],[37,"Matthew Golden",64]],"grade":"B","rank":6,"composite":205.6,"note":"St. Brown, Achane, McBride and Maye make the fourth-best starting nine by value. Depth is where this one comes up short.","adp_edge":8,"mu":107.82039999999999,"rec":"8-6","proj_pts":107.8,"sup":"Most top-heavy","supwhy":"a $13 bench, less than a quarter of anyone else in the top six"},{"slot":6,"team":"Game Plan Jemma","start":180.9,"bench":47.0,"total":227.9,"starters":[["Dak Prescott","QB",10],["Omarion Hampton","RB",37],["Javonte Williams","RB",25],["Ja'Marr Chase","WR",59],["Malik Nabers","WR",27.9],["Dalton Kincaid","TE",3],["Davante Adams","WR",19]],"best":[[20,"Jakobi Meyers",146],[10,"Davante Adams",66],[3,"Ja'Marr Chase",6]],"worst":[[4,"Dallas Goedert",115],[22,"Terrance Ferguson",135],[32,"Jared Goff",86]],"grade":"B-","rank":7,"composite":197.3,"note":"Ja\u2019Marr Chase is the most valuable single asset in the league outside the top two backs. The supporting cast is where it thins out.","adp_edge":11,"mu":103.3984,"rec":"7-7","proj_pts":103.4,"sup":"Most reliant on one star","supwhy":"Ja\u2019Marr Chase alone is 33% of the starting lineup\u2019s value"},{"slot":7,"team":"Filthy Rich","start":169.8,"bench":23.6,"total":193.4,"starters":[["Joe Burrow","QB",16],["Kyren Williams","RB",27],["Breece Hall","RB",18.0],["Puka Nacua","WR",51.3],["Justin Jefferson","WR",42],["Tucker Kraft","TE",8.5],["MarShawn Lloyd","RB",7]],"best":[[25,"Kyle Monangai",134],[15,"Malik Willis",147],[9,"Alec Pierce",107]],"worst":[[13,"Tucker Kraft",54],[16,"Joe Burrow",47],[37,"Hunter Henry",127]],"grade":"C","rank":8,"composite":178.1,"note":"Nacua and Jefferson is the best receiver duo drafted all night. Yahoo\u2019s own Week 1 projection rates this roster far higher than the season-long values do \u2014 worth watching which read holds up.","adp_edge":-18,"mu":100.9564,"rec":"6-8","proj_pts":101.0,"sup":"Best receiver duo","supwhy":"Nacua and Jefferson, $93 combined and clear of the field"},{"slot":10,"team":"Peasant Lewis","start":151.7,"bench":23.2,"total":174.9,"starters":[["Josh Allen","QB",30],["James Cook III","RB",47],["Jonathon Brooks","RB",9.9],["George Pickens","WR",32],["Michael Wilson","WR",11],["Sam LaPorta","TE",10.8],["Marvin Harrison Jr.","WR",11]],"best":[[55,"Jordan Addison",150],[34,"Jayden Reed",130],[25,"Michael Wilson",111]],"worst":[[40,"Sam LaPorta",30],[42,"Matthew Stafford",71],[71,"Travis Kelce",50]],"grade":"C-","rank":9,"composite":159.8,"note":"The most aggressive drafting in the league, with several players taken well ahead of market. Josh Allen and James Cook are a genuine foundation to build on.","adp_edge":12,"mu":96.9744,"rec":"5-9","proj_pts":97.0,"sup":"Boldest picks","supwhy":"Travis Kelce 71 selections ahead of ADP, the draft\u2019s biggest reach"},{"slot":5,"team":"QB Pocket Samantha","start":145.1,"bench":25.8,"total":170.9,"starters":[["Jalen Hurts","QB",15],["Jeremiyah Love","RB",16.1],["David Montgomery","RB",15],["CeeDee Lamb","WR",43],["Drake London","WR",34],["Kyle Pitts Sr.","TE",11],["Jaylen Warren","RB",11]],"best":[[29,"DK Metcalf",105],[20,"Rachaad White",136],[7,"Jaylen Warren",76]],"worst":[[21,"Jake Ferguson",125],[21,"David Montgomery",36],[32,"George Kittle",56]],"grade":"D+","rank":10,"composite":154.1,"note":"Lamb and London are real. The league\u2019s steepest negative against ADP came alongside them.","adp_edge":-62,"mu":95.5224,"rec":"5-9","proj_pts":95.5,"sup":"Furthest ahead of the market","supwhy":"\u221262 against ADP, the steepest in the league"}];
+const esc = s => String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const gclass = g => g[0]==='A'?'gA':(g[0]==='B'?'gB':(g[0]==='C'?'gC':'gD'));
+const SLOTS = ['QB','RB','RB','WR','WR','TE','FLEX'];
+const max = Math.max(...T.map(t=>t.composite));
+
+document.getElementById('teams').innerHTML = T.map((t,i) => {
+  const lineup = t.starters.map((s,j) =>
+    '<div class="pl p'+s[1]+'"><span class="p c'+s[1]+'">'+SLOTS[j]+'</span>' +
+    '<span>'+esc(s[0])+'</span><span class="v">$'+s[2]+'</span></div>').join('');
+
+  const best = t.best.map(b=>'<span class="tag good">'+esc(b[1])+' &mdash; '+b[0]+' late</span>').join('');
+  const worst = t.worst.map(b=>'<span class="tag bad">'+esc(b[1])+' &mdash; '+b[0]+' early</span>').join('');
+
+  return '<details class="card">'+
+    '<summary><span class="rk">'+t.rank+'</span>'+
+      '<span class="tm">'+esc(t.team)+'<small>draft slot '+t.slot+' &middot; composite '+t.composite+'</small></span>'+
+      '<span class="gr '+gclass(t.grade)+'">'+t.grade+'</span></summary>'+
+    '<div class="body">'+
+      '<div class="meter"><i style="width:'+Math.round(t.composite/max*100)+'%"></i></div>'+
+      '<div class="sup"><span class="st">'+esc(t.sup)+'</span>'+
+        '<span class="sw">'+esc(t.supwhy)+'</span></div>'+
+      '<p class="note">'+esc(t.note)+'</p>'+
+      '<p class="lbl">Projected starters</p><div class="lineup">'+lineup+'</div>'+
+      '<dl class="kv">'+
+        '<dt>Total roster value</dt><dd><b>$'+t.total+'</b> &nbsp;<span style="color:var(--dim)">('+t.start+' starters + '+t.bench+' bench)</span></dd>'+
+        '<dt>Draft vs ADP</dt><dd><b class="'+(t.adp_edge>0?'pos':(t.adp_edge<0?'neg':''))+'">'+(t.adp_edge>0?'+':'')+t.adp_edge+'</b> picks across the starting nine</dd>'+
+        '<dt>Projected record</dt><dd><b>'+t.rec+'</b> &nbsp;<span style="color:var(--dim)">'+t.proj_pts+' pts/wk</span></dd>'+
+      '</dl>'+
+      '<p class="lbl">Best value</p><div class="tagrow" style="margin-bottom:12px">'+best+'</div>'+
+      '<p class="lbl">Biggest reach</p><div class="tagrow">'+worst+'</div>'+
+    '</div></details>';
+}).join('');
+
+const setAll = open => document.querySelectorAll('#teams details').forEach(d => d.open = open);
+document.getElementById('expandAll').onclick   = () => setAll(true);
+document.getElementById('collapseAll').onclick = () => setAll(false);
+
+const YPROJ = {'Tight Ends Colonoscopy Co.':109.84,'Lion Ass Bitches':115.01,'End Zone Christina':111.24,
+ 'Monday Night Jason':107.89,'Filthy Rich':112.61,'Game Plan Jemma':96.09,'Kevanescence':95.12,
+ 'Peasant Lewis':99.96,'End Around Chris':106.75,'QB Pocket Samantha':100.38};
+
+const M1 = [
+ ['Tight Ends Colonoscopy Co.','Lion Ass Bitches',
+  'The top two rosters drawn against each other in week one. Both were built the same way \u2014 an elite back first, then value hunting in the middle rounds \u2014 and they finished three points apart in total roster value. Whoever wins this takes early control of the standings, and whoever loses learns almost nothing about their team.'],
+ ['End Zone Christina','Monday Night Jason',
+  'A clean stylistic split: the best receiving core in the league against the best backfield. Christina\u2019s edge is a top-two tight end, which is worth real points in a format where most of the league is starting a replacement. Jason answers with three backs who can each carry a week on their own.'],
+ ['Filthy Rich','Game Plan Jemma',
+  'The only matchup with a genuine favourite on paper. Filthy Rich pairs the best receiver duo drafted with a projection that outruns their draft grade by a wide margin \u2014 this is the week that tells us whether the season-long values were too harsh on them. Jemma leans almost entirely on one superstar receiver.'],
+ ['Kevanescence','Peasant Lewis',
+  'The lowest combined projection on the board, and the hardest game to read. Kevanescence has the deepest roster in the league but the thinnest top end; Peasant Lewis has the opposite problem, with a strong quarterback-and-back foundation and little behind it. Low-scoring games are the most random, so treat this as a true coin flip.'],
+ ['End Around Chris','QB Pocket Samantha',
+  'Chris drafted with more discipline against market price than almost anyone and gets a chance to show it early. Samantha\u2019s two blue-chip receivers give this real upside \u2014 if both hit their ceiling on the same afternoon, the projection gap disappears in a hurry.'],
+];
+
+const STARTERS = {};
+T.forEach(t => { STARTERS[t.team] = t.starters.slice().sort((a,b)=>b[2]-a[2]).slice(0,3); });
+
+function erf(x){const s=x<0?-1:1;x=Math.abs(x);const t=1/(1+0.3275911*x);
+  const y=1-((((1.061405429*t-1.453152027)*t+1.421413741)*t-0.284496736)*t+0.254829592)*t*Math.exp(-x*x);
+  return s*y;}
+const phi = z => 0.5*(1+erf(z/Math.SQRT2));
+
+document.getElementById('week1').innerHTML = M1.map(([a,bb,summary])=>{
+  const d = YPROJ[a]-YPROJ[bb];
+  const win = d>0?a:bb, pct = Math.round(phi(Math.abs(d)/(22*Math.SQRT2))*100);
+  const call = pct<58?'toss-up':(pct<68?'lean':'clear edge');
+  const line = x => '<span class="t'+(x===win?' w':'')+'">'+esc(x)+'</span>'+
+                    '<span class="s">'+YPROJ[x].toFixed(2)+'</span>';
+  const side = tm => '<div class="wside"><p class="wname">'+esc(tm)+'</p><div class="watch">'+
+    STARTERS[tm].map(p => '<span class="wch p'+p[1]+'"><em class="c'+p[1]+'">'+p[1]+'</em>'+
+    esc(p[0])+'</span>').join('') + '</div></div>';
+  const watch = side(a) + side(bb);
+  return '<div class="mcard">'+
+    '<div class="mrow">'+line(a)+line(bb)+'</div>'+
+    '<p class="msum">'+esc(summary)+'</p>'+
+    '<p class="lbl" style="margin:13px 0 0">Players to watch</p>'+
+    '<div class="wgrid">'+watch+'</div>'+
+    '<p class="verdict"><b>'+esc(win)+'</b> by '+Math.abs(d).toFixed(1)+' &middot; '+pct+'% &middot; '+call+'</p>'+
+  '</div>';
+}).join('');
+</script>
+</body>
+</html>
