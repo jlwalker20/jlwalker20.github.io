@@ -1,0 +1,399 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="dark">
+<title>Week 4 power rankings v1</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Condensed:wght@400;500;600;700&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --deep:#14181f; --panel:#1b212b; --raise:#222a36; --line:#2e3846;
+  --ink:#e6eaf1; --mute:#8a97aa; --dim:#5f6b7d;
+  --rb:#4fb286; --wr:#e0a04a; --te:#9184d8; --qb:#5c9be0; --flat:#6b7788;
+  --hot:#e0665c; --good:#4fb286;
+  --cond:"IBM Plex Sans Condensed",system-ui,-apple-system,sans-serif;
+  --body:"IBM Plex Sans",system-ui,-apple-system,sans-serif;
+}
+*{box-sizing:border-box}
+html,body{margin:0;padding:0}
+body{
+  padding-bottom:66px;
+  background:var(--deep); color:var(--ink);
+  font-family:var(--body); font-size:15px; line-height:1.5;
+  font-variant-numeric:tabular-nums; -webkit-font-smoothing:antialiased;
+}
+.wrap{max-width:820px;margin:0 auto;padding:26px 18px 40px}
+h1{font-family:var(--cond);font-size:26px;font-weight:600;margin:0 0 3px;letter-spacing:.01em}
+.ver{font-size:15px;font-weight:500;color:var(--dim);margin-left:4px}
+.sub{color:var(--mute);font-size:14px;margin:0 0 6px;max-width:62ch}
+.stamp{color:var(--dim);font-family:var(--cond);font-size:13px;margin:0 0 22px}
+
+.stack{display:flex;flex-direction:column;gap:12px}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:4px}
+
+summary{
+  cursor:pointer;list-style:none;padding:13px 15px;display:grid;
+  grid-template-columns:30px 1fr auto;gap:12px;align-items:center;min-height:56px;
+}
+summary::-webkit-details-marker{display:none}
+summary:focus-visible{outline:2px solid var(--qb);outline-offset:-2px}
+details[open] > summary{border-bottom:1px solid var(--line)}
+.rk{font-family:var(--cond);font-size:21px;font-weight:600;color:var(--dim);text-align:center}
+details[open] .rk{color:var(--ink)}
+.tm{font-family:var(--cond);font-size:17px;font-weight:600;line-height:1.2}
+.tm small{display:block;font-size:12.5px;font-weight:400;color:var(--dim);margin-top:2px}
+.gr{font-family:var(--cond);font-size:16px;font-weight:700;padding:3px 11px;border-radius:3px;
+    min-width:48px;text-align:center}
+.gA{background:rgba(79,178,134,.16);color:#5ec99a;border:1px solid rgba(79,178,134,.5)}
+.gB{background:rgba(92,155,224,.15);color:#6fa8e6;border:1px solid rgba(92,155,224,.45)}
+.gC{background:rgba(224,160,74,.15);color:var(--wr);border:1px solid rgba(224,160,74,.45)}
+.gD{background:rgba(224,102,92,.15);color:var(--hot);border:1px solid rgba(224,102,92,.5)}
+.motw{font-family:var(--cond);font-size:12px;color:var(--te);letter-spacing:.04em;text-transform:uppercase;margin:0 0 6px}
+.mcard.hl{border-color:rgba(145,132,216,.55)}
+.gF{background:var(--raise);color:var(--mute);border:1px solid var(--line)}
+
+.sup{display:flex;gap:8px;align-items:baseline;padding:10px 12px;margin:0 0 13px;
+  background:var(--raise);border-left:3px solid var(--qb);border-radius:3px}
+.sup .st{font-family:var(--cond);font-size:15px;font-weight:600}
+.sup .sw{font-size:13px;color:var(--mute)}
+.body{padding:14px 15px}
+.note{color:var(--mute);font-size:14px;margin:0 0 14px}
+.lbl{font-family:var(--cond);font-size:12px;color:var(--dim);letter-spacing:.04em;
+     text-transform:uppercase;margin:0 0 7px}
+.lineup{display:flex;flex-direction:column;gap:4px;margin-bottom:14px}
+.pl{display:grid;grid-template-columns:38px 1fr auto;gap:9px;align-items:baseline;
+    background:var(--raise);border-left:3px solid var(--flat);border-radius:3px;padding:7px 10px;
+    font-family:var(--cond);font-size:15px}
+.pl .p{font-size:12px;font-weight:700}
+.pl .v{font-size:13px;color:var(--dim)}
+.pRB{border-left-color:var(--rb)} .pWR{border-left-color:var(--wr)}
+.pTE{border-left-color:var(--te)} .pQB{border-left-color:var(--qb)}
+.pFLEX,.pDEF,.pK{border-left-color:var(--flat)}
+.cRB{color:var(--rb)} .cWR{color:var(--wr)} .cTE{color:var(--te)} .cQB{color:var(--qb)}
+.cDEF,.cK,.cFLEX{color:var(--flat)}
+
+.meter{height:5px;background:var(--line);border-radius:3px;overflow:hidden;margin:0 0 14px}
+.meter i{display:block;height:100%;background:linear-gradient(90deg,var(--qb),var(--good))}
+.kv{display:grid;grid-template-columns:auto 1fr;gap:5px 12px;font-size:13.5px;margin-bottom:12px}
+.kv dt{font-family:var(--cond);color:var(--dim)}
+.kv dd{margin:0;color:var(--mute)}
+.kv b{color:var(--ink);font-weight:600}
+.kv b.pos{color:var(--good)} .kv b.neg{color:var(--hot)}
+.tagrow{display:flex;flex-wrap:wrap;gap:6px}
+.tag{font-family:var(--cond);font-size:13px;padding:3px 9px;border-radius:3px;
+     background:var(--raise);border:1px solid var(--line);color:var(--mute)}
+.tag.good{color:var(--good);border-color:rgba(79,178,134,.4)}
+.tag.bad{color:var(--hot);border-color:rgba(224,102,92,.4)}
+.pad{padding:14px 15px}
+.pad h2{font-family:var(--cond);font-size:15px;font-weight:600;color:var(--mute);margin:0 0 10px}
+.pad p{margin:0 0 11px;font-size:14px;color:var(--mute)}
+.pad p:last-child{margin-bottom:0}
+.pad strong{color:var(--ink);font-weight:600}
+.pad .when{font-family:var(--cond);color:var(--dim)}
+.nav{position:fixed;left:0;right:0;bottom:0;z-index:30;display:flex;
+  background:var(--panel);border-top:1px solid var(--line)}
+.nav a{flex:1;text-align:center;padding:14px 4px;color:var(--mute);text-decoration:none;
+  font-family:var(--cond);font-size:14.5px;font-weight:500;min-height:54px;
+  display:flex;align-items:center;justify-content:center;border-right:1px solid var(--line)}
+.nav a:last-child{border-right:0}
+.nav a:hover,.nav a:active{background:var(--raise);color:var(--ink)}
+.nav a:focus-visible{outline:2px solid var(--qb);outline-offset:-3px}
+section{scroll-margin-top:12px}
+.sechd{font-family:var(--cond);font-size:13px;color:var(--dim);letter-spacing:.05em;
+  text-transform:uppercase;margin:26px 0 10px}
+.sechd:first-child{margin-top:0}
+.sechdrow{display:flex;align-items:center;justify-content:space-between;gap:12px;
+  flex-wrap:wrap;margin:26px 0 10px}
+.sechdrow .sechd{margin:0}
+.ctl{display:flex;gap:6px}
+.ctl button{font-family:var(--cond);font-size:13.5px;font-weight:500;color:var(--mute);
+  background:var(--panel);border:1px solid var(--line);border-radius:3px;
+  padding:8px 12px;min-height:40px;cursor:pointer}
+.ctl button:hover{color:var(--ink);border-color:var(--dim)}
+.ctl button:focus-visible{outline:2px solid var(--qb);outline-offset:2px}
+.mcard{background:var(--panel);border:1px solid var(--line);border-radius:4px;
+  padding:14px 15px;margin-bottom:12px}
+.mrow{display:grid;grid-template-columns:1fr auto;gap:4px 10px;align-items:baseline}
+.mrow .t{font-family:var(--cond);font-size:16.5px}
+.mrow .t.w{font-weight:600;color:var(--good)}
+.mrow .s{font-family:var(--cond);font-size:15px;color:var(--dim);text-align:right}
+.verdict{font-family:var(--cond);font-size:13.5px;color:var(--mute);
+  margin:9px 0 0;padding-top:9px;border-top:1px solid var(--line)}
+.verdict b{color:var(--ink)}
+.msum{font-size:13.5px;color:var(--mute);margin:9px 0 0}
+.wgrid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:8px}
+@media(max-width:560px){.wgrid{grid-template-columns:1fr;gap:10px}}
+.wside{min-width:0}
+.wname{font-family:var(--cond);font-size:13px;color:var(--mute);font-weight:600;
+  margin:0 0 6px;padding-bottom:5px;border-bottom:1px solid var(--line);
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.watch{display:flex;flex-wrap:wrap;gap:5px}
+.wch{font-family:var(--cond);font-size:13.5px;padding:3px 9px;border-radius:3px;
+  background:var(--raise);border-left:3px solid var(--flat)}
+.wch em{font-style:normal;font-size:11px;font-weight:700;margin-right:5px}
+footer{color:var(--dim);font-size:12.5px;font-family:var(--cond);margin-top:22px;line-height:1.6}
+
+@media(max-width:560px){
+  .wrap{padding:16px 12px 30px}
+  h1{font-size:21px}
+  summary{grid-template-columns:26px 1fr auto;gap:9px;padding:12px 12px}
+  .tm{font-size:16px}
+  .body{padding:12px}
+  .kv{grid-template-columns:1fr}
+  .kv dt{margin-top:5px}
+  .sup{flex-direction:column;gap:3px}
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Week 4 power rankings <span class="ver">v1</span></h1>
+  <p class="sub">Blended standing for the ten-team half-PPR league after three weeks: average starter points, bench counted at a third, an adjustment for the record, and an injury adjustment for what each roster is missing going into Week 4.</p>
+  <p class="stamp">Posted after Week 3 &middot; before Week 4 kickoff</p>
+
+  <section id="s-power">
+    <div class="sechdrow">
+      <p class="sechd">Power rankings</p>
+      <div class="ctl">
+        <button type="button" id="expandAll">Expand all</button>
+        <button type="button" id="collapseAll">Collapse all</button>
+      </div>
+    </div>
+    <div class="stack" id="teams"></div>
+  </section>
+
+  <div class="card" style="margin-top:12px">
+    <div class="pad">
+      <h2>League notes</h2>
+      <p><strong>Week 3 cost more than any week so far.</strong> De'Von Achane tore his ACL and is out for the season, Justin Jefferson has a high ankle sprain that's being read as about four weeks, Breece Hall is week to week with a quad, and Travis Etienne aggravated a hamstring. That's on top of Nacua, Daniels, Caleb Williams and A.J. Brown. Seven of the ten rosters are missing a starter.</p>
+      <p><strong>Three teams lost games their bench would have won.</strong> Peasant Lewis lost by 0.92 with Matthew Stafford's 22.90 behind Josh Allen's 18.96. The Lion Ass Bitches left Bowers (22.60) and McLaurin (16.70) out of a 131.84&ndash;113.58 loss. Game Plan Jemma benched Jakobi Meyers (15.90) and Cam Skattebo (11.50) in a six-point loss.</p>
+      <p><strong>End Around Chris is alone at 3-0</strong> and has scored 104.90 or better every week without ever topping 151. Nobody else in the league has been under 20 points of variance week to week.</p>
+      <p><strong>Third and fourth are 0.03 apart.</strong> Kevanescence scored 78.94 after two weeks over 129, and Eagle Eyed's 146.90 was the highest score anyone has posted since Week 1.</p>
+    </div>
+  </div>
+
+  <section id="s-week4">
+    <p class="sechd">Week 4 matchups</p>
+    <div id="week4"></div>
+    <p style="font-size:12.5px;color:var(--dim);margin:2px 0 0">Projections are Yahoo's own. Weekly scores swing roughly 22 points either side, so anything inside a six-point margin is close to a coin flip.</p>
+  </section>
+
+  <section id="s-injuries">
+    <p class="sechd">Injury report</p>
+    <div class="card">
+      <div class="pad">
+        <p><strong>De'Von Achane, RB, Miami &mdash; torn ACL.</strong> <span class="when">Out for the season.</span> A non-contact knee injury in the Week 3 loss, confirmed by Schefter as an ACL tear. Achane scored 1.70 in End Zone Christina's lineup before leaving. Ollie Gordon is the first waiver call in Miami, with Jaylen Wright behind him. This is the single most expensive injury in the league so far.</p>
+        <p><strong>Justin Jefferson, WR, Minnesota &mdash; ankle.</strong> <span class="when">About four weeks.</span> His foot was trapped under a defender and the read is a high ankle sprain, with projections pointing to a Week 8 return. High ankle sprains cost receivers about four weeks on average and tend to dull production after that. Jordan Addison is the beneficiary in Minnesota, and Filthy Rich loses its top receiver a week after getting nothing from Nacua.</p>
+        <p><strong>Breece Hall, RB, NY Jets &mdash; quad.</strong> <span class="when">Week to week.</span> An MRI came back better than feared, but an absence is still expected and Braelon Allen takes the backfield. Hall scored 7.00 for Filthy Rich before the injury.</p>
+        <p><strong>Travis Etienne Jr., RB, New Orleans &mdash; hamstring.</strong> <span class="when">Expected to miss time.</span> He aggravated the hamstring and is expected out, with Alvin Kamara and Kendre Miller splitting the work. Christina loses a second starting back in the same week.</p>
+        <p><strong>Caleb Williams, QB, Chicago &mdash; hamstring.</strong> <span class="when">Back around Week 5 or 6.</span> Williams missed Week 3. Schefter reported a grade 2 strain with a three-to-four-week timeline from the Week 2 injury, which makes Week 4 unlikely. Bo Nix scored 25.14 on Monday Night Jason's bench while Bryce Young started.</p>
+        <p><strong>Puka Nacua, WR, LA Rams &mdash; hip.</strong> <span class="when">Likely back Week 4.</span> Doubtful and inactive for Week 3, but reporting says he should play against Philadelphia barring a setback. Surgery has been mentioned only if he doesn't improve.</p>
+        <p><strong>Jayden Daniels, QB, Washington &mdash; dislocated elbow.</strong> <span class="when">Back within three weeks.</span> Daniels avoided surgery and an IR stint, and is expected back within three weeks of the Week 2 injury, which puts Week 4 or 5 in play. C.J. Stroud has the job on the Lion Ass Bitches until then.</p>
+        <p><strong>Nico Collins, WR, Houston &mdash; hamstring.</strong> <span class="when">Decent chance for Week 4.</span> Collins has now missed two games. Reporting gives him a decent chance to return this week.</p>
+        <p><strong>A.J. Brown, WR, New England &mdash; high-ankle sprain, on IR.</strong> <span class="when">Around Week 7.</span> No change from the six-week estimate.</p>
+        <p><strong>Also on the report.</strong> Brock Bowers is back and scored 22.60 from a bench. Zay Flowers returned and scored 12.90, also from a bench. Dallas Goedert sat out Week 3 with the knee. Jayden Reed still has no timetable. Jonathon Brooks is on IR. Baker Mayfield hurt his thumb, which matters for Tampa's pass catchers.</p>
+      </div>
+    </div>
+  </section>
+
+  <footer>
+    Power score = average weekly starter points + 35% of average bench points + 8 &times; (wins &minus; losses) / games played, minus an injury adjustment.<br>
+    The injury adjustment is the projected weekly points lost against the best replacement already on the roster, weighted by how long the absence is expected to run. Movement is measured against the Week 3 rankings.
+  </footer>
+</div>
+
+<nav class="nav" aria-label="Jump to section">
+  <a href="#s-power">Power rankings</a>
+  <a href="#s-week4">Week 4</a>
+  <a href="#s-injuries">Injuries</a>
+</nav>
+
+<script>
+const T = [
+{"rank":1,"prev":3,"team":"Monday Night Jason","rec":"2-1","pf":374.12,
+ "w3":["W","Lion Ass Bitches","131.84–113.58"],"w2":["L","Eagle Eyed","78.72–109.96"],"w1":["W","End Zone Christina","163.56–93.42"],
+ "st":124.71,"bn":63.95,"badj":22.38,"recadj":2.67,"inj":1.5,"power":148.3,
+ "top":[["Bijan Robinson","RB",34.30],["Garrett Wilson","WR",21.70],["Derrick Henry","RB",21.40]],
+ "sup":"Most points scored in the league","supwhy":"374.12 through three weeks, 8.12 clear of second",
+ "note":"Won by eighteen with Bryce Young at quarterback while Bo Nix scored 25.14 on the bench, and with Harold Fannin Jr. (20.60) behind Mark Andrews (3.90). Bijan Robinson's 34.30 and Henry's 21.40 make this the most productive backfield in the league. Caleb Williams is likely out another week or two, which is the only reason the injury column isn't zero.",
+ "good":["Bijan 34.30","Deepest bench in the league","Most points for"],"bad":["Williams hamstring","Left 35 points on the bench"]},
+
+{"rank":2,"prev":2,"team":"End Around Chris","rec":"3-0","pf":366.00,
+ "w3":["W","Kevanescence","104.90–78.94"],"w2":["W","Lion Ass Bitches","110.60–97.64"],"w1":["W","Eagle Eyed","150.50–97.52"],
+ "st":122.00,"bn":49.29,"badj":17.25,"recadj":8,"inj":0.5,"power":146.8,
+ "top":[["Jaxon Smith-Njigba","WR",30.36],["Lamar Jackson","QB",20.44],["Kenneth Walker III","RB",20.30]],
+ "sup":"The only 3-0 team","supwhy":"and the only roster never to score under 104",
+ "note":"Smith-Njigba has 90.56 in three weeks and is the best receiver in the league by a distance. Jackson and Walker both cleared 20, and the Eagles defense went 0.00 without it mattering. Flowers is back (12.90 on the bench) and Kyler Murray has been added behind Jackson. Tight end is still the hole: Loveland has 5.90 for the season.",
+ "good":["Smith-Njigba 90.56 in three weeks","3-0","Most consistent scoring"],"bad":["Loveland 5.90 for the season"]},
+
+{"rank":3,"prev":1,"team":"Kevanescence","rec":"2-1","pf":341.18,
+ "w3":["L","End Around Chris","78.94–104.90"],"w2":["W","No Dick(er) All Balls","132.28–83.46"],"w1":["W","Peasant Lewis","129.96–94.76"],
+ "st":113.73,"bn":54.19,"badj":18.97,"recadj":2.67,"inj":0.0,"power":135.4,
+ "top":[["Patrick Mahomes","QB",16.94],["Chris Olave","WR",15.20],["DeVonta Smith","WR",9.50]],
+ "sup":"Worst week of anyone's season","supwhy":"78.94 after two weeks over 129",
+ "note":"Everything went quiet at once. Taylor 8.20, Chase Brown 7.90, Likely 2.30, Smack 2.00, and Mahomes' 16.94 was the high score. The bench offered nothing either at 42.04. Nothing here is hurt, which is why this is still a top-three roster, but the tight end spot has now produced 2.30 and 5.80 in consecutive weeks.",
+ "good":["Healthy roster","Still second in points for through two weeks"],"bad":["78.94 in Week 3","Likely 2.30 at tight end"]},
+
+{"rank":4,"prev":6,"team":"Eagle Eyed","rec":"2-1","pf":354.38,
+ "w3":["W","End Zone Christina","146.90–84.48"],"w2":["W","Monday Night Jason","109.96–78.72"],"w1":["L","End Around Chris","97.52–150.50"],
+ "st":118.13,"bn":41.53,"badj":14.54,"recadj":2.67,"inj":0.0,"power":135.3,
+ "top":[["Tyler Shough","QB",24.80],["Drake London","WR",23.90],["George Kittle","TE",23.20]],
+ "sup":"Highest score since Week 1","supwhy":"146.90 with a −2.00 defense in the lineup",
+ "note":"Shough started over Hurts and scored 24.80 to Hurts' 13.62, the second week in a row that call has paid. London 23.90, Kittle 23.20, Jeremiyah Love 19.40 from the flex and Warren 19.10 in relief of Montgomery. The Packers defense scored −2.00 and the final was still 146.90. Three straight weeks of improvement and nothing on the injury report.",
+ "good":["146.90","Shough over Hurts, again","Healthy roster"],"bad":["Thin bench at 41.12","Montgomery 5.80"]},
+
+{"rank":5,"prev":4,"team":"Game Plan Jemma","rec":"1-2","pf":332.94,
+ "w3":["L","No Dick(er) All Balls","103.94–110.28"],"w2":["W","Peasant Lewis","140.86–119.62"],"w1":["L","Filthy Rich","88.14–111.76"],
+ "st":110.98,"bn":62.48,"badj":21.87,"recadj":-2.67,"inj":0.5,"power":129.7,
+ "top":[["Ja'Marr Chase","WR",20.30],["Dak Prescott","QB",18.94],["Javonte Williams","RB",17.30]],
+ "sup":"Second straight week of bench trouble","supwhy":"Meyers and Skattebo sat for 27.40 in a six-point loss",
+ "note":"Jakobi Meyers scored 15.90 behind Jaylin Coker's 2.80, and Skattebo's 11.50 sat behind Hampton's 5.60. The best lineup lands near 123 and wins comfortably. Goff also outscored Prescott again, this time by 0.42. The roster keeps producing 110 or better in raw talent and keeps starting the wrong nine.",
+ "good":["Chase 20.30","Second-deepest bench"],"bad":["Meyers 15.90 benched","Goedert knee","1-2 with the fourth-most points"]},
+
+{"rank":6,"prev":5,"team":"Lion Ass Bitches","rec":"1-2","pf":326.84,
+ "w3":["L","Monday Night Jason","113.58–131.84"],"w2":["L","End Around Chris","97.64–110.60"],"w1":["W","No Dick(er) All Balls","115.62–97.50"],
+ "st":108.95,"bn":59.66,"badj":20.88,"recadj":-2.67,"inj":3.0,"power":124.2,
+ "top":[["Jahmyr Gibbs","RB",37.90],["Tee Higgins","WR",18.00],["Chuba Hubbard","RB",13.00]],
+ "sup":"Highest-scoring player of the week","supwhy":"Jahmyr Gibbs, 37.90",
+ "note":"Gibbs put up the best individual week in the league and it still wasn't enough, because Bowers came back and scored 22.60 on the bench while Ferguson started for 7.80, and McLaurin's 16.70 sat behind Waddle's 5.40. The best lineup reaches 142.68 and wins by eleven. Daniels should be back inside three weeks and Collins has a decent chance this week, so the injury column is about to get lighter.",
+ "good":["Gibbs 37.90","Bowers back","Daniels and Collins both close"],"bad":["Left 29 points on the bench","1-2 despite the sixth-best scoring"]},
+
+{"rank":7,"prev":8,"team":"Peasant Lewis","rec":"0-3","pf":324.34,
+ "w3":["L","Filthy Rich","109.96–110.88"],"w2":["L","Game Plan Jemma","119.62–140.86"],"w1":["L","Kevanescence","94.76–129.96"],
+ "st":108.11,"bn":49.29,"badj":17.25,"recadj":-8,"inj":0.0,"power":117.4,
+ "top":[["Michael Wilson","WR",20.40],["James Cook III","RB",19.40],["Josh Allen","QB",18.96]],
+ "sup":"Unluckiest team in the league","supwhy":"0-3 with more points than four teams above them",
+ "note":"Lost by 0.92 with Matthew Stafford's 22.90 on the bench behind Josh Allen's 18.96. That one swap wins the game. Jordan Addison scored 17.50 there too. The roster has now scored 324.34, seventh in the league, and has nothing to show for it. Nothing significant is hurt, and the schedule finally offers a winnable game.",
+ "good":["Healthy roster","Seven starters in double figures"],"bad":["Lost by 0.92","0-3","Stafford 22.90 benched"]},
+
+{"rank":8,"prev":9,"team":"Filthy Rich","rec":"2-1","pf":313.62,
+ "w3":["W","Peasant Lewis","110.88–109.96"],"w2":["L","End Zone Christina","90.98–106.20"],"w1":["W","Game Plan Jemma","111.76–88.14"],
+ "st":104.54,"bn":41.32,"badj":14.46,"recadj":2.67,"inj":8.0,"power":113.7,
+ "top":[["Brock Purdy","QB",31.28],["Kyren Williams","RB",18.80],["Jaguars","DEF",16.00]],
+ "sup":"2-1 and falling","supwhy":"Jefferson, Hall and Nacua are all hurt at once",
+ "note":"Purdy's 31.28 and a 16.00 defense won this by 0.92. Then the bill arrived: Jefferson injured his ankle and could miss about four weeks, Hall is week to week with a quad, and Nacua has yet to play a snap for this roster. Nacua should return in Week 4, which helps, but the receiver room behind Jefferson is Wan'Dale Robinson and not much else.",
+ "good":["Purdy 31.28","Nacua likely back"],"bad":["Jefferson ankle, about four weeks","Hall quad","Thinnest bench in the league"]},
+
+{"rank":9,"prev":7,"team":"End Zone Christina","rec":"1-2","pf":284.10,
+ "w3":["L","Eagle Eyed","84.48–146.90"],"w2":["W","Filthy Rich","106.20–90.98"],"w1":["L","Monday Night Jason","93.42–163.56"],
+ "st":94.70,"bn":50.73,"badj":17.75,"recadj":-2.67,"inj":8.0,"power":101.8,
+ "top":[["Jordan Love","QB",19.48],["Rashee Rice","WR",12.30],["Trey McBride","TE",12.00]],
+ "sup":"Lost a backfield in one afternoon","supwhy":"Achane tore an ACL and Etienne aggravated a hamstring",
+ "note":"Achane scored 1.70 before the knee gave out and is done for the season; Etienne managed 8.00 and is expected to miss time. St. Brown's 9.90 was his quietest week. Marquise Golden (18.50) and Juwan Johnson (19.30) sat on the bench. Yahoo projects 81.16 for Week 4, the lowest number on the board by sixteen points, and the waiver wire is now the whole plan at running back.",
+ "good":["Love 19.48"],"bad":["Achane out for the season","Etienne hamstring","81.16 projection, lowest of Week 4"]},
+
+{"rank":10,"prev":10,"team":"No Dick(er) All Balls","rec":"1-2","pf":291.24,
+ "w3":["W","Game Plan Jemma","110.28–103.94"],"w2":["L","Kevanescence","83.46–132.28"],"w1":["L","Lion Ass Bitches","97.50–115.62"],
+ "st":97.08,"bn":27.14,"badj":9.50,"recadj":-2.67,"inj":3.0,"power":100.9,
+ "top":[["Trevor Lawrence","QB",20.78],["Christian McCaffrey","RB",19.60],["Vikings","DEF",17.00]],
+ "sup":"First win of the season","supwhy":"110.28, the best lineup this roster has put up",
+ "note":"Seven of the nine starters cleared 8.50 and the Vikings defense added 17.00 in the kicker's old slot. Lawrence 20.78, McCaffrey 19.60, Evans 10.90 and Warren 10.20 &mdash; no single big week, just no holes. Barkley's 8.50 is the one that needs to grow. The bench is the smallest in the league at 19.30, so there's no internal help if anyone else goes down, and Brown is still on IR until around Week 7.",
+ "good":["First win","Seven starters over 8.50","No lineup mistakes"],"bad":["Smallest bench in the league","Brown on IR","Barkley 8.50"]}
+];
+
+const OWNER = {'Lion Ass Bitches':'Ari','Eagle Eyed':'Sam','No Dick(er) All Balls':'Jordan'};
+const disp = t => t + (OWNER[t] ? ' ('+OWNER[t]+')' : '');
+const esc = s => String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const max = Math.max(...T.map(t=>t.power));
+const movecls = m => m>0?'gA':(m<0?'gD':'gF');
+const movetxt = m => m>0?('▲'+m):(m<0?('▼'+Math.abs(m)):'–');
+const res = r => '<b class="'+(r[0]==='W'?'pos':'neg')+'">'+(r[0]==='W'?'Beat':'Lost to')+'</b> '+esc(disp(r[1]))+', '+r[2];
+const sgn = n => n>0?('+'+n.toFixed(2)):(n<0?('−'+Math.abs(n).toFixed(2)):'0.00');
+
+document.getElementById('teams').innerHTML = T.map(t => {
+  const move = t.prev - t.rank;
+  const top = t.top.map(p =>
+    '<div class="pl p'+p[1]+'"><span class="p c'+p[1]+'">'+p[1]+'</span>' +
+    '<span>'+esc(p[0])+'</span><span class="v">'+p[2].toFixed(2)+'</span></div>').join('');
+  const good = t.good.map(x=>'<span class="tag good">'+esc(x)+'</span>').join('');
+  const bad  = t.bad.map(x=>'<span class="tag bad">'+esc(x)+'</span>').join('');
+  return '<details class="card">'+
+    '<summary><span class="rk">'+t.rank+'</span>'+
+      '<span class="tm">'+esc(disp(t.team))+'<small>'+t.rec+' &middot; power '+t.power.toFixed(1)+
+        ' &middot; was '+t.prev+'</small></span>'+
+      '<span class="gr '+movecls(move)+'">'+movetxt(move)+'</span></summary>'+
+    '<div class="body">'+
+      '<div class="meter"><i style="width:'+Math.round(t.power/max*100)+'%"></i></div>'+
+      '<div class="sup"><span class="st">'+esc(t.sup)+'</span>'+
+        '<span class="sw">'+esc(t.supwhy)+'</span></div>'+
+      '<p class="note">'+esc(t.note)+'</p>'+
+      '<p class="lbl">Week 3 top scorers</p><div class="lineup">'+top+'</div>'+
+      '<dl class="kv">'+
+        '<dt>Week 3</dt><dd>'+res(t.w3)+'</dd>'+
+        '<dt>Week 2</dt><dd>'+res(t.w2)+'</dd>'+
+        '<dt>Week 1</dt><dd>'+res(t.w1)+'</dd>'+
+        '<dt>Starters</dt><dd><b>'+t.st.toFixed(2)+'</b> &nbsp;<span style="color:var(--dim)">per week &middot; '+t.pf.toFixed(2)+' season</span></dd>'+
+        '<dt>Bench</dt><dd><b class="pos">+'+t.badj.toFixed(2)+'</b> &nbsp;<span style="color:var(--dim)">('+t.bn.toFixed(2)+' per week at 35%)</span></dd>'+
+        '<dt>Record</dt><dd><b class="'+(t.recadj>0?'pos':(t.recadj<0?'neg':''))+'">'+sgn(t.recadj)+'</b> &nbsp;<span style="color:var(--dim)">'+t.rec+'</span></dd>'+
+        '<dt>Injuries</dt><dd><b class="'+(t.inj>0?'neg':'')+'">'+sgn(-t.inj)+'</b> &nbsp;<span style="color:var(--dim)">projected weekly points lost</span></dd>'+
+        '<dt>Power score</dt><dd><b>'+t.power.toFixed(1)+'</b></dd>'+
+      '</dl>'+
+      (good?'<p class="lbl">Working</p><div class="tagrow" style="margin-bottom:12px">'+good+'</div>':'')+
+      (bad ?'<p class="lbl">Watching</p><div class="tagrow">'+bad+'</div>':'')+
+    '</div></details>';
+}).join('');
+
+const setAll = open => document.querySelectorAll('#teams details').forEach(d => d.open = open);
+document.getElementById('expandAll').onclick   = () => setAll(true);
+document.getElementById('collapseAll').onclick = () => setAll(false);
+
+const YPROJ = {'No Dick(er) All Balls':102.89,'Peasant Lewis':107.46,'Monday Night Jason':114.13,'Kevanescence':112.95,
+ 'Lion Ass Bitches':113.04,'End Zone Christina':81.16,'Filthy Rich':89.06,'Eagle Eyed':110.72,
+ 'Game Plan Jemma':99.34,'End Around Chris':108.73};
+const REC = {}; T.forEach(t => REC[t.team] = t.rec);
+
+const WATCH = {
+ 'No Dick(er) All Balls':[['Christian McCaffrey','RB'],['Trevor Lawrence','QB'],['Ladd McConkey','WR']],
+ 'Peasant Lewis':[['Josh Allen','QB'],['James Cook III','RB'],['Travis Kelce','TE']],
+ 'Monday Night Jason':[['Bijan Robinson','RB'],['Derrick Henry','RB'],['Bo Nix','QB']],
+ 'Kevanescence':[['Patrick Mahomes','QB'],['Jonathan Taylor','RB'],['Chris Olave','WR']],
+ 'Lion Ass Bitches':[['Jahmyr Gibbs','RB'],['Brock Bowers','TE'],['C.J. Stroud','QB']],
+ 'End Zone Christina':[['Amon-Ra St. Brown','WR'],['Trey McBride','TE'],['Jordan Love','QB']],
+ 'Filthy Rich':[['Brock Purdy','QB'],['Puka Nacua','WR'],['Kyren Williams','RB']],
+ 'Eagle Eyed':[['Tyler Shough','QB'],['George Kittle','TE'],['CeeDee Lamb','WR']],
+ 'Game Plan Jemma':[['Ja’Marr Chase','WR'],['Davante Adams','WR'],['Dak Prescott','QB']],
+ 'End Around Chris':[['Jaxon Smith-Njigba','WR'],['Kenneth Walker III','RB'],['Lamar Jackson','QB']]
+};
+
+const M4 = [
+ ['Monday Night Jason','Kevanescence',true,
+  'The two 2-1 teams with the most points in the league, projected 1.18 apart. Jason has the better backfield and the deeper bench; Kevanescence is coming off 78.94 and is the only top-four roster with a clean injury report. Jason is still without Caleb Williams, so Bo Nix takes another start. The winner is right behind Chris; the loser is in the 2-2 pile.'],
+ ['Lion Ass Bitches','End Zone Christina',false,
+  'The largest projection gap of the season at 31.9. Christina is projected at 81.16 after losing Achane for the year and Etienne to a hamstring in the same afternoon. The Bitches should have Bowers in the lineup this time, may get Collins back, and are a week or two from Daniels. If Ari is going to start a run, this is the week it has to begin.'],
+ ['Filthy Rich','Eagle Eyed',false,
+  'Both 2-1, and the projection says 21.7 points apart. Jefferson’s ankle and Hall’s quad gut a lineup that won last week by 0.92, and Nacua returning only replaces some of it. Eagle Eyed has scored 146.90, 109.96 and 97.52 in ascending order and has nothing on the injury report.'],
+ ['Game Plan Jemma','End Around Chris',false,
+  'Jemma has the fourth-most points in the league and a 1-2 record to go with it, mostly because of what has been sitting on her bench. Chris is 3-0 and has not scored under 104. A 9.4-point gap that a corrected lineup could erase.'],
+ ['No Dick(er) All Balls','Peasant Lewis',false,
+  'The 1-2 team that just won its first game against the 0-3 team that has outscored half the league. Lewis is projected ahead for the fourth straight week and has lost every one of them, by 35, 21 and 0.92. Both rosters are healthy enough to be judged on the lineup, and both benches are among the three thinnest in the league.'],
+];
+
+function erf(x){const s=x<0?-1:1;x=Math.abs(x);const t=1/(1+0.3275911*x);
+  const y=1-((((1.061405429*t-1.453152027)*t+1.421413741)*t-0.284496736)*t+0.254829592)*t*Math.exp(-x*x);
+  return s*y;}
+const phi = z => 0.5*(1+erf(z/Math.SQRT2));
+
+document.getElementById('week4').innerHTML = M4.map(([a,bb,motw,summary])=>{
+  const d = YPROJ[a]-YPROJ[bb];
+  const win = d>0?a:bb, pct = Math.round(phi(Math.abs(d)/(22*Math.SQRT2))*100);
+  const call = pct<58?'toss-up':(pct<68?'lean':'clear edge');
+  const line = x => '<span class="t'+(x===win?' w':'')+'">'+esc(disp(x))+' <span style="color:var(--dim);font-weight:400">'+REC[x]+'</span></span>'+
+                    '<span class="s">'+YPROJ[x].toFixed(2)+'</span>';
+  const side = tm => '<div class="wside"><p class="wname">'+esc(disp(tm))+'</p><div class="watch">'+
+    WATCH[tm].map(p => '<span class="wch p'+p[1]+'"><em class="c'+p[1]+'">'+p[1]+'</em>'+
+    esc(p[0])+'</span>').join('') + '</div></div>';
+  return '<div class="mcard'+(motw?' hl':'')+'">'+
+    (motw?'<p class="motw">Matchup of the week</p>':'')+
+    '<div class="mrow">'+line(a)+line(bb)+'</div>'+
+    '<p class="msum">'+esc(summary)+'</p>'+
+    '<p class="lbl" style="margin:13px 0 0">Players to watch</p>'+
+    '<div class="wgrid">'+side(a)+side(bb)+'</div>'+
+    '<p class="verdict"><b>'+esc(disp(win))+'</b> by '+Math.abs(d).toFixed(1)+' &middot; '+pct+'% &middot; '+call+'</p>'+
+  '</div>';
+}).join('');
+</script>
+</body>
+</html>
