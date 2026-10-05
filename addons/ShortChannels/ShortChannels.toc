@@ -1,0 +1,7 @@
+## Interface: 16001
+## Title: ShortChannels
+## Notes: Shortens chat channel names (General -> G, Trade -> T, etc.)
+## Author: You
+## Version: 1.1
+
+ShortChannels.lua
