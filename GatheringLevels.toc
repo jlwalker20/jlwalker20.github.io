@@ -1,8 +1,0 @@
-## Interface: 16001
-## Title: GatheringLevels
-## Notes: Shows each zone's Herbalism, Mining, Skinning and Fishing skill ranges on the world map, for the professions you have.
-## Author: You
-## Version: 0.3
-
-Data.lua
-GatheringLevels.lua
