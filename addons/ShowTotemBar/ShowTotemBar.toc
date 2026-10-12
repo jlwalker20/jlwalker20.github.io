@@ -1,7 +1,0 @@
-## Interface: 16001
-## Title: ShowTotemBar
-## Notes: Forces the totem bar to stay visible, working around it being force-hidden in gamepad mode.
-## Author: You
-## Version: 1.0
-
-ShowTotemBar.lua
