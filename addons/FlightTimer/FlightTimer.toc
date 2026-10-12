@@ -1,0 +1,8 @@
+## Interface: 16001
+## Title: FlightTimer
+## Notes: Shows how long your current flight path has left. Movable.
+## Author: You
+## Version: 1.4
+## SavedVariables: FlightTimerDB
+
+FlightTimer.lua

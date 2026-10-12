@@ -1,0 +1,7 @@
+## Interface: 16001
+## Title: ChatFade
+## Notes: Fades the chat window after 30 seconds without a new message, and brings it back when one arrives.
+## Author: You
+## Version: 1.0
+
+ChatFade.lua
