@@ -1,0 +1,498 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="dark">
+<title>Week 6 power rankings v2</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Condensed:wght@400;500;600;700&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --deep:#14181f; --panel:#1b212b; --raise:#222a36; --line:#2e3846;
+  --ink:#e6eaf1; --mute:#8a97aa; --dim:#5f6b7d;
+  --rb:#4fb286; --wr:#e0a04a; --te:#9184d8; --qb:#5c9be0; --flat:#6b7788;
+  --hot:#e0665c; --good:#4fb286;
+  --cond:"IBM Plex Sans Condensed",system-ui,-apple-system,sans-serif;
+  --body:"IBM Plex Sans",system-ui,-apple-system,sans-serif;
+}
+*{box-sizing:border-box}
+html,body{margin:0;padding:0}
+body{
+  padding-bottom:66px;
+  background:var(--deep); color:var(--ink);
+  font-family:var(--body); font-size:15px; line-height:1.5;
+  font-variant-numeric:tabular-nums; -webkit-font-smoothing:antialiased;
+}
+.wrap{max-width:820px;margin:0 auto;padding:26px 18px 40px}
+h1{font-family:var(--cond);font-size:26px;font-weight:600;margin:0 0 3px;letter-spacing:.01em}
+.ver{font-size:15px;font-weight:500;color:var(--dim);margin-left:4px}
+.sub{color:var(--mute);font-size:14px;margin:0 0 6px;max-width:62ch}
+.stamp{color:var(--dim);font-family:var(--cond);font-size:13px;margin:0 0 22px}
+
+.stack{display:flex;flex-direction:column;gap:12px}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:4px}
+
+summary{
+  cursor:pointer;list-style:none;padding:13px 15px;display:grid;
+  grid-template-columns:30px 1fr auto;gap:12px;align-items:center;min-height:56px;
+}
+summary::-webkit-details-marker{display:none}
+summary:focus-visible{outline:2px solid var(--qb);outline-offset:-2px}
+details[open] > summary{border-bottom:1px solid var(--line)}
+.rk{font-family:var(--cond);font-size:21px;font-weight:600;color:var(--dim);text-align:center}
+details[open] .rk{color:var(--ink)}
+.tm{font-family:var(--cond);font-size:17px;font-weight:600;line-height:1.2}
+.tm small{display:block;font-size:12.5px;font-weight:400;color:var(--dim);margin-top:2px}
+.gr{font-family:var(--cond);font-size:16px;font-weight:700;padding:3px 11px;border-radius:3px;
+    min-width:48px;text-align:center}
+.gA{background:rgba(79,178,134,.16);color:#5ec99a;border:1px solid rgba(79,178,134,.5)}
+.gB{background:rgba(92,155,224,.15);color:#6fa8e6;border:1px solid rgba(92,155,224,.45)}
+.gC{background:rgba(224,160,74,.15);color:var(--wr);border:1px solid rgba(224,160,74,.45)}
+.gD{background:rgba(224,102,92,.15);color:var(--hot);border:1px solid rgba(224,102,92,.5)}
+.motw{font-family:var(--cond);font-size:12px;color:var(--te);letter-spacing:.04em;text-transform:uppercase;margin:0 0 6px}
+.mcard.hl{border-color:rgba(145,132,216,.55)}
+.gF{background:var(--raise);color:var(--mute);border:1px solid var(--line)}
+
+.sup{display:flex;gap:8px;align-items:baseline;padding:10px 12px;margin:0 0 13px;
+  background:var(--raise);border-left:3px solid var(--qb);border-radius:3px}
+.sup .st{font-family:var(--cond);font-size:15px;font-weight:600}
+.sup .sw{font-size:13px;color:var(--mute)}
+.body{padding:14px 15px}
+.note{color:var(--mute);font-size:14px;margin:0 0 14px}
+.lbl{font-family:var(--cond);font-size:12px;color:var(--dim);letter-spacing:.04em;
+     text-transform:uppercase;margin:0 0 7px}
+.lineup{display:flex;flex-direction:column;gap:4px;margin-bottom:14px}
+.pl{display:grid;grid-template-columns:38px 1fr auto;gap:9px;align-items:baseline;
+    background:var(--raise);border-left:3px solid var(--flat);border-radius:3px;padding:7px 10px;
+    font-family:var(--cond);font-size:15px}
+.pl .p{font-size:12px;font-weight:700}
+.pl .v{font-size:13px;color:var(--dim)}
+.pRB{border-left-color:var(--rb)} .pWR{border-left-color:var(--wr)}
+.pTE{border-left-color:var(--te)} .pQB{border-left-color:var(--qb)}
+.pFLEX,.pDEF,.pK{border-left-color:var(--flat)}
+.cRB{color:var(--rb)} .cWR{color:var(--wr)} .cTE{color:var(--te)} .cQB{color:var(--qb)}
+.cDEF,.cK,.cFLEX{color:var(--flat)}
+
+.meter{height:5px;background:var(--line);border-radius:3px;overflow:hidden;margin:0 0 14px}
+.meter i{display:block;height:100%;background:linear-gradient(90deg,var(--qb),var(--good))}
+.kv{display:grid;grid-template-columns:auto 1fr;gap:5px 12px;font-size:13.5px;margin-bottom:12px}
+.kv dt{font-family:var(--cond);color:var(--dim)}
+.kv dd{margin:0;color:var(--mute)}
+.kv b{color:var(--ink);font-weight:600}
+.kv b.pos{color:var(--good)} .kv b.neg{color:var(--hot)}
+.tagrow{display:flex;flex-wrap:wrap;gap:6px}
+.tag{font-family:var(--cond);font-size:13px;padding:3px 9px;border-radius:3px;
+     background:var(--raise);border:1px solid var(--line);color:var(--mute)}
+.tag.good{color:var(--good);border-color:rgba(79,178,134,.4)}
+.tag.bad{color:var(--hot);border-color:rgba(224,102,92,.4)}
+.pad{padding:14px 15px}
+.pad h2{font-family:var(--cond);font-size:15px;font-weight:600;color:var(--mute);margin:0 0 10px}
+.pad p{margin:0 0 11px;font-size:14px;color:var(--mute)}
+.pad p:last-child{margin-bottom:0}
+.pad strong{color:var(--ink);font-weight:600}
+.pad .when{font-family:var(--cond);color:var(--dim)}
+.nav{position:fixed;left:0;right:0;bottom:0;z-index:30;display:flex;
+  background:var(--panel);border-top:1px solid var(--line)}
+.nav a{flex:1;text-align:center;padding:14px 4px;color:var(--mute);text-decoration:none;
+  font-family:var(--cond);font-size:14.5px;font-weight:500;min-height:54px;
+  display:flex;align-items:center;justify-content:center;border-right:1px solid var(--line)}
+.nav a:last-child{border-right:0}
+.nav a:hover,.nav a:active{background:var(--raise);color:var(--ink)}
+.nav a:focus-visible{outline:2px solid var(--qb);outline-offset:-3px}
+section{scroll-margin-top:12px}
+.sechd{font-family:var(--cond);font-size:13px;color:var(--dim);letter-spacing:.05em;
+  text-transform:uppercase;margin:26px 0 10px}
+.sechd:first-child{margin-top:0}
+.sechdrow{display:flex;align-items:center;justify-content:space-between;gap:12px;
+  flex-wrap:wrap;margin:26px 0 10px}
+.sechdrow .sechd{margin:0}
+.ctl{display:flex;gap:6px}
+.ctl button{font-family:var(--cond);font-size:13.5px;font-weight:500;color:var(--mute);
+  background:var(--panel);border:1px solid var(--line);border-radius:3px;
+  padding:8px 12px;min-height:40px;cursor:pointer}
+.ctl button:hover{color:var(--ink);border-color:var(--dim)}
+.ctl button:focus-visible{outline:2px solid var(--qb);outline-offset:2px}
+.mcard{background:var(--panel);border:1px solid var(--line);border-radius:4px;
+  padding:14px 15px;margin-bottom:12px}
+.mrow{display:grid;grid-template-columns:1fr auto;gap:4px 10px;align-items:baseline}
+.mrow .t{font-family:var(--cond);font-size:16.5px}
+.mrow .t.w{font-weight:600;color:var(--good)}
+.mrow .s{font-family:var(--cond);font-size:15px;color:var(--dim);text-align:right}
+.verdict{font-family:var(--cond);font-size:13.5px;color:var(--mute);
+  margin:9px 0 0;padding-top:9px;border-top:1px solid var(--line)}
+.verdict b{color:var(--ink)}
+.msum{font-size:13.5px;color:var(--mute);margin:9px 0 0}
+.wgrid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:8px}
+@media(max-width:560px){.wgrid{grid-template-columns:1fr;gap:10px}}
+.wside{min-width:0}
+.wname{font-family:var(--cond);font-size:13px;color:var(--mute);font-weight:600;
+  margin:0 0 6px;padding-bottom:5px;border-bottom:1px solid var(--line);
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.watch{display:flex;flex-wrap:wrap;gap:5px}
+.wch{font-family:var(--cond);font-size:13.5px;padding:3px 9px;border-radius:3px;
+  background:var(--raise);border-left:3px solid var(--flat)}
+.wch em{font-style:normal;font-size:11px;font-weight:700;margin-right:5px}
+.ptab{width:100%;border-collapse:collapse;font-family:var(--cond);font-size:15px}
+.ptab th{font-size:11.5px;letter-spacing:.04em;text-transform:uppercase;color:var(--dim);
+  font-weight:500;text-align:left;padding:0 0 7px}
+.ptab th.r,.ptab td.r{text-align:right}
+.ptab td{padding:9px 0;border-top:1px solid var(--line);vertical-align:top}
+.ptab .sd{width:24px;color:var(--dim);font-size:16px;font-weight:600;text-align:center}
+.ptab .tn{font-weight:600;line-height:1.25}
+.ptab .tn small{display:block;font-size:12px;font-weight:400;color:var(--dim);margin-top:2px}
+.ptab .rc{width:40px;color:var(--mute)}
+.ptab .od{width:62px}
+.ptab .od b{font-size:15px;color:var(--ink)}
+.bar{height:4px;background:var(--line);border-radius:2px;overflow:hidden;margin-top:5px;width:56px;margin-left:auto}
+.bar i{display:block;height:100%;background:var(--good)}
+.bar.lo i{background:var(--hot)}
+.cutrow td{border-top:2px solid var(--hot);padding-top:7px}
+.cutlbl{font-family:var(--cond);font-size:11.5px;text-transform:uppercase;letter-spacing:.05em;color:var(--hot)}
+.sched{display:grid;grid-template-columns:52px 1fr;gap:4px 10px;font-size:13.5px;font-family:var(--cond)}
+.sched dt{color:var(--dim)}
+.sched dd{margin:0 0 7px;color:var(--mute)}
+footer{color:var(--dim);font-size:12.5px;font-family:var(--cond);margin-top:22px;line-height:1.6}
+
+@media(max-width:560px){
+  .wrap{padding:16px 12px 30px}
+  h1{font-size:21px}
+  summary{grid-template-columns:26px 1fr auto;gap:9px;padding:12px 12px}
+  .tm{font-size:16px}
+  .body{padding:12px}
+  .kv{grid-template-columns:1fr}
+  .kv dt{margin-top:5px}
+  .sup{flex-direction:column;gap:3px}
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Week 6 power rankings <span class="ver">v2</span></h1>
+  <p class="sub">Blended standing for the ten-team half-PPR league after five weeks: average starter points, bench counted at a third, an adjustment for the record, and an injury adjustment for what each roster is missing going into Week 6.</p>
+  <p class="stamp">Posted after Week 5 &middot; updated after the Wednesday waivers</p>
+
+  <section id="s-power">
+    <div class="sechdrow">
+      <p class="sechd">Power rankings</p>
+      <div class="ctl">
+        <button type="button" id="expandAll">Expand all</button>
+        <button type="button" id="collapseAll">Collapse all</button>
+      </div>
+    </div>
+    <div class="stack" id="teams"></div>
+  </section>
+
+  <div class="card" style="margin-top:12px">
+    <div class="pad">
+      <h2>League notes</h2>
+      <p><strong>Nobody is unbeaten any more.</strong> Peasant Lewis took out End Around Chris 138.68 to 117.26, with Chris playing Kyler Murray while Lamar Jackson sat out with the ankle. Three teams are now 4-1 and two more are 3-2.</p>
+      <p><strong>Three of the five losing teams had a winning lineup on their bench.</strong> Jordan started Roman Wilson, who had been ruled out, for 0.00 while Emeka Egbuka's 14.20 sat &mdash; that one change makes it 145.64 and wins. Jemma left Goff, Nabers and Corum out for 67.24 and would have reached about 142 against 138.38. Christina would have hit about 126 with Boston and Marks in the lineup.</p>
+      <p><strong>Byes are now doing real damage.</strong> Cincinnati, Detroit, Miami and Minnesota are off in Week 6. Peasant Lewis has three starters on bye, Ari loses Jahmyr Gibbs, and Christina loses Amon-Ra St. Brown. Kevanescence gets Mahomes and McMillan back from the Week 5 bye and still loses two more slots.</p>
+      <p><strong>The projections below are ours, not Yahoo's,</strong> and they now read the actual lineups as they stood after Wednesday's waivers. See the method note under the matchups.</p>
+    </div>
+  </div>
+
+  <section id="s-week6">
+    <p class="sechd">Week 6 matchups</p>
+    <div id="week6"></div>
+    <p style="font-size:12.5px;color:var(--dim);margin:2px 0 0">Our projection: 45% of a team's season starter average, 55% of its last three weeks, then adjusted for the lineup each manager has actually set &mdash; byes, open slots and injury designations included. Where a roster has an obvious fix available on its own bench, we assume the manager makes it before kickoff and flag it. Weekly scores swing roughly 22 points either side, so anything inside a six-point margin is close to a coin flip.</p>
+  </section>
+
+  <section id="s-playoffs">
+    <p class="sechd">Playoff picture</p>
+    <div class="card">
+      <div class="pad">
+        <h2>Six of ten make it</h2>
+        <p>The regular season runs through Week 13. The top six seeds reach the championship bracket, the top two get a first-round bye, and the quarterfinals start in Week 14. Seeding is by record, with total points as the tiebreaker &mdash; which is how the three 4-1 teams are currently separated.</p>
+        <p>Odds below come from simulating the remaining eight weeks 40,000 times. Each team scores from its own distribution each week &mdash; its blended scoring level, less the injury adjustment, with the same 22-point weekly swing used everywhere else on this page &mdash; and the simulated standings are seeded by the league's own rules.</p>
+      </div>
+      <div class="pad" style="padding-top:0">
+        <table class="ptab">
+          <thead><tr><th></th><th>Team</th><th class="r">Rec</th><th class="r">Playoff</th><th class="r">Bye</th></tr></thead>
+          <tbody id="pbody"></tbody>
+        </table>
+      </div>
+      <div class="pad" style="padding-top:0">
+        <p><strong>The bubble is one game wide.</strong> Peasant Lewis and CeeDee Sam are both 2-3 and separated by 25.98 points of scoring. They play each other in Week 8, which is the single most valuable game left on either schedule.</p>
+        <p><strong>Three teams need a run.</strong> Jemma, Jordan and Christina are all 1-4 and all need something close to 6-2 the rest of the way. Jemma has the best roster of the three and the best chance at about one in ten; Jordan and Christina are at roughly one in thirty each.</p>
+        <p><strong>Nobody has an easy run-in.</strong> Remaining schedules are within three points of each other on average opponent strength, which is what a round robin does. The difference is who is healthy in November, not who they play.</p>
+      </div>
+    </div>
+
+    <details class="card" style="margin-top:12px">
+      <summary><span class="rk">&#128197;</span><span class="tm">Remaining schedule<small>Weeks 6 through 13</small></span><span class="gr gF">40</span></summary>
+      <div class="body"><dl class="sched" id="schedlist"></dl></div>
+    </details>
+  </section>
+
+  <section id="s-injuries">
+    <p class="sechd">Injury report</p>
+    <div class="card">
+      <div class="pad">
+        <p><strong>Lamar Jackson, QB, Baltimore &mdash; ankle sprain.</strong> <span class="when">Questionable.</span> Jackson missed Week 5 and Tyler Huntley started. Rapoport reports there's "some hope" he plays against Cleveland. This is the biggest single question in the league this week: Chris's other quarterback, Kyler Murray, is on bye, and as of Wednesday Murray was still in the starting lineup.</p>
+        <p><strong>Caleb Williams, QB, Chicago &mdash; hamstring.</strong> <span class="when">Back this week.</span> Williams missed three games, is reported to be pushing to return, and is already back in Monday Night Jason's lineup. Bo Nix and Bryce Young are both on the bench behind him, so there is no risk in the slot either way.</p>
+        <p><strong>Jaxon Smith-Njigba, WR, Seattle &mdash; ankle.</strong> <span class="when">Questionable, Thursday game.</span> New this week. He was limited in practice on both Monday and Tuesday, and Seattle plays Thursday at Denver, which leaves almost no time for the designation to clear. He is in End Around Chris's starting lineup.</p>
+        <p><strong>Saquon Barkley, RB, Philadelphia &mdash; hamstring.</strong> <span class="when">Questionable.</span> Barkley missed Week 5 and could return against Carolina, with reporting suggesting limited upside in the first week back. Jordan has him on the bench this time rather than in the lineup.</p>
+        <p><strong>A.J. Brown, WR, New England &mdash; ankle.</strong> <span class="when">Could return this week.</span> Mike Vrabel has not ruled out a Week 6 return and Brown could be back at practice. He has been on IR since Week 1 and now carries a Week 6 projection, so the activation decision is live.</p>
+        <p><strong>CeeDee Lamb, WR, Dallas &mdash; quad.</strong> <span class="when">Questionable.</span> Hurt on Thursday night for 1.90, described as a bruise rather than anything serious, with extra rest before Green Bay. He is in Sam's lineup.</p>
+        <p><strong>Breece Hall, RB, NY Jets &mdash; quad.</strong> <span class="when">Questionable.</span> Hall now has a Week 6 projection while sitting in Filthy Rich's IR slot, which means another activation call &mdash; the same one Filthy Rich left unmade with Jefferson last week.</p>
+        <p><strong>Quinshon Judkins, RB, Cleveland &mdash; ankle.</strong> <span class="when">Day to day.</span> A tweak rather than a sprain, but a risky start against Baltimore. He is in Kevanescence's lineup.</p>
+        <p><strong>Rashee Rice, WR, Kansas City &mdash; hamstring.</strong> <span class="when">Questionable.</span> Back from the bye but still carrying the designation, and in Christina's lineup.</p>
+        <p><strong>Also on the report.</strong> Deebo Samuel is out at least two more weeks with the hamstring. David Montgomery is doubtful with the groin and Woody Marks has the Houston backfield. TreVeyon Henderson is doubtful with the ankle. Roman Wilson is out multiple weeks with the finger. Stefon Diggs, DeVonta Smith, Jalen Coker, Rico Dowdle and Kyle Monangai are all questionable. Jayden Reed's season is over. Justin Jefferson is healthy but on bye.</p>
+      </div>
+    </div>
+  </section>
+
+  <footer>
+    Power score = average weekly starter points + 35% of average bench points + 8 &times; (wins &minus; losses) / games played, minus an injury adjustment.<br>
+    The injury adjustment is the projected weekly points lost against the best replacement already on the roster, weighted by how long the absence is expected to run. Bye weeks are not counted in it. Week 6 projections and playoff odds are our own, not Yahoo's, and read the lineups as they stood after Wednesday's waivers. Movement is measured against the Week 5 rankings.
+  </footer>
+</div>
+
+<nav class="nav" aria-label="Jump to section">
+  <a href="#s-power">Rankings</a>
+  <a href="#s-week6">Week 6</a>
+  <a href="#s-playoffs">Playoffs</a>
+  <a href="#s-injuries">Injuries</a>
+</nav>
+
+<script>
+const T = [
+{"rank":1,"prev":4,"team":"Lion Ass Bitches","rec":"3-2","pf":626.38,
+ "w5":["W","CeeDee Sam","142.26–86.74"],"w4":["W","End Zone Christina","157.28–103.18"],"w3":["L","Monday Night Jason","113.58–131.84"],"w2":["L","End Around Chris","97.64–110.60"],"w1":["W","It's The Hope That Kills You","115.62–97.50"],
+ "st":125.28,"bn":50.16,"badj":17.56,"recadj":1.6,"inj":0.5,"power":143.9,
+ "top":[["Jahmyr Gibbs","RB",35.20],["Jayden Daniels","QB",32.26],["Brock Bowers","TE",19.00]],
+ "sup":"Best two-week stretch of the season","supwhy":"157.28 and 142.26 back to back",
+ "note":"Daniels returned from the elbow and scored 32.26, Gibbs went for 35.20, and this is now the highest-scoring roster in the league at 626.38. The injury column is finally empty — Daniels, Collins and Bowers are all back and all producing. Gibbs is on bye in Week 6 and the lineup has already been rebuilt around it, with Hubbard back from Carolina's bye and McLaurin in from the hamstring.",
+ "good":["Most points in the league","Daniels back for 32.26","Healthiest roster"],"bad":["Gibbs on bye in Week 6"]},
+
+{"rank":2,"prev":2,"team":"Monday Night Jason","rec":"3-2","pf":623.26,
+ "w5":["W","Game Plan Jemma","138.38–99.84"],"w4":["L","Kevanescence","110.76–123.60"],"w3":["W","Lion Ass Bitches","131.84–113.58"],"w2":["L","CeeDee Sam","78.72–109.96"],"w1":["W","End Zone Christina","163.56–93.42"],
+ "st":124.65,"bn":52.08,"badj":18.23,"recadj":1.6,"inj":2.0,"power":142.5,
+ "top":[["Christian Watson","WR",29.30],["Jacoby Brissett","QB",25.78],["Derrick Henry","RB",20.50]],
+ "sup":"Best waiver work in the league","supwhy":"Jacoby Brissett scored 25.78 as the third-string answer",
+ "note":"With Caleb Williams out and Bryce Young on bye, Jason picked up Brissett and got 25.78 out of him. Watson added 29.30 and Henry 20.50. Williams is back in the lineup for Week 6 with Nix and Young behind him, and Pineiro has been added to cover the McPherson bye. The one soft spot is tight end: Fannin has 0.90 and 10.20 in the last two weeks.",
+ "good":["Brissett 25.78 off waivers","Second in points for","Williams back"],"bad":["Tight end 0.90 last week"]},
+
+{"rank":3,"prev":1,"team":"End Around Chris","rec":"4-1","pf":598.94,
+ "w5":["L","Peasant Lewis","117.26–138.68"],"w4":["W","Game Plan Jemma","115.68–94.90"],"w3":["W","Kevanescence","104.90–78.94"],"w2":["W","Lion Ass Bitches","110.60–97.64"],"w1":["W","CeeDee Sam","150.50–97.52"],
+ "st":119.79,"bn":46.79,"badj":16.38,"recadj":4.8,"inj":4.0,"power":137.0,
+ "top":[["Bucky Irving","RB",30.50],["Spencer Shrader","K",21.00],["Jaxon Smith-Njigba","WR",20.30]],
+ "sup":"First loss","supwhy":"117.26 would have won three of the other four games",
+ "note":"Irving's 30.50 and a 21.00 kicker week weren't enough against 138.68, which is a reasonable way to lose. Week 6 is the problem. Murray is on bye and was still in the quarterback slot on Wednesday, Jackson is questionable with the ankle, and there is no third option on the roster. Smith-Njigba is questionable too, for a Thursday game. Loveland has 2.90 and 8.70 in the last two weeks and tight end is still unsolved.",
+ "good":["4-1","Irving 30.50","Walker back from bye"],"bad":["Murray on bye in the QB slot","Jackson ankle","Smith-Njigba ankle"]},
+
+{"rank":4,"prev":3,"team":"Kevanescence","rec":"4-1","pf":586.38,
+ "w5":["W","End Zone Christina","121.60–107.06"],"w4":["W","Monday Night Jason","123.60–110.76"],"w3":["L","End Around Chris","78.94–104.90"],"w2":["W","It's The Hope That Kills You","132.28–83.46"],"w1":["W","Peasant Lewis","129.96–94.76"],
+ "st":117.28,"bn":51.61,"badj":18.06,"recadj":4.8,"inj":3.5,"power":136.6,
+ "top":[["Parker Washington","WR",27.40],["Isaiah Likely","TE",26.90],["Aaron Rodgers","QB",22.00]],
+ "sup":"Won a bye week","supwhy":"121.60 with Mahomes and McMillan both off",
+ "note":"Aaron Rodgers came off waivers and scored 22.00 in Mahomes' place, Washington added 27.40 and Likely 26.90. Winning by fifteen while two of the best players on the roster sat out is the quietest good result of the week. Mahomes and McMillan are back in the lineup for Week 6, with Santos and the Rams defense added to cover the Reichard and Chase Brown byes. Judkins' ankle is the open question.",
+ "good":["4-1","Rodgers 22.00 off waivers","Mahomes and McMillan back"],"bad":["Judkins ankle","DeVonta Smith questionable"]},
+
+{"rank":5,"prev":6,"team":"Filthy Rich","rec":"4-1","pf":571.80,
+ "w5":["W","It's The Hope That Kills You","133.76–131.44"],"w4":["W","CeeDee Sam","124.42–117.94"],"w3":["W","Peasant Lewis","110.88–109.96"],"w2":["L","End Zone Christina","90.98–106.20"],"w1":["W","Game Plan Jemma","111.76–88.14"],
+ "st":114.36,"bn":51.64,"badj":18.07,"recadj":4.8,"inj":2.5,"power":134.7,
+ "top":[["Puka Nacua","WR",29.20],["Braelon Allen","RB",18.10],["Brock Purdy","QB",17.16]],
+ "sup":"Wins the close ones","supwhy":"three wins by 2.32, 0.92 and 6.48",
+ "note":"Four wins, and the margins are 2.32, 0.92 and 6.48. Nacua has scored 23.20 and 29.20 since returning, and Braelon Allen has covered for Hall well enough. Justin Jefferson played and scored 15.80 while sitting in an IR slot — he needs activating, and now Breece Hall has a Week 6 projection from the same slot. With Gordon, Burrow and Jefferson all on bye, the lineup thins to Wan'Dale Robinson at receiver and MarShawn Lloyd in the flex.",
+ "good":["4-1","Nacua 29.20","Jefferson healthy again"],"bad":["Two players stuck on IR","Gordon on bye","Thin at receiver this week"]},
+
+{"rank":6,"prev":7,"team":"Peasant Lewis","rec":"2-3","pf":585.04,
+ "w5":["W","End Around Chris","138.68–117.26"],"w4":["W","It's The Hope That Kills You","122.02–72.48"],"w3":["L","Filthy Rich","109.96–110.88"],"w2":["L","Game Plan Jemma","119.62–140.86"],"w1":["L","Kevanescence","94.76–129.96"],
+ "st":117.01,"bn":41.62,"badj":14.57,"recadj":-1.6,"inj":2.5,"power":127.5,
+ "top":[["Josh Allen","QB",31.50],["George Pickens","WR",23.50],["James Cook III","RB",22.30]],
+ "sup":"Ended the unbeaten run","supwhy":"138.68, the second-highest score of the week",
+ "note":"Two straight wins and the roster finally looks like its points total: Allen 31.50, Pickens 23.50, Cook 22.30, LaPorta 17.30. Week 6 is the problem. Jones, LaPorta and Bates are all on bye and all three were still in the lineup on Wednesday, alongside a doubtful Tre' Harris. Kelce covers the tight end spot; there is no second running back and no kicker anywhere on the roster, so the rest has to come off the wire.",
+ "good":["Two straight wins","Allen 31.50","Fourth in points for"],"bad":["Three byes in the starting lineup","No RB2 or kicker on the roster","Reed out for the season"]},
+
+{"rank":7,"prev":8,"team":"Game Plan Jemma","rec":"1-4","pf":527.68,
+ "w5":["L","Monday Night Jason","99.84–138.38"],"w4":["L","End Around Chris","94.90–115.68"],"w3":["L","It's The Hope That Kills You","103.94–110.28"],"w2":["W","Peasant Lewis","140.86–119.62"],"w1":["L","Filthy Rich","88.14–111.76"],
+ "st":105.54,"bn":62.85,"badj":22.00,"recadj":-4.8,"inj":0.5,"power":122.2,
+ "top":[["Davante Adams","WR",19.60],["Ja'Marr Chase","WR",16.70],["Jets","DEF",16.00]],
+ "sup":"Fourth winnable game left on the bench","supwhy":"Goff, Nabers and Corum sat for 67.24",
+ "note":"Jared Goff scored 28.94, Malik Nabers 23.60 and Blake Corum 14.70, all on the bench, in a loss by 38.54. The best available lineup reaches about 142 and wins. That is now four times in five weeks that the bench outscored the mistake. The good news is that Week 6 finally has Nabers in the starting lineup, where he should have been for a month. Nothing on this roster is seriously hurt and the bench is the deepest in the league.",
+ "good":["Healthiest roster in the league","Deepest bench by a distance","Nabers finally starting"],"bad":["67.24 benched in a loss","Chase and Goff on bye","1-4 with the sixth-most points"]},
+
+{"rank":8,"prev":5,"team":"CeeDee Sam","rec":"2-3","pf":559.06,
+ "w5":["L","Lion Ass Bitches","86.74–142.26"],"w4":["L","Filthy Rich","117.94–124.42"],"w3":["W","End Zone Christina","146.90–84.48"],"w2":["W","Monday Night Jason","109.96–78.72"],"w1":["L","End Around Chris","97.52–150.50"],
+ "st":111.81,"bn":43.08,"badj":15.08,"recadj":-1.6,"inj":6.0,"power":119.3,
+ "top":[["Jaylen Warren","RB",33.80],["Drake London","WR",15.30],["Tyler Loop","K",14.00]],
+ "sup":"Worst week of the season","supwhy":"86.74, with five starters under 5.00",
+ "note":"Warren's 33.80 was most of the scoring. Shough 1.84, Lamb 1.90 after a quad injury, Metcalf 3.80, Kittle 4.90, Love 2.20 — five starters under five points in the same week the team was renamed after CeeDee Lamb. Hurts has the quarterback job back for Week 6, but the defense slot was empty on Wednesday with the Ravens sitting on the bench. Lamb's quad, Montgomery's groin and Diggs' hamstring make this the second-largest injury adjustment in the league.",
+ "good":["Warren 33.80","Hurts back in at quarterback"],"bad":["Defense slot empty","Lamb quad","Montgomery groin"]},
+
+{"rank":9,"prev":9,"team":"End Zone Christina","rec":"1-4","pf":494.34,
+ "w5":["L","Kevanescence","107.06–121.60"],"w4":["L","Lion Ass Bitches","103.18–157.28"],"w3":["L","CeeDee Sam","84.48–146.90"],"w2":["W","Filthy Rich","106.20–90.98"],"w1":["L","Monday Night Jason","93.42–163.56"],
+ "st":98.87,"bn":52.74,"badj":18.46,"recadj":-4.8,"inj":3.0,"power":109.5,
+ "top":[["Drake Maye","QB",39.46],["Marquise Golden","WR",17.30],["Trey McBride","TE",17.10]],
+ "sup":"Highest individual score of the week","supwhy":"Drake Maye, 39.46, in a loss",
+ "note":"Maye's 39.46 was the best single performance anyone had and it went to waste, because the backfield produced 3.20 between Kamara and Robinson. Boston and Marks were on the bench; starting both wins the game by about four. Both are in the lineup now, but the defense slot was empty on Wednesday with the Chiefs on the bench, St. Brown is on bye and Rice is questionable with the hamstring.",
+ "good":["Maye 39.46","Boston and Marks promoted"],"bad":["Defense slot empty","St. Brown on bye","1-4 and last in points for"]},
+
+{"rank":10,"prev":10,"team":"It's The Hope That Kills You","rec":"1-4","pf":495.16,
+ "w5":["L","Filthy Rich","131.44–133.76"],"w4":["L","Peasant Lewis","72.48–122.02"],"w3":["W","Game Plan Jemma","110.28–103.94"],"w2":["L","Kevanescence","83.46–132.28"],"w1":["L","Lion Ass Bitches","97.50–115.62"],
+ "st":99.03,"bn":27.06,"badj":9.47,"recadj":-4.8,"inj":7.5,"power":96.2,
+ "top":[["Mike Evans","WR",22.80],["Trevor Lawrence","QB",22.74],["Tyler Warren","TE",17.90]],
+ "sup":"Best score of the season, and a loss","supwhy":"131.44, beaten by 2.32",
+ "note":"Evans 22.80, Lawrence 22.74, Warren 17.90, Stevenson 16.00, Bass 13.00 — eight of the nine starters produced. The ninth was Roman Wilson, who had been ruled out before kickoff and scored 0.00 while Egbuka's 14.20 sat on the bench. That one swap wins it 145.64 to 133.76. The Week 6 lineup is the cleanest this team has set all season: nine healthy starters, Barkley and McConkey both benched rather than started hurt, and the Steelers defense in for the Vikings bye.",
+ "good":["Season-high 131.44","Cleanest lineup of the year","Brown could return this week"],"bad":["Barkley hamstring","McConkey foot","Smallest bench in the league"]}
+];
+
+const OWNER = {'Lion Ass Bitches':'Ari','CeeDee Sam':'Sam',"It's The Hope That Kills You":'Jordan'};
+const disp = t => t + (OWNER[t] ? ' ('+OWNER[t]+')' : '');
+const esc = s => String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const max = Math.max(...T.map(t=>t.power));
+const movecls = m => m>0?'gA':(m<0?'gD':'gF');
+const movetxt = m => m>0?('▲'+m):(m<0?('▼'+Math.abs(m)):'–');
+const res = r => '<b class="'+(r[0]==='W'?'pos':'neg')+'">'+(r[0]==='W'?'Beat':'Lost to')+'</b> '+esc(disp(r[1]))+', '+r[2];
+const sgn = n => n>0?('+'+n.toFixed(2)):(n<0?('−'+Math.abs(n).toFixed(2)):'0.00');
+
+document.getElementById('teams').innerHTML = T.map(t => {
+  const move = t.prev - t.rank;
+  const top = t.top.map(p =>
+    '<div class="pl p'+p[1]+'"><span class="p c'+p[1]+'">'+p[1]+'</span>' +
+    '<span>'+esc(p[0])+'</span><span class="v">'+p[2].toFixed(2)+'</span></div>').join('');
+  const good = t.good.map(x=>'<span class="tag good">'+esc(x)+'</span>').join('');
+  const bad  = t.bad.map(x=>'<span class="tag bad">'+esc(x)+'</span>').join('');
+  return '<details class="card">'+
+    '<summary><span class="rk">'+t.rank+'</span>'+
+      '<span class="tm">'+esc(disp(t.team))+'<small>'+t.rec+' &middot; power '+t.power.toFixed(1)+
+        ' &middot; was '+t.prev+'</small></span>'+
+      '<span class="gr '+movecls(move)+'">'+movetxt(move)+'</span></summary>'+
+    '<div class="body">'+
+      '<div class="meter"><i style="width:'+Math.round(t.power/max*100)+'%"></i></div>'+
+      '<div class="sup"><span class="st">'+esc(t.sup)+'</span>'+
+        '<span class="sw">'+esc(t.supwhy)+'</span></div>'+
+      '<p class="note">'+esc(t.note)+'</p>'+
+      '<p class="lbl">Week 5 top scorers</p><div class="lineup">'+top+'</div>'+
+      '<dl class="kv">'+
+        '<dt>Week 5</dt><dd>'+res(t.w5)+'</dd>'+
+        '<dt>Week 4</dt><dd>'+res(t.w4)+'</dd>'+
+        '<dt>Week 3</dt><dd>'+res(t.w3)+'</dd>'+
+        '<dt>Week 2</dt><dd>'+res(t.w2)+'</dd>'+
+        '<dt>Week 1</dt><dd>'+res(t.w1)+'</dd>'+
+        '<dt>Starters</dt><dd><b>'+t.st.toFixed(2)+'</b> &nbsp;<span style="color:var(--dim)">per week &middot; '+t.pf.toFixed(2)+' season</span></dd>'+
+        '<dt>Bench</dt><dd><b class="pos">+'+t.badj.toFixed(2)+'</b> &nbsp;<span style="color:var(--dim)">('+t.bn.toFixed(2)+' per week at 35%)</span></dd>'+
+        '<dt>Record</dt><dd><b class="'+(t.recadj>0?'pos':(t.recadj<0?'neg':''))+'">'+sgn(t.recadj)+'</b> &nbsp;<span style="color:var(--dim)">'+t.rec+'</span></dd>'+
+        '<dt>Injuries</dt><dd><b class="'+(t.inj>0?'neg':'')+'">'+sgn(-t.inj)+'</b> &nbsp;<span style="color:var(--dim)">projected weekly points lost</span></dd>'+
+        '<dt>Power score</dt><dd><b>'+t.power.toFixed(1)+'</b></dd>'+
+      '</dl>'+
+      (good?'<p class="lbl">Working</p><div class="tagrow" style="margin-bottom:12px">'+good+'</div>':'')+
+      (bad ?'<p class="lbl">Watching</p><div class="tagrow">'+bad+'</div>':'')+
+    '</div></details>';
+}).join('');
+
+const setAll = open => document.querySelectorAll('#teams details').forEach(d => d.open = open);
+document.getElementById('expandAll').onclick   = () => setAll(true);
+document.getElementById('collapseAll').onclick = () => setAll(false);
+
+const PROJ = {"It's The Hope That Kills You":104.2,'End Around Chris':106.3,'Monday Night Jason':123.4,
+ 'Peasant Lewis':95.4,'Lion Ass Bitches':122.1,'Filthy Rich':115.3,'End Zone Christina':90.4,
+ 'Game Plan Jemma':100.8,'Kevanescence':112.6,'CeeDee Sam':104.3};
+const BYES = {"It's The Hope That Kills You":'None in the lineup','End Around Chris':'Murray, in the QB slot',
+ 'Monday Night Jason':'J. Williams, benched','Peasant Lewis':'Jones, LaPorta, Bates — all starting',
+ 'Lion Ass Bitches':'Gibbs, Higgins, benched','Filthy Rich':'Gordon, Burrow, Jefferson, benched',
+ 'End Zone Christina':'St. Brown, benched','Game Plan Jemma':'Chase, Goff, benched',
+ 'Kevanescence':'Chase Brown, benched','CeeDee Sam':'Bengals DEF, dropped'};
+const FIX = {'End Around Chris':'Start Jackson if he clears','Peasant Lewis':'Needs an RB and a kicker',
+ 'End Zone Christina':'Defense slot is empty','CeeDee Sam':'Defense slot is empty',
+ 'Filthy Rich':'Hall and Jefferson stuck on IR'};
+const REC = {}; T.forEach(t => REC[t.team] = t.rec);
+
+const WATCH = {
+ "It's The Hope That Kills You":[['Christian McCaffrey','RB'],['Trevor Lawrence','QB'],['Mike Evans','WR']],
+ 'End Around Chris':[['Bucky Irving','RB'],['Jaxon Smith-Njigba','WR'],['Lamar Jackson','QB']],
+ 'Monday Night Jason':[['Caleb Williams','QB'],['Derrick Henry','RB'],['Christian Watson','WR']],
+ 'Peasant Lewis':[['Josh Allen','QB'],['James Cook III','RB'],['Travis Kelce','TE']],
+ 'Lion Ass Bitches':[['Jayden Daniels','QB'],['Chuba Hubbard','RB'],['Brock Bowers','TE']],
+ 'Filthy Rich':[['Puka Nacua','WR'],['Kyren Williams','RB'],['Brock Purdy','QB']],
+ 'End Zone Christina':[['Drake Maye','QB'],['Trey McBride','TE'],['Woody Marks','RB']],
+ 'Game Plan Jemma':[['Malik Nabers','WR'],['Davante Adams','WR'],['Javonte Williams','RB']],
+ 'Kevanescence':[['Patrick Mahomes','QB'],['Jonathan Taylor','RB'],['Tetairoa McMillan','WR']],
+ 'CeeDee Sam':[['Jalen Hurts','QB'],['Jaylen Warren','RB'],['CeeDee Lamb','WR']]
+};
+
+const M6 = [
+ ["It's The Hope That Kills You",'End Around Chris',true,
+  'The closest game on the board, and the one most likely to be decided before kickoff. Chris still had Kyler Murray in the quarterback slot on Wednesday with Minnesota on bye, a questionable Lamar Jackson on the bench and no third option anywhere on the roster; Smith-Njigba is questionable too, for a Thursday game. Jordan has set his cleanest lineup of the season — nine healthy starters, Barkley and McConkey benched rather than started hurt, and the Steelers defense in for the Vikings.'],
+ ['Lion Ass Bitches','Filthy Rich',false,
+  'Ari has already worked around the Gibbs bye: Hubbard is back from Carolina’s week off, Swift and Tuten flank him, and McLaurin returns from the hamstring. Filthy Rich comes in thinner than its record — Gordon, Burrow and Jefferson are all on bye, which leaves Wan’Dale Robinson at receiver and MarShawn Lloyd in the flex, and both Jefferson and Breece Hall are sitting on IR with Week 6 projections.'],
+ ['Monday Night Jason','Peasant Lewis',false,
+  'The largest gap of the week, and almost all of it is roster mechanics. Lewis had Jones, LaPorta and Bates in the lineup on Wednesday with all three on bye, plus a doubtful Tre’ Harris; Kelce fixes the tight end spot but there is no second running back and no kicker on the roster to fix the rest. Jason gets Caleb Williams back from the hamstring with Nix and Young behind him, and added Pineiro for the McPherson bye.'],
+ ['Kevanescence','CeeDee Sam',false,
+  'Kevanescence gets Mahomes and McMillan straight back into the lineup and has already covered the Reichard and Chase Brown byes with Santos and the Rams defense. Sam had an empty defense slot on Wednesday with the Ravens on his bench, and Lamb is questionable with the quad after scoring 1.90 on Thursday night. Judkins’ ankle is the one real risk on the other side.'],
+ ['Game Plan Jemma','End Zone Christina',false,
+  'Two 1-4 teams, and the loser is effectively finished. Jemma is finally starting Nabers, who has outscored her lineup from the bench for a month, with Chase and Goff on bye. Christina has promoted Boston and Marks after leaving them out of a game she would have won, but her defense slot was empty on Wednesday with the Chiefs on the bench, St. Brown is on bye and Rice is questionable.'],
+];
+
+function erf(x){const s=x<0?-1:1;x=Math.abs(x);const t=1/(1+0.3275911*x);
+  const y=1-((((1.061405429*t-1.453152027)*t+1.421413741)*t-0.284496736)*t+0.254829592)*t*Math.exp(-x*x);
+  return s*y;}
+const phi = z => 0.5*(1+erf(z/Math.SQRT2));
+
+document.getElementById('week6').innerHTML = M6.map(([a,bb,motw,summary])=>{
+  const d = PROJ[a]-PROJ[bb];
+  const win = d>0?a:bb, pct = Math.round(phi(Math.abs(d)/(22*Math.SQRT2))*100);
+  const call = pct<58?'toss-up':(pct<68?'lean':'clear edge');
+  const line = x => '<span class="t'+(x===win?' w':'')+'">'+esc(disp(x))+' <span style="color:var(--dim);font-weight:400">'+REC[x]+'</span></span>'+
+                    '<span class="s">'+PROJ[x].toFixed(1)+'</span>';
+  const side = tm => '<div class="wside"><p class="wname">'+esc(disp(tm))+'</p><div class="watch">'+
+    WATCH[tm].map(p => '<span class="wch p'+p[1]+'"><em class="c'+p[1]+'">'+p[1]+'</em>'+
+    esc(p[0])+'</span>').join('') +
+    '<span class="wch" style="border-left-color:var(--wr)"><em style="color:var(--wr)">BYE</em>'+esc(BYES[tm])+'</span>'+
+    (FIX[tm]?'<span class="wch" style="border-left-color:var(--hot)"><em style="color:var(--hot)">FIX</em>'+esc(FIX[tm])+'</span>':'')+
+    '</div></div>';
+  return '<div class="mcard'+(motw?' hl':'')+'">'+
+    (motw?'<p class="motw">Matchup of the week</p>':'')+
+    '<div class="mrow">'+line(a)+line(bb)+'</div>'+
+    '<p class="msum">'+esc(summary)+'</p>'+
+    '<p class="lbl" style="margin:13px 0 0">Players to watch, byes and open slots</p>'+
+    '<div class="wgrid">'+side(a)+side(bb)+'</div>'+
+    '<p class="verdict"><b>'+esc(disp(win))+'</b> by '+Math.abs(d).toFixed(1)+' &middot; '+pct+'% &middot; '+call+'</p>'+
+  '</div>';
+}).join('');
+
+const PLAYOFF = [
+ ['End Around Chris','4-1',598.94,8.1,92,33],
+ ['Kevanescence','4-1',586.38,7.7,86,21],
+ ['Filthy Rich','4-1',571.80,8.3,93,37],
+ ['Lion Ass Bitches','3-2',626.38,8.5,98,60],
+ ['Monday Night Jason','3-2',623.26,7.9,94,38],
+ ['Peasant Lewis','2-3',585.04,6.5,72,8],
+ ['CeeDee Sam','2-3',559.06,6.0,47,3],
+ ['Game Plan Jemma','1-4',527.68,4.4,10,0],
+ ["It's The Hope That Kills You",'1-4',495.16,3.8,3,0],
+ ['End Zone Christina','1-4',494.34,3.8,3,0]
+];
+document.getElementById('pbody').innerHTML = PLAYOFF.map((r,i)=>{
+  const [tm,rec,pf,pw,po,bo]=r;
+  const cut = i===6 ? ' class="cutrow"' : '';
+  const cutlbl = i===6 ? '<tr><td></td><td colspan="4" class="cutlbl" style="border:0;padding:10px 0 0">Playoff cut line</td></tr>' : '';
+  return cutlbl+'<tr'+cut+'>'+
+    '<td class="sd">'+(i+1)+'</td>'+
+    '<td class="tn">'+esc(disp(tm))+'<small>'+pw.toFixed(1)+' projected wins &middot; '+pf.toFixed(2)+' points</small></td>'+
+    '<td class="rc r">'+rec+'</td>'+
+    '<td class="od r"><b>'+po+'%</b><span class="bar'+(po<50?' lo':'')+'"><i style="width:'+po+'%"></i></span></td>'+
+    '<td class="od r"><b>'+bo+'%</b><span class="bar'+(bo<50?' lo':'')+'"><i style="width:'+bo+'%"></i></span></td>'+
+  '</tr>';
+}).join('');
+
+const SCHED = {
+ 6:[["It's The Hope That Kills You",'End Around Chris'],['Lion Ass Bitches','Filthy Rich'],['Game Plan Jemma','End Zone Christina'],['CeeDee Sam','Kevanescence'],['Peasant Lewis','Monday Night Jason']],
+ 7:[["It's The Hope That Kills You",'Monday Night Jason'],['Lion Ass Bitches','Kevanescence'],['End Zone Christina','Peasant Lewis'],['Filthy Rich','End Around Chris'],['Game Plan Jemma','CeeDee Sam']],
+ 8:[["It's The Hope That Kills You",'End Zone Christina'],['Monday Night Jason','End Around Chris'],['Lion Ass Bitches','Game Plan Jemma'],['Filthy Rich','Kevanescence'],['Peasant Lewis','CeeDee Sam']],
+ 9:[["It's The Hope That Kills You",'CeeDee Sam'],['Monday Night Jason','Filthy Rich'],['Lion Ass Bitches','Peasant Lewis'],['End Zone Christina','End Around Chris'],['Kevanescence','Game Plan Jemma']],
+ 10:[["It's The Hope That Kills You",'Lion Ass Bitches'],['Monday Night Jason','End Zone Christina'],['Filthy Rich','Game Plan Jemma'],['Peasant Lewis','Kevanescence'],['CeeDee Sam','End Around Chris']],
+ 11:[["It's The Hope That Kills You",'Kevanescence'],['Monday Night Jason','CeeDee Sam'],['Lion Ass Bitches','End Around Chris'],['End Zone Christina','Filthy Rich'],['Peasant Lewis','Game Plan Jemma']],
+ 12:[["It's The Hope That Kills You",'Game Plan Jemma'],['Monday Night Jason','Lion Ass Bitches'],['End Zone Christina','CeeDee Sam'],['Filthy Rich','Peasant Lewis'],['Kevanescence','End Around Chris']],
+ 13:[["It's The Hope That Kills You",'Peasant Lewis'],['Monday Night Jason','Kevanescence'],['Lion Ass Bitches','End Zone Christina'],['Filthy Rich','CeeDee Sam'],['Game Plan Jemma','End Around Chris']]
+};
+document.getElementById('schedlist').innerHTML = Object.keys(SCHED).map(wk =>
+  '<dt>Week '+wk+'</dt><dd>'+SCHED[wk].map(g=>esc(disp(g[0]))+' v '+esc(disp(g[1]))).join('<br>')+'</dd>'
+).join('');
+</script>
+</body>
+</html>
