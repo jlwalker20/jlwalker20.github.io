@@ -1,4 +1,4 @@
-ShortChannels 1.1
+ShortChannels 1.2
 =================
 Shortens chat channel names in your chat windows.
 
@@ -42,6 +42,12 @@ COMMANDS
   None. Nothing to configure in game.
 
 NOTES
-  - Load order: it hooks the chat windows at login. If you add another
-    chat addon that rewrites channel names, the two may fight; disable one.
-  - Tested on the Forever beta, client 1.60.1 (70170).
+  - 1.2 uses the game's official chat-filter hook and never modifies the
+    chat windows themselves. Versions up to 1.1 replaced the chat
+    windows' AddMessage function, which could hang the gamepad UI and make
+    the game offer to disable the addon. If you have 1.1, replace it.
+  - If the game hides a message from addons (it can during some combat
+    and instance situations), that message shows the full channel name.
+  - If you add another chat addon that rewrites channel names, the two
+    may fight; disable one.
+  - Tested on the Forever beta, client 1.60.1.

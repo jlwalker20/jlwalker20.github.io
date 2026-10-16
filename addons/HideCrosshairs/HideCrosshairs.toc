@@ -1,0 +1,7 @@
+## Interface: 16001
+## Title: HideCrosshairs
+## Notes: Hides the red and green target crosshair buttons above the gamepad action bars.
+## Author: You
+## Version: 0.2
+
+HideCrosshairs.lua

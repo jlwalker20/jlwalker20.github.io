@@ -2,6 +2,6 @@
 ## Title: ShortChannels
 ## Notes: Shortens chat channel names (General -> G, Trade -> T, etc.)
 ## Author: You
-## Version: 1.1
+## Version: 1.2
 
 ShortChannels.lua
