@@ -1,0 +1,7 @@
+## Interface: 16001
+## Title: PartyLevels
+## Notes: Adds each member's level to their name on the raid-style party and raid frames.
+## Author: You
+## Version: 1.0
+
+PartyLevels.lua

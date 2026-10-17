@@ -1,11 +1,12 @@
-ChatFade 1.0
+ChatFade 1.1
 ============
 Fades the chat window out after 30 seconds with no new message, and
 brings it back to full opacity the moment a new line arrives. That
 includes system lines like "Changed Channel: [1. G]" when you travel, plus
 loading screens and zone changes.
 
-It stays visible while you are typing in chat or have the mouse over it.
+It comes straight back when you open the chat input box, and stays
+visible while you are typing in chat or have the mouse over it.
 The combat log tab is ignored, so fight spam does not keep chat awake.
 
 HOW TO INSTALL
@@ -35,8 +36,10 @@ COMMANDS
   None.
 
 NOTES
-  - It never touches the chat input box. That is on purpose: opening the
-    chat box in gamepad mode can freeze the Forever beta client (a
-    Blizzard bug), so the addon stays away from it.
+  - It never hooks or changes the chat input box. That is on purpose:
+    opening the chat box in gamepad mode can freeze the Forever beta
+    client (a Blizzard bug). To notice the box opening it only checks
+    whether it is open, a few times a second, and only while the chat is
+    faded.
   - Works alongside ShortChannels.
   - Tested on the Forever beta, client 1.60.1 (70170).

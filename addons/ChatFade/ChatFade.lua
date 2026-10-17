@@ -4,12 +4,14 @@
 -- includes system lines such as "Changed Channel: [1. G]" when you move
 -- between zones, plus loading screens and zone changes as a backup.
 --
--- It stays visible while you're typing in chat or have the mouse over it.
+-- It stays visible while you're typing in chat or have the mouse over it,
+-- and (1.1) comes straight back when you open the chat input box.
 --
 -- Controller-mode safety (lessons from Angler's Journal): no Blizzard
 -- templates, no mouse capture, nothing added to Blizzard's Esc list, and
 -- it never hooks the chat input box (the path that hangs when you type in
--- chat in controller mode). It only listens for new lines on the chat
+-- chat in controller mode). To notice the input box opening it only LOOKS
+-- at it a few times a second, and only while the chat is faded. It only listens for new lines on the chat
 -- windows and changes their opacity. No loop runs while idle; a short
 -- per-frame update runs only during the fade itself.
 
@@ -92,12 +94,23 @@ local function FadeTo(newTarget, duration)
     driver:SetScript("OnUpdate", OnUpdate)
 end
 
--- Stay visible while you're typing or pointing at the chat.
-local function KeepVisible()
+-- Is a chat input box open? (Read-only checks; nothing is hooked.)
+local function EditBoxOpen()
+    local imStyle = GetCVar and GetCVar("chatStyle") == "im"
     for i = 1, NumWindows() do
         local eb = _G["ChatFrame" .. i .. "EditBox"]
-        if eb and eb.HasFocus and eb:HasFocus() then return true end
+        if eb then
+            if eb.HasFocus and eb:HasFocus() then return true end
+            -- in "IM" chat style the box is only shown while open
+            if imStyle and eb.IsShown and eb:IsShown() then return true end
+        end
     end
+    return false
+end
+
+-- Stay visible while you're typing or pointing at the chat.
+local function KeepVisible()
+    if EditBoxOpen() then return true end
     if MouseIsOver then
         for i = 1, NumWindows() do
             local f = _G["ChatFrame" .. i]
@@ -111,6 +124,7 @@ local function KeepVisible()
 end
 
 local ScheduleCheck
+local Watch
 
 local function Check()
     checkPending = false
@@ -121,6 +135,7 @@ local function Check()
         ScheduleCheck(2)
     elseif target ~= CONFIG.FADED_ALPHA then
         FadeTo(CONFIG.FADED_ALPHA, CONFIG.FADE_OUT_TIME)
+        Watch(true)
     end
 end
 
@@ -132,8 +147,27 @@ ScheduleCheck = function(delay)
     C_Timer.After(math.max(delay, 0.1), function() pcall(Check) end)
 end
 
-local function Wake()
+local watcher = CreateFrame("Frame")
+local Wake
+
+-- While the chat is faded, look for the input box opening a few times a second.
+Watch = function(on)
+    if on then
+        local acc = 0
+        watcher:SetScript("OnUpdate", function(_, elapsed)
+            acc = acc + elapsed
+            if acc < 0.15 then return end
+            acc = 0
+            if EditBoxOpen() then pcall(Wake) end
+        end)
+    else
+        watcher:SetScript("OnUpdate", nil)
+    end
+end
+
+Wake = function()
     lastActivity = GetTime()
+    Watch(false)
     if target ~= 1 or alpha ~= 1 then
         FadeTo(1, CONFIG.FADE_IN_TIME)
     end

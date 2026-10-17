@@ -1,4 +1,4 @@
-HideCrosshairs 0.2
+HideCrosshairs 0.3
 ==================
 Hides the red (enemy) and green (friendly) crosshair icons that the
 gamepad UI shows above the action bars on the bumpers (LB / RB). The
@@ -27,9 +27,11 @@ HOW IT WORKS
   ("Interface action failed because of an AddOn"); transparency is not,
   so it is safe mid-fight. If the game fades them back in, the addon
   sets them invisible again.
-  It finds them by looking inside the gamepad UI for frames and artwork
-  whose names mention "target" or "crosshair". Nothing outside the
-  gamepad UI (like your normal target frame) is touched.
+  It finds them by looking inside the gamepad ACTION BARS for frames and
+  artwork whose names mention "target" or "crosshair". Nothing outside the
+  action bars is touched: not your target frame, and not the aiming
+  crosshair in the middle of the screen. (0.2 also hid that aiming
+  crosshair by mistake; 0.3 fixes it.)
 
 MACRO (created for you)
   HC Debug   prints what was hidden and lists the artwork the gamepad UI

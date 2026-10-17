@@ -1,4 +1,4 @@
--- HideCrosshairs 0.2
+-- HideCrosshairs 0.3
 -- Hides the red (enemy) and green (friendly) target crosshairs that the
 -- gamepad UI shows above the action bars, on the bumpers (LB / RB). Your
 -- bumper bindings keep working; only the icons become invisible.
@@ -13,12 +13,20 @@
 --     an ART word (e.g. "crosshair", "target")
 -- The "HC Debug" macro (created for you) prints what it hid and what else
 -- it can see, so the exact pieces can be targeted by name if needed.
+--
+-- 0.3: only touches things INSIDE the gamepad action bars. 0.2 also caught
+-- the aiming crosshair in the middle of the screen, which lives elsewhere
+-- in the gamepad UI. "Reticle" is no longer a match word either.
 
 local CONFIG = {
     SCOPE = { "Gamepad", "GamePad" },
-    MATCH = { "Target", "Crosshair", "Reticle", "Bumper", "Shoulder" },
+    MATCH = { "Target", "Crosshair", "Bumper", "Shoulder" },
     SKIP  = { "Bind", "Label", "Text", "Frame$" },
-    ART   = { "crosshair", "reticle", "target", "bumper", "shoulder" },
+    ART   = { "crosshair", "target", "bumper", "shoulder" },
+    -- must sit inside a frame whose name contains one of these
+    BARS  = { "ActionBar" },
+    -- never touch frames/art whose name contains one of these
+    NEVER = { "Reticle", "reticle", "Cursor", "cursor", "Aim", "aim" },
     -- exact names to hide, if the debug output shows them (filled in later)
     NAMES = {},
 }
@@ -44,6 +52,19 @@ local function InGamepadUI(obj)
     local cur, depth = obj, 0
     while cur and depth < 10 do
         if has(SafeName(cur), CONFIG.SCOPE) then return true end
+        local ok, p = pcall(function() return cur:GetParent() end)
+        cur = ok and p or nil
+        depth = depth + 1
+    end
+    return false
+end
+
+local function InActionBars(obj)
+    local cur, depth = obj, 0
+    while cur and depth < 10 do
+        local n = SafeName(cur)
+        if has(n, CONFIG.NEVER) then return false end
+        if has(n, CONFIG.BARS) then return true end
         local ok, p = pcall(function() return cur:GetParent() end)
         cur = ok and p or nil
         depth = depth + 1
@@ -90,7 +111,10 @@ local function ScanNames()
             for _, n in ipairs(CONFIG.NAMES) do if n == name then exact = true end end
             if exact or (has(name, CONFIG.MATCH) and not has(name, CONFIG.SKIP)) then
                 local ok, t = pcall(function() return obj.GetObjectType and obj:GetObjectType() end)
-                if ok and t and IsUsable(obj) then pcall(Blank, obj, "name: " .. name) end
+                local okb, inBars = pcall(InActionBars, obj)
+                if ok and t and IsUsable(obj) and (exact or (okb and inBars)) then
+                    pcall(Blank, obj, "name: " .. name)
+                end
             end
         end
     end
@@ -118,10 +142,10 @@ end
 
 local function ScanArt()
     EachGamepadFrame(function(f)
-        if not f.GetRegions then return end
+        if not f.GetRegions or not InActionBars(f) then return end
         for _, r in ipairs({ f:GetRegions() }) do
             local atlas = AtlasOf(r)
-            if atlas and has(atlas, CONFIG.ART, true) and IsUsable(r) then
+            if atlas and has(atlas, CONFIG.ART, true) and not has(atlas, CONFIG.NEVER) and IsUsable(r) then
                 Blank(r, "art: " .. atlas .. "  in " .. Path(f))
             end
         end
