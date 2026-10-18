@@ -1,4 +1,4 @@
-HideCrosshairs 0.3
+HideCrosshairs 0.5
 ==================
 Hides the red (enemy) and green (friendly) crosshair icons that the
 gamepad UI shows above the action bars on the bumpers (LB / RB). The
@@ -22,16 +22,15 @@ IF IT SHOWS RED / "OUT OF DATE" AFTER A GAME PATCH
   number to match the new client (16001 for client 1.60.x).
 
 HOW IT WORKS
-  It makes the two icons fully transparent instead of hiding them.
-  Hiding parts of the action bars during combat is blocked by the game
-  ("Interface action failed because of an AddOn"); transparency is not,
-  so it is safe mid-fight. If the game fades them back in, the addon
-  sets them invisible again.
-  It finds them by looking inside the gamepad ACTION BARS for frames and
-  artwork whose names mention "target" or "crosshair". Nothing outside the
-  action bars is touched: not your target frame, and not the aiming
-  crosshair in the middle of the screen. (0.2 also hid that aiming
-  crosshair by mistake; 0.3 fixes it.)
+  It only fades the icon ARTWORK of the two crosshairs. It never changes
+  Blizzard's buttons or frames and never hooks Blizzard's code, and once
+  a second it puts the icons back to invisible if the game faded them in.
+  (0.3 changed the buttons themselves, which on the Steam Deck could get
+  the game's own bar code blocked with a "blocked from an action" warning.
+  0.4 fixes that. 0.4 also faded the menus the bumpers open; 0.5 only
+  fades the two icons themselves, never anything attached to them.)
+  It only looks inside the gamepad ACTION BARS, so your target frame and
+  the aiming crosshair in the middle of the screen are never touched.
 
 MACRO (created for you)
   HC Debug   prints what was hidden and lists the artwork the gamepad UI

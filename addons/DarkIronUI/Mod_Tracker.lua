@@ -1,0 +1,19 @@
+-- DarkTracker module: the quest objective tracker's headers and decorative art.
+local _, NS = ...
+NS.NewRecolor({
+    key = "tracker", label = "DarkIronUI_QuestTracker", slash = "/dot", macroPrefix = "DOT",
+    icon = "INV_Misc_Note_01",
+    roots = { "ObjectiveTrackerFrame", "QuestWatchFrame", "WatchFrame", "QuestObjectiveTracker",
+              "ScenarioObjectiveTracker", "CampaignQuestObjectiveTracker", "AchievementObjectiveTracker" },
+    depth = 6,
+    darkness = 0.55, bgDarkness = 0.45,
+    bgWords = { "background", "backdrop", "bg" },
+    fileTextures = false,    -- only named art: never quest icons or item buttons
+    -- quest markers (the round "..." / "?" buttons): their backgrounds go grey,
+    -- their yellow symbols stay (those are "icon" art or the button's Icon)
+    never = { "icon", "check", "glow", "flash", "highlight", "progressbar", "bar-fill", "statusbar",
+              "questitem", "item", "spark", "quest-campaign", "selected" },
+    neverNames = { "Icon", "Check", "Bar", "Highlight" },
+    respectTints = false,
+    events = { "QUEST_WATCH_LIST_CHANGED", "QUEST_LOG_UPDATE", "SUPER_TRACKING_CHANGED" },
+})

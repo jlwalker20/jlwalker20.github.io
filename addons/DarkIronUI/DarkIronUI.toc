@@ -1,0 +1,20 @@
+## Interface: 16001
+## Title: DarkIronUI
+## Notes: The full dark grey look in one addon: unit frames, gamepad and keyboard action bars, XP bar, bag bar, menu bar, buffs and debuffs, nameplates, minimap, quest tracker and tooltips.
+## Author: You
+## Version: 1.0
+## SavedVariables: DarkIronUIDB, DarkIronUI_UnitFramesDB, DarkIronUI_ActionBarsDB, DarkIronUI_KeyboardBarsDB
+
+Init.lua
+DarkCore.lua
+Mod_Minimap.lua
+Mod_Tracker.lua
+Mod_Tooltip.lua
+Mod_XPBar.lua
+Mod_Bags.lua
+Mod_MenuBar.lua
+Mod_Auras.lua
+Mod_Nameplates.lua
+UnitFrames.lua
+ActionBars.lua
+KeyboardBars.lua

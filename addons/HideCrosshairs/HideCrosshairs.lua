@@ -1,4 +1,4 @@
--- HideCrosshairs 0.3
+-- HideCrosshairs 0.5
 -- Hides the red (enemy) and green (friendly) target crosshairs that the
 -- gamepad UI shows above the action bars, on the bumpers (LB / RB). Your
 -- bumper bindings keep working; only the icons become invisible.
@@ -13,6 +13,17 @@
 --     an ART word (e.g. "crosshair", "target")
 -- The "HC Debug" macro (created for you) prints what it hid and what else
 -- it can see, so the exact pieces can be targeted by name if needed.
+--
+-- 0.5: narrower. Only artwork drawn by the matched piece itself (not
+-- anything attached to it, like the menu a bumper opens), and only artwork
+-- that is on screen at the moment it searches (menus are closed then).
+--
+-- 0.4: no longer touches Blizzard's frames or buttons at all, and no longer
+-- hooks any Blizzard function. 0.3 made the buttons themselves transparent
+-- and hooked their SetAlpha, which the gamepad bars also use when they
+-- fade; that could get Blizzard's own bar code blocked ("blocked from an
+-- action only available to the Blizzard UI"). 0.4 only fades the icon
+-- ARTWORK (textures) and re-checks it once a second instead of hooking.
 --
 -- 0.3: only touches things INSIDE the gamepad action bars. 0.2 also caught
 -- the aiming crosshair in the middle of the screen, which lives elsewhere
@@ -32,7 +43,6 @@ local CONFIG = {
 }
 
 local hidden = {}   -- object -> description
-local guard = false
 
 local function has(s, list, lower)
     if type(s) ~= "string" then return false end
@@ -83,19 +93,29 @@ local function Path(obj)
     return table.concat(parts, " > ")
 end
 
+local function IsTexture(obj)
+    local ok, t = pcall(function() return obj.GetObjectType and obj:GetObjectType() end)
+    return ok and (t == "Texture" or t == "MaskTexture")
+end
+
+-- Only ever fades artwork (textures). Never a frame or button.
 local function Blank(obj, why)
-    if hidden[obj] then
-        if obj:GetAlpha() ~= 0 then obj:SetAlpha(0) end
-        return
+    if not IsTexture(obj) then return end
+    if not hidden[obj] then
+        -- only adopt artwork that is on screen right now (menus are closed
+        -- when the search runs, so their artwork is left alone)
+        local okv, vis = pcall(function() return obj.IsVisible and obj:IsVisible() end)
+        if not (okv and vis) then return end
     end
-    hidden[obj] = why
-    obj:SetAlpha(0)
-    hooksecurefunc(obj, "SetAlpha", function(self, a)
-        if guard or a == 0 then return end
-        guard = true
-        pcall(self.SetAlpha, self, 0)
-        guard = false
-    end)
+    hidden[obj] = hidden[obj] or why
+    if obj:GetAlpha() ~= 0 then obj:SetAlpha(0) end
+end
+
+-- For a matched named frame: fade only the artwork it draws itself.
+-- (Not its children: the menu a bumper opens hangs off these.)
+local function BlankArtOf(frame, why)
+    if not (frame and frame.GetRegions) then return end
+    for _, r in ipairs({ frame:GetRegions() }) do pcall(Blank, r, why) end
 end
 
 local function IsUsable(obj)
@@ -113,14 +133,14 @@ local function ScanNames()
                 local ok, t = pcall(function() return obj.GetObjectType and obj:GetObjectType() end)
                 local okb, inBars = pcall(InActionBars, obj)
                 if ok and t and IsUsable(obj) and (exact or (okb and inBars)) then
-                    pcall(Blank, obj, "name: " .. name)
+                    pcall(BlankArtOf, obj, "art of " .. name)
                 end
             end
         end
     end
     for _, name in ipairs(CONFIG.NAMES) do
         local obj = _G[name]
-        if type(obj) == "table" and IsUsable(obj) then pcall(Blank, obj, "name: " .. name) end
+        if type(obj) == "table" and IsUsable(obj) then pcall(BlankArtOf, obj, "art of " .. name) end
     end
 end
 
@@ -209,5 +229,23 @@ events:RegisterEvent("PLAYER_REGEN_ENABLED")
 events:RegisterEvent("CVAR_UPDATE")
 events:SetScript("OnEvent", function(_, event)
     if event ~= "ADDON_LOADED" then TryMacro() end
-    C_Timer.After(0.5, Scan)
+    C_Timer.After(0.5, function()
+        -- full searches only outside combat; the re-check below covers combat
+        if not (InCombatLockdown and InCombatLockdown()) then Scan() end
+    end)
 end)
+
+-- Once a second, put back any icon the game has faded in again.
+-- (Reading and fading artwork only; nothing of Blizzard's is hooked.)
+local function Recheck()
+    for tex in pairs(hidden) do
+        local ok, a = pcall(tex.GetAlpha, tex)
+        if ok and a and a ~= 0 then pcall(tex.SetAlpha, tex, 0) end
+    end
+end
+if C_Timer.NewTicker then
+    C_Timer.NewTicker(1, Recheck)
+else
+    local acc = 0
+    events:SetScript("OnUpdate", function(_, e) acc = acc + e; if acc >= 1 then acc = 0; Recheck() end end)
+end
