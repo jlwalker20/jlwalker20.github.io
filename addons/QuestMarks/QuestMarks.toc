@@ -1,0 +1,8 @@
+## Interface: 16001
+## Title: QuestMarks
+## Notes: Puts a * after the nameplate name of units your active quests need (kills or quest-item drops).
+## Author: You
+## Version: 0.5
+## SavedVariables: QuestMarksDB
+
+QuestMarks.lua

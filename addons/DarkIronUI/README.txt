@@ -1,4 +1,4 @@
-DarkIronUI 1.6 - for World of Warcraft: Forever (client 1.60.1)
+DarkIronUI 1.13 - for World of Warcraft: Forever (client 1.60.1)
 =================================================================
 
 One addon that recolors the default Blizzard UI from gold/brown to a
@@ -14,10 +14,10 @@ WHAT IT COVERS
   Bag bar          Backpack and bag slot borders
   Menu bar         Character, spellbook, talents, etc. (grey frame,
                    color picture in the middle)
-  Buffs/debuffs    Plain frame art (debuff type colors kept)
-  Nameplates       Health and cast bar borders
+  Cast bars        Your cast bar and the target / focus cast bars
   Minimap          Border and round buttons (pictures stay in color)
-  Quest tracker    Header and quest-button backgrounds
+  Quest tracker    Header and quest-button backgrounds; yellow "..." on
+                   grey markers, the selected quest's marker stays yellow
   Tooltips         Borders (item-quality colors kept)
 
 INSTALL
@@ -35,8 +35,7 @@ TOGGLE / DEBUG (each part on its own; macros are created for you)
   /dxp  XP bar          DXP Toggle, DXP Debug
   /dbb  Bag bar         DBB Toggle, DBB Debug
   /dmn  Menu bar        DMN Toggle, DMN Debug
-  /dau  Buffs/debuffs   DAU Toggle, DAU Debug
-  /dnp  Nameplates      DNP Toggle, DNP Debug
+  /dcb  Cast bars       DCB Toggle, DCB Debug
   /dmm  Minimap         DMM Toggle, DMM Debug
   /dot  Quest tracker   DOT Toggle, DOT Debug
   /dtt  Tooltips        DTT Toggle, DTT Debug
@@ -53,9 +52,10 @@ TUNING (edit the files, then /reload)
 SAFETY
   Only the color of artwork is changed. No Blizzard functions are
   replaced, nothing secure is shown/hidden in combat, and searches run
-  out of combat (nameplates excepted: color only). Locked frames
-  (e.g. friendly nameplates in dungeons) keep Blizzard's look.
+  out of combat.
 
 KNOWN LIMITS
   The gamepad LT / RT / LT+RT tags beside the button clusters keep
   Blizzard's look.
+  Buffs/debuffs and nameplates keep Blizzard's look: the game guards
+  those frames, and recoloring them caused "blocked from an action" errors.

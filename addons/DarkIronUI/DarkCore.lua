@@ -141,6 +141,7 @@ NS.mods = NS.mods or {}
 --   ringOnly = { atlas words }  (one-piece buttons: grey ring, full-color middle),
 --   ringCenter = 0.72  (size of the colored middle, as a share of the button),
 --   atlasSwap = { ["lowercase atlas"] = "replacement atlas" }  (show one picture instead of another),
+--   skipAdditive = true  (leave additive-blend art alone: glows),
 --   combatScan = true  (also scan in combat: only for art on non-secure frames, e.g. nameplates),
 --   ringShape = "circle" or "square"  (shape of the colored middle),
 --   ringParents = { frame-name words }  (those buttons' face pictures get the ring treatment),
@@ -240,8 +241,41 @@ function NS.NewRecolor(spec)
     local swapped = {}   -- texture -> original atlas name
     local swapTargets = {}
     for _, to in pairs(spec.atlasSwap or {}) do swapTargets[to:lower()] = true end
+    -- swapUnlessSibling: leave Blizzard's picture when a piece next to it has this word
+    local function SiblingSays(tex, word)
+        if not word then return false end
+        -- look at pieces near the symbol: its own frame (and that frame's child
+        -- frames) plus the art directly on the frame above it. The marker's
+        -- background and its symbol can sit in different frames.
+        local okP, p = pcall(function() return tex:GetParent() end)
+        if not (okP and p) then return false end
+        local okG, g = pcall(function() return p:GetParent() end)
+        local frames, seenF = {}, {}
+        local function add(f) if f and not seenF[f] then seenF[f] = true; frames[#frames + 1] = f end end
+        add(p)
+        if okG and g and g ~= UIParent then add(g) end   -- its regions only, never other markers
+        local okK2, kids2 = pcall(function() return { p:GetChildren() } end)
+        if okK2 then for _, k in ipairs(kids2) do add(k) end end
+        for _, f in ipairs(frames) do
+            local okR, regs = pcall(function() return { f:GetRegions() } end)
+            if okR then
+                for _, r in ipairs(regs) do
+                    if r ~= tex and r.IsShown and r:IsShown() and has(AtlasOf(r), { word }) then return true end
+                end
+            end
+        end
+        return false
+    end
     local function SwapAtlas(tex)
         local a = AtlasOf(tex)
+        if a and swapped[tex] and SiblingSays(tex, spec.swapUnlessSibling) then
+            -- now on a selected marker: put Blizzard's picture back
+            if swapTargets[a:lower()] then pcall(tex.SetAtlas, tex, swapped[tex]) end
+            swapped[tex] = nil
+            return true
+        end
+        local candidate = a and (spec.atlasSwap[a:lower()] or swapTargets[a:lower()])
+        if candidate and SiblingSays(tex, spec.swapUnlessSibling) then return true end
         local to = a and spec.atlasSwap[a:lower()]
         if not to then
             -- already showing our replacement: still ours; anything else: Blizzard reused it
@@ -254,10 +288,46 @@ function NS.NewRecolor(spec)
         return true
     end
 
+    -- tintOnSibling = { words = {...}, sibling = "word", value = 0.15 }: symbols drawn
+    -- dark while a piece next to them has the sibling word (the selected marker)
+    local tinted, tintSeen = {}, {}   -- texture -> { r, g, b, a, desat } original; symbols looked at
+    local function TintSymbol(tex)
+        local ts = spec.tintOnSibling
+        if not ts then return false end
+        local a = AtlasOf(tex)
+        if not (a and has(a, ts.words)) then
+            if tinted[tex] then   -- Blizzard reused it for something else
+                local o = tinted[tex]
+                pcall(tex.SetVertexColor, tex, o[1], o[2], o[3], o[4]); pcall(tex.SetDesaturated, tex, o[5])
+                tinted[tex] = nil
+            end
+            return false
+        end
+        local on = Enabled() and SiblingSays(tex, ts.sibling)
+        if on then
+            if not tinted[tex] then
+                local r, g, b, al = tex:GetVertexColor()
+                if IsSecret(r) then return true end
+                tinted[tex] = { r or 1, g or 1, b or 1, al or 1, tex.IsDesaturated and tex:IsDesaturated() or false }
+            end
+            local v = ts.value or 0.15
+            if tex.SetDesaturated and not tex:IsDesaturated() then tex:SetDesaturated(true) end
+            local r = tex:GetVertexColor()
+            if not (r and Close(r, v)) then tex:SetVertexColor(v, v, v, tinted[tex][4]) end
+        elseif tinted[tex] then
+            local o = tinted[tex]
+            pcall(tex.SetVertexColor, tex, o[1], o[2], o[3], o[4]); pcall(tex.SetDesaturated, tex, o[5])
+            tinted[tex] = nil
+        end
+        tintSeen[tex] = true
+        return true
+    end
+
     local function Decide(e)
         local tex, parent = e.tex, e.parent
         if ours[tex] then return end
-        if spec.atlasSwap and SwapAtlas(tex) then return end
+        if spec.atlasSwap and SwapAtlas(tex) then pcall(TintSymbol, tex); return end
+        if spec.tintOnSibling and TintSymbol(tex) then return end
         -- a bar's own fill (XP, rep, health...) keeps its color
         if parent and parent.GetStatusBarTexture then
             local okB, fill = pcall(function() return parent:GetStatusBarTexture() end)
@@ -266,6 +336,10 @@ function NS.NewRecolor(spec)
         local atlas = AtlasOf(tex)
         local name = SafeName(tex)
         if has(atlas, spec.never) or has(name, spec.never) then return end
+        if spec.skipAdditive then   -- glows (threat, selection...) are drawn additively
+            local okB, mode = pcall(function() return tex:GetBlendMode() end)
+            if okB and mode == "ADD" then return end
+        end
         if has(atlas, spec.keep) or has(name, spec.keep) then return end   -- pictures that stay in color
         if (has(atlas, spec.ringOnly) or IsFaceOf(tex, parent, spec.ringParents))
             and not (has(atlas, spec.bgWords) or has(name, spec.bgWords)) then
@@ -295,9 +369,22 @@ function NS.NewRecolor(spec)
 
     local function Recheck()
         if not Enabled() then return end
-        for tex, t in pairs(touched) do pcall(Apply, tex, t.d) end
+        for tex, t in pairs(touched) do
+            -- Blizzard may reuse a piece for a different picture (e.g. a quest marker
+            -- turning into the "selected" one): give back pieces that are now off-limits
+            local a = AtlasOf(tex)
+            if a and (has(a, spec.never) or has(a, spec.keep)) then
+                local o = t.orig
+                pcall(tex.SetVertexColor, tex, o[1], o[2], o[3], o[4])
+                if tex.SetDesaturated then pcall(tex.SetDesaturated, tex, o[5]) end
+                touched[tex] = nil
+            else
+                pcall(Apply, tex, t.d)
+            end
+        end
         for tex, c in pairs(centers) do pcall(SyncCenter, tex, c) end
         for tex in pairs(swapped) do pcall(SwapAtlas, tex) end
+        for tex in pairs(tintSeen) do pcall(TintSymbol, tex) end
     end
 
     local function Restore()
@@ -317,6 +404,10 @@ function NS.NewRecolor(spec)
             end
         end
         wipe(swapped)
+        for tex, o in pairs(tinted) do
+            pcall(tex.SetVertexColor, tex, o[1], o[2], o[3], o[4]); pcall(tex.SetDesaturated, tex, o[5])
+        end
+        wipe(tinted); wipe(tintSeen)
     end
 
     -- timing probe (DarkIronUI's Perf.lua; a no-op without it)
@@ -340,12 +431,18 @@ function NS.NewRecolor(spec)
         for _, root in ipairs(spec.roots) do CollectRoot(Resolve(root), spec.depth or 5, list, seen, spec.skipFrames) end
         local rows = {}
         for _, e in ipairs(list) do
-            local id = AtlasOf(e.tex) or SafeName(e.tex) or ("file " .. tostring(e.tex.GetTexture and e.tex:GetTexture()))
+          pcall(function()   -- one unreadable piece must not stop the list
+            local okF, file = pcall(function() return e.tex:GetTexture() end)
+            if not okF or IsSecret(file) then file = "?" end
+            local id = AtlasOf(e.tex) or SafeName(e.tex) or ("file " .. tostring(file))
             if not shown[id] then
                 shown[id] = true
                 local owner = SafeName(e.parent) or "?"
-                rows[#rows + 1] = id .. "  [" .. (touched[e.tex] and "grey" or "left alone") .. "]  in " .. owner
+                local okB, mode = pcall(function() return e.tex:GetBlendMode() end)
+                local extra = (okB and mode and not IsSecret(mode) and mode ~= "BLEND") and (" (" .. tostring(mode) .. ")") or ""
+                rows[#rows + 1] = id .. extra .. "  [" .. (tinted[e.tex] and "darkened symbol" or touched[e.tex] and "grey" or "left alone") .. "]  in " .. owner
             end
+          end)
         end
         table.sort(rows)
         Say("art found (" .. #rows .. "):")
