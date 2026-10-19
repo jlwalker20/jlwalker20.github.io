@@ -1,0 +1,7 @@
+## Interface: 16001
+## Title: HideChatLegend
+## Notes: Hides the gamepad button legend (Send / Chat Channels / Tab Settings / Back) that appears while the chat input box is open.
+## Author: You
+## Version: 0.2
+
+HideChatLegend.lua

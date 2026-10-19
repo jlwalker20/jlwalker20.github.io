@@ -1,4 +1,4 @@
--- DarkIronUI_UnitFrames 1.0 (formerly FlatUnitFrames)
+-- DarkIronUI_UnitFrames 1.3 (formerly FlatUnitFrames)
 
 -- run once even if both DarkIronUI and DarkIronUI_UnitFrames are installed
 if _G.DarkIronUI_UnitFrames_Running then return end
@@ -68,6 +68,14 @@ _G.DarkIronUI_UnitFrames_Running = true
 --   UFF Toggle   turn the look on/off (off restores Blizzard's art exactly)
 --   UFF Debug    list the artwork it found and what it did with each piece
 --   UFF Elite Left / Right / Up / Down   nudge the elite border 2px (saved)
+
+
+-- timing probe (DarkIronUI's Perf.lua; a no-op without it)
+local function M(what, fn, ...)
+    local m = DarkIronUI_Measure
+    if m then return m("UnitFrames", what, fn, ...) end
+    return fn(...)
+end
 
 local CONFIG = {
     STYLE = "dark",       -- "dark" = recolor Blizzard's art, "flat" = flat redraw
@@ -660,8 +668,8 @@ restWatch:SetScript("OnUpdate", function(_, e)
     restAcc = restAcc + e
     if restAcc < 0.2 then return end
     restAcc = 0
-    pcall(UpdateRestGlow)
-    if LayerEliteHook then pcall(LayerEliteHook) end
+    pcall(M, "rest glow", UpdateRestGlow)
+    if LayerEliteHook then pcall(M, "rest layering", LayerEliteHook) end
 end)
 
 ---------------------------------------------------------------- PvP above level circle
@@ -1041,7 +1049,7 @@ events:RegisterEvent("PLAYER_TARGET_CHANGED")
 events:RegisterEvent("PLAYER_UPDATE_RESTING")
 events:RegisterEvent("PLAYER_FOCUS_CHANGED")
 local ADDON = ...
-local scanQueued = false
+local scanQueued, scanMissed = false, false
 events:SetScript("OnEvent", function(_, event, arg1)
     if event == "ADDON_LOADED" then
         if arg1 == ADDON then
@@ -1057,13 +1065,18 @@ events:SetScript("OnEvent", function(_, event, arg1)
     end
     if event == "PLAYER_ENTERING_WORLD" or event == "PLAYER_REGEN_ENABLED" then TryMacros() end
     if event == "PLAYER_ENTERING_WORLD" then scopeRoots = nil end
-    -- full searches only outside combat; the 1s re-check covers combat
+    if event == "CVAR_UPDATE" and not (type(arg1) == "string" and arg1:lower():find("gamepad", 1, true)) then return end
+    -- full searches only outside combat; the 1s re-check covers combat.
+    -- leaving combat: only rescan if a scan was skipped during the fight
+    if event == "PLAYER_REGEN_ENABLED" and not scanMissed then return end
     if scanQueued then return end
     scanQueued = true
-    C_Timer.After(0.5, function()
+    C_Timer.After(0.40, function()   -- staggered against the other DarkIronUI parts
         scanQueued = false
-        if not (InCombatLockdown and InCombatLockdown()) then pcall(Scan); pcall(UpdateElite) end
+        if InCombatLockdown and InCombatLockdown() then scanMissed = true; return end
+        scanMissed = false
+        pcall(M, "scan", Scan); pcall(M, "elite", UpdateElite)
     end)
 end)
 
-if C_Timer.NewTicker then C_Timer.NewTicker(1, Recheck) end
+if C_Timer.NewTicker then C_Timer.NewTicker(1, function() M("recheck", Recheck) end) end

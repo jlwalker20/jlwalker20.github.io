@@ -14,6 +14,8 @@ NS.NewRecolor({
     never = { "icon", "check", "glow", "flash", "highlight", "progressbar", "bar-fill", "statusbar",
               "questitem", "item", "spark", "quest-campaign", "selected" },
     neverNames = { "Icon", "Check", "Bar", "Highlight" },
+    -- Blizzard draws brown "..." on its yellow marker; on our grey marker use its yellow "..."
+    atlasSwap = { ["quest-in-progress-icon-brown"] = "Quest-In-Progress-Icon-yellow" },
     respectTints = false,
     events = { "QUEST_WATCH_LIST_CHANGED", "QUEST_LOG_UPDATE", "SUPER_TRACKING_CHANGED" },
 })

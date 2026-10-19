@@ -1,4 +1,6 @@
--- HideCrosshairs 0.5
+-- HideCrosshairs 0.7
+-- 0.6: searches only the gamepad UI (not every frame in the game) and once per
+--      burst of events, so leaving combat no longer causes a hitch
 -- Hides the red (enemy) and green (friendly) target crosshairs that the
 -- gamepad UI shows above the action bars, on the bumpers (LB / RB). Your
 -- bumper bindings keep working; only the icons become invisible.
@@ -124,9 +126,21 @@ local function IsUsable(obj)
 end
 
 -- 1. named frames
+-- the gamepad-named globals, collected once (going through every global in the
+-- game on each search was the expensive part)
+local gpNames
 local function ScanNames()
-    for name, obj in pairs(_G) do
-        if type(name) == "string" and type(obj) == "table" and has(name, CONFIG.SCOPE) then
+    if not gpNames then
+        gpNames = {}
+        for name, obj in pairs(_G) do
+            if type(name) == "string" and type(obj) == "table" and has(name, CONFIG.SCOPE) then
+                gpNames[#gpNames + 1] = name
+            end
+        end
+    end
+    for _, name in ipairs(gpNames) do
+        local obj = _G[name]
+        if type(obj) == "table" then
             local exact = false
             for _, n in ipairs(CONFIG.NAMES) do if n == name then exact = true end end
             if exact or (has(name, CONFIG.MATCH) and not has(name, CONFIG.SKIP)) then
@@ -150,14 +164,27 @@ local function AtlasOf(region)
     return ok and type(a) == "string" and a or nil
 end
 
+-- the gamepad UI's top-level frames, found once from UIParent's children, then
+-- walked (much cheaper than looking at every frame in the whole UI)
+local roots
 local function EachGamepadFrame(fn)
-    if not EnumerateFrames then return end
-    local f = EnumerateFrames()
-    while f do
+    if not roots then
+        roots = {}
+        local ok, kids = pcall(function() return { UIParent:GetChildren() } end)
+        for _, f in ipairs(ok and kids or {}) do
+            if has(SafeName(f), CONFIG.SCOPE) then roots[#roots + 1] = f end
+        end
+    end
+    local seen = {}
+    local function walk(f, d)
+        if not f or seen[f] or d > 12 then return end
+        seen[f] = true
         local okv, gp = pcall(InGamepadUI, f)
         if okv and gp then pcall(fn, f) end
-        f = EnumerateFrames(f)
+        local ok, kids = pcall(function() return { f:GetChildren() } end)
+        if ok then for _, c in ipairs(kids) do walk(c, d + 1) end end
     end
+    for _, f in ipairs(roots) do walk(f, 0) end
 end
 
 local function ScanArt()
@@ -227,10 +254,17 @@ events:RegisterEvent("PLAYER_ENTERING_WORLD")
 events:RegisterEvent("ADDON_LOADED")
 events:RegisterEvent("PLAYER_REGEN_ENABLED")
 events:RegisterEvent("CVAR_UPDATE")
-events:SetScript("OnEvent", function(_, event)
+local queued = false
+events:SetScript("OnEvent", function(_, event, arg1)
     if event ~= "ADDON_LOADED" then TryMacro() end
-    C_Timer.After(0.5, function()
-        -- full searches only outside combat; the re-check below covers combat
+    -- only gamepad settings matter; ignore every other setting change
+    if event == "CVAR_UPDATE" and not (type(arg1) == "string" and arg1:lower():find("gamepad", 1, true)) then return end
+    if event == "PLAYER_ENTERING_WORLD" or event == "CVAR_UPDATE" then roots = nil; gpNames = nil end
+    if queued then return end          -- one search per burst of events
+    queued = true
+    C_Timer.After(0.8, function()      -- a little after the DarkIronUI parts, not on the same frame
+        queued = false
+        -- searches only outside combat; the re-check below covers combat
         if not (InCombatLockdown and InCombatLockdown()) then Scan() end
     end)
 end)

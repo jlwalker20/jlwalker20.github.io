@@ -1,4 +1,4 @@
-HideCrosshairs 0.5
+HideCrosshairs 0.7
 ==================
 Hides the red (enemy) and green (friendly) crosshair icons that the
 gamepad UI shows above the action bars on the bumpers (LB / RB). The

@@ -1,4 +1,4 @@
--- DarkIronUI_KeyboardBars 1.0
+-- DarkIronUI_KeyboardBars 1.3
 -- The DarkIronUI gamepad action bar look (flat light-grey rings with a darker
 -- outline, darkened slots, full-color icons) for the regular mouse & keyboard
 -- action bars: main bar, the extra MultiBars, stance and pet bars. The
@@ -15,6 +15,14 @@ _G.DarkIronUI_KeyboardBars_Running = true
 -- Macros (created for you):
 --   DKB Toggle   turn the look on/off
 --   DKB Debug    list the artwork it found
+
+
+-- timing probe (DarkIronUI's Perf.lua; a no-op without it)
+local function M(what, fn, ...)
+    local m = DarkIronUI_Measure
+    if m then return m("KeyboardBars", what, fn, ...) end
+    return fn(...)
+end
 
 local CONFIG = {
     STYLE = "dark",      -- "dark" = Blizzard's own ring art greyed (crisp); "flat" = solid stencil copy (looks soft/glowy on these bars)
@@ -137,7 +145,7 @@ local function DarkenFrameArt(tex, darkness)
         touched[tex] = t
     end
     if darkness then t.d = darkness end
-    if CONFIG.DESATURATE and tex.SetDesaturated then tex:SetDesaturated(true) end
+    if CONFIG.DESATURATE and tex.SetDesaturated and not (tex.IsDesaturated and tex:IsDesaturated()) then tex:SetDesaturated(true) end
     local o, d = t.orig, t.d or CONFIG.DARKNESS
     local r, g, b = tex:GetVertexColor()
     if not (r and math.abs(r - o[1] * d) < 0.01 and math.abs(g - o[2] * d) < 0.01 and math.abs(b - o[3] * d) < 0.01) then
@@ -187,7 +195,8 @@ local function FlattenRing(tex, atlas)
         t = { kind = "flat", holder = holder, origAlpha = tex:GetAlpha() }
         touched[tex] = t
     end
-    t.holder:SetShown(tex:IsShown())         -- appear/disappear with Blizzard's piece
+    local want = tex:IsShown() and true or false   -- appear/disappear with Blizzard's piece
+    if t.holder:IsShown() ~= want then t.holder:SetShown(want) end
     if tex:GetAlpha() ~= 0 then tex:SetAlpha(0) end -- fade out the shaded original (art only)
 end
 
@@ -309,9 +318,8 @@ events:RegisterEvent("ADDON_LOADED")
 events:RegisterEvent("PLAYER_ENTERING_WORLD")
 events:RegisterEvent("PLAYER_REGEN_ENABLED")
 events:RegisterEvent("CVAR_UPDATE")
-events:RegisterEvent("ACTIONBAR_SLOT_CHANGED")
 local ADDON = ...
-local scanQueued = false
+local scanQueued, scanMissed = false, false
 events:SetScript("OnEvent", function(_, event, arg1)
     if event == "ADDON_LOADED" then
         if arg1 == ADDON then
@@ -321,15 +329,21 @@ events:SetScript("OnEvent", function(_, event, arg1)
         end
         return
     end
-    if event ~= "ACTIONBAR_SLOT_CHANGED" then TryMacros() end
+    TryMacros()
+    -- only gamepad/UI settings can change which bars exist; ignore every other setting change
+    if event == "CVAR_UPDATE" and not (type(arg1) == "string" and arg1:lower():find("gamepad", 1, true)) then return end
     if event == "PLAYER_ENTERING_WORLD" then roots = nil end
-    -- full searches only outside combat; the 1s re-check covers combat
+    -- full searches only outside combat; the 1s re-check covers combat.
+    -- leaving combat: only rescan if a scan was skipped during the fight
+    if event == "PLAYER_REGEN_ENABLED" and not scanMissed then return end
     if scanQueued then return end
     scanQueued = true
-    C_Timer.After(0.5, function()
+    C_Timer.After(0.50, function()   -- staggered against the other DarkIronUI parts
         scanQueued = false
-        if not (InCombatLockdown and InCombatLockdown()) then pcall(Scan) end
+        if InCombatLockdown and InCombatLockdown() then scanMissed = true; return end
+        scanMissed = false
+        pcall(M, "scan", Scan)
     end)
 end)
 
-if C_Timer.NewTicker then C_Timer.NewTicker(1, Recheck) end
+if C_Timer.NewTicker then C_Timer.NewTicker(1, function() M("recheck", Recheck) end) end

@@ -140,6 +140,7 @@ NS.mods = NS.mods or {}
 --   keepSheetPictures = true  (small image-sheet pieces are pictures, left in color),
 --   ringOnly = { atlas words }  (one-piece buttons: grey ring, full-color middle),
 --   ringCenter = 0.72  (size of the colored middle, as a share of the button),
+--   atlasSwap = { ["lowercase atlas"] = "replacement atlas" }  (show one picture instead of another),
 --   combatScan = true  (also scan in combat: only for art on non-secure frames, e.g. nameplates),
 --   ringShape = "circle" or "square"  (shape of the colored middle),
 --   ringParents = { frame-name words }  (those buttons' face pictures get the ring treatment),
@@ -234,9 +235,29 @@ function NS.NewRecolor(spec)
         SyncCenter(tex, c)
     end
 
+    -- atlasSwap: show one Blizzard picture in place of another (e.g. the yellow
+    -- quest dots instead of the brown ones meant for a yellow background)
+    local swapped = {}   -- texture -> original atlas name
+    local swapTargets = {}
+    for _, to in pairs(spec.atlasSwap or {}) do swapTargets[to:lower()] = true end
+    local function SwapAtlas(tex)
+        local a = AtlasOf(tex)
+        local to = a and spec.atlasSwap[a:lower()]
+        if not to then
+            -- already showing our replacement: still ours; anything else: Blizzard reused it
+            if a and swapTargets[a:lower()] and swapped[tex] then return true end
+            swapped[tex] = nil
+            return false
+        end
+        swapped[tex] = a
+        pcall(tex.SetAtlas, tex, to)
+        return true
+    end
+
     local function Decide(e)
         local tex, parent = e.tex, e.parent
         if ours[tex] then return end
+        if spec.atlasSwap and SwapAtlas(tex) then return end
         -- a bar's own fill (XP, rep, health...) keeps its color
         if parent and parent.GetStatusBarTexture then
             local okB, fill = pcall(function() return parent:GetStatusBarTexture() end)
@@ -276,6 +297,7 @@ function NS.NewRecolor(spec)
         if not Enabled() then return end
         for tex, t in pairs(touched) do pcall(Apply, tex, t.d) end
         for tex, c in pairs(centers) do pcall(SyncCenter, tex, c) end
+        for tex in pairs(swapped) do pcall(SwapAtlas, tex) end
     end
 
     local function Restore()
@@ -286,6 +308,22 @@ function NS.NewRecolor(spec)
         end
         wipe(touched)
         for _, c in pairs(centers) do c.copy:Hide() end
+        for tex, orig in pairs(swapped) do
+            local a = AtlasOf(tex)
+            if a and spec.atlasSwap then
+                for from, to in pairs(spec.atlasSwap) do
+                    if a:lower() == to:lower() and orig:lower() == from then pcall(tex.SetAtlas, tex, orig) end
+                end
+            end
+        end
+        wipe(swapped)
+    end
+
+    -- timing probe (DarkIronUI's Perf.lua; a no-op without it)
+    local function M(what, fn, ...)
+        local m = DarkIronUI_Measure
+        if m then return m(spec.label, what, fn, ...) end
+        return fn(...)
     end
 
     local function Say(m) print("|cff9999ff" .. spec.label .. ":|r " .. m) end
@@ -348,7 +386,10 @@ function NS.NewRecolor(spec)
     events:RegisterEvent("PLAYER_ENTERING_WORLD")
     events:RegisterEvent("PLAYER_REGEN_ENABLED")
     for _, ev in ipairs(spec.events or {}) do pcall(events.RegisterEvent, events, ev) end
-    local queued = false
+    local queued, missed = false, false
+    -- spread the modules' scans over several frames instead of all at once
+    NS.scanSlot = (NS.scanSlot or 0) + 1
+    local delay = 0.5 + 0.07 * NS.scanSlot
     events:SetScript("OnEvent", function(_, event, arg1)
         if event == "ADDON_LOADED" then
             if arg1 ~= ADDON or DB then return end
@@ -362,15 +403,22 @@ function NS.NewRecolor(spec)
         end
         if event == "PLAYER_ENTERING_WORLD" or event == "PLAYER_REGEN_ENABLED" then TryMacros() end
         if event:sub(1, 5) == "UNIT_" and spec.eventUnit and arg1 ~= spec.eventUnit then return end
+        -- leaving combat: only rescan if a scan was skipped during the fight
+        if event == "PLAYER_REGEN_ENABLED" and not missed then return end
         if queued then return end
         queued = true
-        C_Timer.After(0.5, function()
+        C_Timer.After(delay, function()
             queued = false
-            if spec.combatScan or not (InCombatLockdown and InCombatLockdown()) then pcall(Scan) end
+            if spec.combatScan or not (InCombatLockdown and InCombatLockdown()) then
+                missed = false
+                pcall(M, "scan", Scan)
+            else
+                missed = true
+            end
         end)
     end)
 
-    if C_Timer.NewTicker then C_Timer.NewTicker(1, Recheck) end
+    if C_Timer.NewTicker then C_Timer.NewTicker(1, function() M("recheck", Recheck) end) end
     -- colored middles follow their button's state every frame (pressed, disabled...)
     local follow = CreateFrame("Frame")
     follow:SetScript("OnUpdate", function()

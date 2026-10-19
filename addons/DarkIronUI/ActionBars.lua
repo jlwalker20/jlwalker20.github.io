@@ -1,4 +1,4 @@
--- DarkIronUI_ActionBars 1.0 (formerly GamepadDarkMode)
+-- DarkIronUI_ActionBars 1.3 (formerly GamepadDarkMode)
 
 -- run once even if both DarkIronUI and DarkIronUI_ActionBars are installed
 if _G.DarkIronUI_ActionBars_Running then return end
@@ -30,6 +30,14 @@ _G.DarkIronUI_ActionBars_Running = true
 -- Macros (created for you):
 --   GDM Toggle   turn the look on/off (off restores Blizzard's colors)
 --   GDM Debug    list the artwork it found, darkened or skipped
+
+
+-- timing probe (DarkIronUI's Perf.lua; a no-op without it)
+local function M(what, fn, ...)
+    local m = DarkIronUI_Measure
+    if m then return m("GamepadBars", what, fn, ...) end
+    return fn(...)
+end
 
 local CONFIG = {
     STYLE = "flat",      -- "flat" (solid, same shapes) or "dark" (dimmed original art)
@@ -96,6 +104,29 @@ local function InScope(frame)
     return gp and bar
 end
 
+-- the gamepad UI's top-level frames, found once from UIParent's children, then
+-- walked; far cheaper than looking at every frame in the whole UI
+local roots
+local function GamepadFrames()
+    if not roots then
+        roots = {}
+        local ok, kids = pcall(function() return { UIParent:GetChildren() } end)
+        for _, f in ipairs(ok and kids or {}) do
+            if has(SafeName(f), CONFIG.SCOPE) then roots[#roots + 1] = f end
+        end
+    end
+    local list, seen = {}, {}
+    local function walk(f, d)
+        if not f or seen[f] or d > 12 then return end
+        seen[f] = true
+        list[#list + 1] = f
+        local ok, kids = pcall(function() return { f:GetChildren() } end)
+        if ok then for _, c in ipairs(kids) do walk(c, d + 1) end end
+    end
+    for _, f in ipairs(roots) do walk(f, 0) end
+    return list
+end
+
 local function IsTexture(o)
     local ok, t = pcall(function() return o.GetObjectType and o:GetObjectType() end)
     return ok and t == "Texture"
@@ -124,7 +155,7 @@ local function DarkenFrameArt(tex, darkness)
         touched[tex] = t
     end
     if darkness then t.d = darkness end
-    if CONFIG.DESATURATE and tex.SetDesaturated then tex:SetDesaturated(true) end
+    if CONFIG.DESATURATE and tex.SetDesaturated and not (tex.IsDesaturated and tex:IsDesaturated()) then tex:SetDesaturated(true) end
     local o, d = t.orig, t.d or CONFIG.DARKNESS
     local r, g, b = tex:GetVertexColor()
     if not (r and math.abs(r - o[1] * d) < 0.01 and math.abs(g - o[2] * d) < 0.01 and math.abs(b - o[3] * d) < 0.01) then
@@ -174,7 +205,8 @@ local function FlattenRing(tex, atlas)
         t = { kind = "flat", holder = holder, origAlpha = tex:GetAlpha() }
         touched[tex] = t
     end
-    t.holder:SetShown(tex:IsShown())         -- appear/disappear with Blizzard's piece
+    local want = tex:IsShown() and true or false   -- appear/disappear with Blizzard's piece
+    if t.holder:IsShown() ~= want then t.holder:SetShown(want) end
     if tex:GetAlpha() ~= 0 then tex:SetAlpha(0) end -- fade out the shaded original (art only)
 end
 
@@ -196,9 +228,8 @@ end
 
 -- find artwork in the gamepad action bars and apply the look
 local function Scan()
-    if not (DB and DB.enabled) or not EnumerateFrames then return end
-    local f = EnumerateFrames()
-    while f do
+    if not (DB and DB.enabled) then return end
+    for _, f in ipairs(GamepadFrames()) do
         local okS, inScope = pcall(InScope, f)
         if okS and inScope and f.GetRegions then
             local icon = IconOf(f)
@@ -218,7 +249,6 @@ local function Scan()
                 end
             end
         end
-        f = EnumerateFrames(f)
     end
 end
 
@@ -243,8 +273,7 @@ local function Debug()
     end
     Say(("look %s (%s): %d pieces flat, %d darkened, %d icons cropped"):format(
         DB.enabled and "ON" or "off", CONFIG.STYLE, flat, dark, icons))
-    local f = EnumerateFrames and EnumerateFrames()
-    while f do
+    for _, f in ipairs(GamepadFrames()) do
         local okS, inScope = pcall(InScope, f)
         if okS and inScope and f.GetRegions then
             for _, r in ipairs({ f:GetRegions() }) do
@@ -257,7 +286,6 @@ local function Debug()
                 end
             end
         end
-        f = EnumerateFrames(f)
     end
     table.sort(skipped)
     Say("artwork in the gamepad action bars (" .. #skipped .. "):")
@@ -300,9 +328,8 @@ events:RegisterEvent("ADDON_LOADED")
 events:RegisterEvent("PLAYER_ENTERING_WORLD")
 events:RegisterEvent("PLAYER_REGEN_ENABLED")
 events:RegisterEvent("CVAR_UPDATE")
-events:RegisterEvent("ACTIONBAR_SLOT_CHANGED")
 local ADDON = ...
-local scanQueued = false
+local scanQueued, scanMissed = false, false
 events:SetScript("OnEvent", function(_, event, arg1)
     if event == "ADDON_LOADED" then
         if arg1 == ADDON then
@@ -312,14 +339,21 @@ events:SetScript("OnEvent", function(_, event, arg1)
         end
         return
     end
-    if event ~= "ACTIONBAR_SLOT_CHANGED" then TryMacros() end
-    -- full searches only outside combat; the 1s re-check covers combat
+    TryMacros()
+    -- only gamepad/UI settings can change which bars exist; ignore every other setting change
+    if event == "CVAR_UPDATE" and not (type(arg1) == "string" and arg1:lower():find("gamepad", 1, true)) then return end
+    if event == "PLAYER_ENTERING_WORLD" or event == "CVAR_UPDATE" then roots = nil end   -- gamepad UI may be (re)built
+    -- full searches only outside combat; the 1s re-check covers combat.
+    -- leaving combat: only rescan if a scan was skipped during the fight
+    if event == "PLAYER_REGEN_ENABLED" and not scanMissed then return end
     if scanQueued then return end
     scanQueued = true
-    C_Timer.After(0.5, function()
+    C_Timer.After(0.45, function()   -- staggered against the other DarkIronUI parts
         scanQueued = false
-        if not (InCombatLockdown and InCombatLockdown()) then pcall(Scan) end
+        if InCombatLockdown and InCombatLockdown() then scanMissed = true; return end
+        scanMissed = false
+        pcall(M, "scan", Scan)
     end)
 end)
 
-if C_Timer.NewTicker then C_Timer.NewTicker(1, Recheck) end
+if C_Timer.NewTicker then C_Timer.NewTicker(1, function() M("recheck", Recheck) end) end

@@ -32,6 +32,8 @@
   .all p { color: var(--muted); font-size: 0.85rem; line-height: 1.5; margin: 12px 0 0; }
   .all b { color: var(--text); }
   a.dl.big { display: block; font-size: 1rem; padding: 14px 16px; }
+  h3.sec { font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.08em; color: var(--accent); margin: 28px 0 2px; }
+  p.secsub { color: var(--muted); font-size: 0.85rem; margin: 0 0 12px; }
 </style>
 </head>
 <body>
@@ -46,8 +48,11 @@
 
 <div class="how"><b>Install:</b> make a folder named after the addon (for example <b>FlightTimer</b>), put its downloaded files in it, and place the folder in Interface/AddOns/ in your WoW Forever game folder. Then /reload or restart the game. Each README has the full steps.</div>
 
+<h3 class="sec">Look</h3>
+<p class="secsub">A full dark-grey reskin of the default UI.</p>
+
 <div class="addon">
-  <h2>DarkIronUI<span>v1.0</span></h2>
+  <h2>DarkIronUI<span>v1.6</span></h2>
   <p>Recolors the default UI from gold and brown to a consistent dark grey: unit frames, gamepad and keyboard action bars, XP bar, bag bar, menu bar, buffs and debuffs, nameplates, minimap, quest tracker and tooltips. Icons, bar colors and debuff-type colors stay as they are. Every part can be toggled on its own. Replaces FlatUnitFrames and GamepadDarkMode; delete those first.</p>
   <div class="links">
     <a class="dl" href="/addons/DarkIronUI.zip" download>DarkIronUI.zip</a>
@@ -55,6 +60,9 @@
     <a class="dl alt" href="/addons/DarkIronUI-parts.zip" download>Single parts (.zip)</a>
   </div>
 </div>
+
+<h3 class="sec">Quality of life</h3>
+<p class="secsub">Small fixes for chat, frames, travel and gathering.</p>
 
 <div class="addon">
   <h2>ShortChannels<span>v1.2</span></h2>
@@ -77,12 +85,22 @@
 </div>
 
 <div class="addon">
-  <h2>ShowTotemBar<span>v1.1</span></h2>
-  <p>Keeps the Shaman totem bar visible in gamepad mode so it shows up in Edit Mode.</p>
+  <h2>TargetClassColors<span>v0.1</span></h2>
+  <p>When you target another player, the target frame's health bar turns their class color. NPCs keep Blizzard's normal colors.</p>
   <div class="links">
-    <a class="dl" href="/addons/ShowTotemBar/ShowTotemBar.toc" download>.toc</a>
-    <a class="dl" href="/addons/ShowTotemBar/ShowTotemBar.lua" download>.lua</a>
-    <a class="dl alt" href="/addons/ShowTotemBar/README.txt">README</a>
+    <a class="dl" href="/addons/TargetClassColors/TargetClassColors.toc" download>.toc</a>
+    <a class="dl" href="/addons/TargetClassColors/TargetClassColors.lua" download>.lua</a>
+    <a class="dl alt" href="/addons/TargetClassColors/README.txt">README</a>
+  </div>
+</div>
+
+<div class="addon">
+  <h2>PartyLevels<span>v1.0</span></h2>
+  <p>Adds each member's level to their name on the raid-style party and raid frames, colored by difficulty like the target frame.</p>
+  <div class="links">
+    <a class="dl" href="/addons/PartyLevels/PartyLevels.toc" download>.toc</a>
+    <a class="dl" href="/addons/PartyLevels/PartyLevels.lua" download>.lua</a>
+    <a class="dl alt" href="/addons/PartyLevels/README.txt">README</a>
   </div>
 </div>
 
@@ -107,8 +125,21 @@
   </div>
 </div>
 
+<h3 class="sec">Gamepad</h3>
+<p class="secsub">For playing with a controller (Steam Deck, Xbox pad).</p>
+
 <div class="addon">
-  <h2>HideCrosshairs<span>v0.5</span></h2>
+  <h2>ShowTotemBar<span>v1.1</span></h2>
+  <p>Keeps the Shaman totem bar visible in gamepad mode so it shows up in Edit Mode.</p>
+  <div class="links">
+    <a class="dl" href="/addons/ShowTotemBar/ShowTotemBar.toc" download>.toc</a>
+    <a class="dl" href="/addons/ShowTotemBar/ShowTotemBar.lua" download>.lua</a>
+    <a class="dl alt" href="/addons/ShowTotemBar/README.txt">README</a>
+  </div>
+</div>
+
+<div class="addon">
+  <h2>HideCrosshairs<span>v0.7</span></h2>
   <p>Hides the red and green "Target Modifier" crosshair icons above the gamepad action bars. Your bumper bindings still work.</p>
   <div class="links">
     <a class="dl" href="/addons/HideCrosshairs/HideCrosshairs.toc" download>.toc</a>
@@ -118,22 +149,12 @@
 </div>
 
 <div class="addon">
-  <h2>PartyLevels<span>v1.0</span></h2>
-  <p>Adds each member's level to their name on the raid-style party and raid frames, colored by difficulty like the target frame.</p>
+  <h2>HideChatLegend<span>v0.2</span></h2>
+  <p>Hides the gamepad button legend (Send / Chat Channels / Tab Settings / Back) that pops up under the chat box while you type. The buttons still work the same.</p>
   <div class="links">
-    <a class="dl" href="/addons/PartyLevels/PartyLevels.toc" download>.toc</a>
-    <a class="dl" href="/addons/PartyLevels/PartyLevels.lua" download>.lua</a>
-    <a class="dl alt" href="/addons/PartyLevels/README.txt">README</a>
-  </div>
-</div>
-
-<div class="addon">
-  <h2>TargetClassColors<span>v0.1</span></h2>
-  <p>When you target another player, the target frame's health bar turns their class color. NPCs keep Blizzard's normal colors.</p>
-  <div class="links">
-    <a class="dl" href="/addons/TargetClassColors/TargetClassColors.toc" download>.toc</a>
-    <a class="dl" href="/addons/TargetClassColors/TargetClassColors.lua" download>.lua</a>
-    <a class="dl alt" href="/addons/TargetClassColors/README.txt">README</a>
+    <a class="dl" href="/addons/HideChatLegend/HideChatLegend.toc" download>.toc</a>
+    <a class="dl" href="/addons/HideChatLegend/HideChatLegend.lua" download>.lua</a>
+    <a class="dl alt" href="/addons/HideChatLegend/README.txt">README</a>
   </div>
 </div>
 
