@@ -1,4 +1,4 @@
-QuestMarks 0.5
+QuestMarks 0.6
 ==============
 Puts a small yellow "*" just after a nameplate's name when that unit is part
 of one of your active quests: a mob you have to kill, or a mob that drops an
@@ -12,9 +12,13 @@ HOW TO INSTALL
   4. Start the game, or /reload (in gamepad mode use a macro).
 
 HOW IT WORKS
-  It tries several ways to tell, in order: the game's own quest check for the
-  unit, the quest lines in the unit's tooltip, and the kill objectives in your
-  quest log (matched by the mob's name). The "*" is its own label next to
+  It checks, in order: the quest progress in the unit's tooltip, the kill
+  objectives in your quest log (matched by the mob's name), and finally the
+  game's own "belongs to one of your quests" check. Progress comes first, so
+  once you've finished a mob's part of a quest (e.g. 4/4 slain) its mark goes
+  away even while the quest itself is still open.
+  Known limit: for mobs that only drop a quest item, the mark may stay until
+  the quest is turned in if the game shows no progress in their tooltip. The "*" is its own label next to
   the name: Blizzard's name text is never changed and nothing is hooked.
   If the game hides a unit's data from addons (e.g. in combat), that plate
   simply gets no mark.

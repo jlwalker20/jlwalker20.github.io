@@ -1,4 +1,6 @@
--- QuestMarks 0.5
+-- QuestMarks 0.6
+-- 0.6: follows objective progress: once you have finished a mob's part of a
+--      quest (e.g. 4/4 slain), its mark goes away
 -- 0.5: no chat message at login (it was only there for testing)
 -- 0.4: says when it has loaded; debug reports any failure instead of staying silent
 -- 0.3: four ways of asking (game check, tooltip data, tooltip text, kill
@@ -44,14 +46,18 @@ local function ByTooltipData(unit)
     if not (f and T) then return nil end
     local ok, data = pcall(f, unit)
     if not ok or type(data) ~= "table" or IsSecret(data) or type(data.lines) ~= "table" then return nil end
+    local sawObjective = false
     for _, line in ipairs(data.lines) do
         local t = type(line) == "table" and line.type
-        if t and not IsSecret(t) and (t == T.QuestObjective or t == T.QuestTitle) then
+        if t and not IsSecret(t) and t == T.QuestObjective then
             local done = line.completed
-            if IsSecret(done) or done ~= true then return true end
+            if IsSecret(done) then return nil end
+            sawObjective = true
+            if done ~= true then return true end      -- something still needed
         end
     end
-    return false
+    if sawObjective then return false end             -- all of its objectives are done
+    return nil                                         -- no objective lines: can't tell
 end
 
 -- 3) read a hidden copy of the unit's tooltip: quest lines look like "Tiger Fur: 1/4"
@@ -68,30 +74,36 @@ local function ByTooltipText(unit)
         scanTip:SetUnit(unit)
     end)
     if not ok then return nil end
-    local found = false
+    local result = nil   -- nil = no progress lines in the tooltip
     for i = 2, math.min(scanTip:NumLines() or 0, 20) do
         local fs = _G["QuestMarksScanTipTextLeft" .. i]
         local okT, txt = pcall(function() return fs and fs:GetText() end)
         if okT and type(txt) == "string" and not IsSecret(txt) then
-            local have, need = txt:match("(%d+)%s*/%s*(%d+)%s*$")
-            if have and tonumber(have) < tonumber(need) then found = true; break end
+            local have, need = txt:match("(%d+)%s*/%s*(%d+)")
+            if have then
+                if tonumber(have) < tonumber(need) then result = true; break end
+                result = false                       -- a finished line like "4/4"
+            end
         end
     end
     pcall(scanTip.Hide, scanTip)
-    return found
+    return result
 end
 
 -- 4) kill objectives in your quest log name the mob: "Bristleback Quilboar slain: 0/8"
-local killNames = {}
+local killNames = {}   -- mob name -> true (still needed) / false (objective finished)
 local function ReadQuestLog()
     wipe(killNames)
     local function add(text, finished)
-        if type(text) ~= "string" or IsSecret(text) or finished then return end
+        if type(text) ~= "string" or IsSecret(text) then return end
+        -- "Razormane Scout slain: 2/4" or "2/4 Razormane Scout slain"
         local name, have, need = text:match("^(.-)%s*:%s*(%d+)%s*/%s*(%d+)")
-        if name and tonumber(have) < tonumber(need) then
-            name = name:gsub("%s+[Ss]lain$", ""):gsub("%s+[Kk]illed$", "")
-            killNames[name] = true
-        end
+        if not name then have, need, name = text:match("^%s*(%d+)%s*/%s*(%d+)%s+(.-)%s*$") end
+        if not name then return end
+        name = name:gsub("%s+[Ss]lain$", ""):gsub("%s+[Kk]illed$", "")
+        local open = not finished and tonumber(have) < tonumber(need)
+        if open then killNames[name] = true
+        elseif killNames[name] == nil then killNames[name] = false end
     end
     pcall(function()
         if C_QuestLog and C_QuestLog.GetNumQuestLogEntries and C_QuestLog.GetInfo and C_QuestLog.GetQuestObjectives then
@@ -116,18 +128,21 @@ end
 local function ByKillName(unit)
     local ok, name = pcall(UnitName, unit)
     if not ok or type(name) ~= "string" or IsSecret(name) then return nil end
-    return killNames[name] == true
+    return killNames[name]    -- true, false (finished) or nil (not a kill target)
 end
 
+-- The ways that know about progress go first; the first definite yes/no wins.
+-- The plain quest check only says "this mob belongs to a quest you have", not
+-- whether you still need it, so it's the last resort.
 local METHODS = {
-    { "quest check", ByQuestCheck }, { "tooltip data", ByTooltipData },
-    { "tooltip text", ByTooltipText }, { "kill objective", ByKillName },
+    { "tooltip data", ByTooltipData }, { "tooltip text", ByTooltipText },
+    { "kill objective", ByKillName }, { "quest check", ByQuestCheck },
 }
 
 local function CheckUnit(unit)
     for _, m in ipairs(METHODS) do
         local ok, v = pcall(m[2], unit)    -- one way failing never stops the others
-        if ok and v == true then return true end
+        if ok and v ~= nil then return v == true end
     end
     return false
 end
@@ -211,7 +226,7 @@ local function Debug()
     local say = function(m) print("|cff9999ffQuestMarks:|r " .. m) end
     ReadQuestLog()
     local names = {}
-    for n in pairs(killNames) do names[#names + 1] = n end
+    for n, open in pairs(killNames) do names[#names + 1] = n .. (open and "" or " (done)") end
     say("kill objectives in your log: " .. (#names > 0 and table.concat(names, ", ") or "none"))
     local plates = (C_NamePlate and C_NamePlate.GetNamePlates and C_NamePlate.GetNamePlates()) or {}
     if #plates == 0 then say("no nameplates on screen") end
@@ -239,7 +254,7 @@ SLASH_QUESTMARKS1 = "/qm"
 SLASH_QUESTMARKS2 = "/questmarks"
 SlashCmdList["QUESTMARKS"] = function(msg)
     if (msg or ""):lower():find("debug") then
-        print("|cff9999ffQuestMarks:|r debug (version 0.5)")
+        print("|cff9999ffQuestMarks:|r debug (version 0.6)")
         local ok, err = pcall(Debug)
         if not ok then print("|cff9999ffQuestMarks:|r debug stopped: " .. tostring(err)) end
         return
