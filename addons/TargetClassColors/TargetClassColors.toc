@@ -2,6 +2,6 @@
 ## Title: TargetClassColors
 ## Notes: Colors the target frame's health bar (and optionally name) by class when your target is a player.
 ## Author: You
-## Version: 0.1
+## Version: 0.3
 
 TargetClassColors.lua

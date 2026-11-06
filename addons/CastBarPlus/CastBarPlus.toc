@@ -1,0 +1,7 @@
+## Interface: 16001
+## Title: CastBarPlus
+## Notes: Taller player cast bar with the spell name inside the bar and the cast timer on its right edge.
+## Author: You
+## Version: 0.8
+
+CastBarPlus.lua

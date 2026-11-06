@@ -1,4 +1,4 @@
-TargetClassColors 0.1
+TargetClassColors 0.3
 =====================
 When your target (or focus) is another player, the health bar on the
 target frame turns their class color: shaman blue, warrior tan, rogue
@@ -8,9 +8,9 @@ HOW TO INSTALL
   1. Download the .toc and .lua files from walkerwagoner.com/addons
      (or use "Download all addons" there).
   2. Make a folder named exactly "TargetClassColors" and put both files in it.
-  3. Put that folder in your WoW Forever game folder under
+  3. Put that folder in your WoW Forever game folder (_forever_) under
      Interface/AddOns/ (so the .toc ends up at
-     Interface/AddOns/TargetClassColors/TargetClassColors.toc).
+     _forever_/Interface/AddOns/TargetClassColors/TargetClassColors.toc).
   4. Start the game, or /reload if it is already running (in gamepad mode
      use a macro that runs /reload).
 
@@ -23,6 +23,9 @@ SETTINGS
   Top of TargetClassColors.lua:
     COLOR_HEALTH   true/false: class-color the health bar
     COLOR_NAME     true/false: also class-color the name text (off by default)
+    LIGHTEN        0-1: mixes the class color toward white (default 0.15)
+    GLOW           0-1: a bright layer of the class color over the filled
+                   part of the bar (default 0.35; 0 turns it off)
 
 HOW IT WORKS
   It only changes the bar's color, and puts Blizzard's color back when you
@@ -33,4 +36,4 @@ COMMANDS
   None. No macros, nothing in chat.
 
 NOTES
-  - Beta: built for the Forever beta, client 1.60.1.
+  - Built for WoW: Forever, client 1.60.1 (live build 70790).

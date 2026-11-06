@@ -8,9 +8,9 @@ on screen.
 HOW TO INSTALL
   1. Download the .toc and .lua files from walkerwagoner.com/addons.
   2. Make a folder named exactly "ShowTotemBar" and put both files in it.
-  3. Put that folder in your WoW Forever game folder under
+  3. Put that folder in your WoW Forever game folder (_forever_) under
      Interface/AddOns/ (so the .toc ends up at
-     Interface/AddOns/ShowTotemBar/ShowTotemBar.toc).
+     _forever_/Interface/AddOns/ShowTotemBar/ShowTotemBar.toc).
   4. Start the game, or type /reload if it is already running (in gamepad
      mode use a macro that runs /reload, see below). Check the AddOns list
      on the character screen: it should be enabled and not red.
@@ -18,7 +18,7 @@ HOW TO INSTALL
 IF IT SHOWS RED / "OUT OF DATE" AFTER A GAME PATCH
   Tick "Load out of date AddOns" on the AddOns screen, or open
   ShowTotemBar.toc in a text editor and change the "## Interface:" number to
-  match the new client build (it is 16001 for client 1.60.1, build 70170).
+  match the new client build (it is 16001 for client 1.60.1).
 
 USING IT
   1. Enable the addon and enter the game (or /reload).
@@ -38,4 +38,4 @@ NOTES
     game's protected action bars, and the game blocks addons from showing
     them mid-fight ("Interface action failed because of an AddOn"). Version
     1.0 did that; 1.1 waits until combat ends instead.
-  - Tested on the Forever beta, client 1.60.1 (70170), on a Shaman.
+  - Built for WoW: Forever, client 1.60.1 (live build 70790); tested on a Shaman.

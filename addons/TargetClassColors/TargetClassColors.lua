@@ -1,4 +1,6 @@
--- TargetClassColors 0.1
+-- TargetClassColors 0.3
+-- 0.2: brighter class colors (LIGHTEN and GLOW settings below)
+-- 0.3: the bright layer stays inside the bar (same box and shape as the fill)
 -- When your target (or focus) is a player, their health bar on the target
 -- frame turns their class color. NPCs keep Blizzard's normal colors.
 --
@@ -11,6 +13,11 @@ local CONFIG = {
     COLOR_HEALTH = true,   -- class-color the health bar
     COLOR_NAME = false,    -- also class-color the name text
     UNITS = { "target", "focus" },
+    -- brightness: the bar art is greyed before the class color goes on, which
+    -- makes it look dim. LIGHTEN mixes the color toward white (0-1) and GLOW
+    -- adds a bright layer of the same color over the filled part (0-1).
+    LIGHTEN = 0.15,
+    GLOW = 0.35,
 }
 
 local FRAME_OF = { target = "TargetFrame", focus = "FocusFrame" }
@@ -58,7 +65,44 @@ local colored = {}  -- object -> true while it shows a class color
 
 local function Close(a, b) return a and b and math.abs(a - b) < 0.01 end
 
+-- our own bright layer over the bar's filled part (made once, out of combat)
+local glows = {}
+local function GlowFor(bar)
+    if glows[bar] then return glows[bar] end
+    if (InCombatLockdown and InCombatLockdown()) or CONFIG.GLOW <= 0 then return nil end
+    local fill = bar.GetStatusBarTexture and bar:GetStatusBarTexture()
+    if not fill then return nil end
+    local holder = CreateFrame("Frame", nil, bar)        -- ours; follows the bar
+    holder:SetAllPoints(bar)
+    holder:EnableMouse(false)
+    local t = holder:CreateTexture(nil, "ARTWORK")
+    -- inside the bar's own box, ending where the health fill ends
+    t:SetPoint("TOPLEFT", bar, "TOPLEFT")
+    t:SetPoint("BOTTOMLEFT", bar, "BOTTOMLEFT")
+    t:SetPoint("RIGHT", fill, "RIGHT")
+    -- and cut to the same shape as the fill (the bar's rounded/clipped ends)
+    if fill.GetNumMaskTextures and t.AddMaskTexture then
+        for i = 1, (fill:GetNumMaskTextures() or 0) do
+            local m = fill:GetMaskTexture(i)
+            if m then pcall(t.AddMaskTexture, t, m) end
+        end
+    end
+    t:SetColorTexture(1, 1, 1, 1)
+    t:SetBlendMode("ADD")
+    t:Hide()
+    glows[bar] = t
+    return t
+end
+
+local function Lighten(v) return v + (1 - v) * CONFIG.LIGHTEN end
+
 local function PaintBar(bar, r, g, b)
+    r, g, b = Lighten(r), Lighten(g), Lighten(b)
+    local glow = GlowFor(bar)
+    if glow then
+        glow:SetVertexColor(r, g, b, CONFIG.GLOW)
+        glow:Show()
+    end
     if not original[bar] then original[bar] = { bar:GetStatusBarColor() } end
     if bar.SetStatusBarDesaturated then pcall(bar.SetStatusBarDesaturated, bar, true) end
     local cr, cg, cb = bar:GetStatusBarColor()
@@ -67,6 +111,7 @@ local function PaintBar(bar, r, g, b)
 end
 
 local function RestoreBar(bar)
+    if glows[bar] then glows[bar]:Hide() end
     if not colored[bar] then return end
     colored[bar] = nil
     if bar.SetStatusBarDesaturated then pcall(bar.SetStatusBarDesaturated, bar, false) end
@@ -127,7 +172,13 @@ events:RegisterEvent("PLAYER_ENTERING_WORLD")
 events:RegisterEvent("PLAYER_TARGET_CHANGED")
 events:RegisterEvent("PLAYER_FOCUS_CHANGED")
 events:RegisterEvent("UNIT_FACTION")
-events:SetScript("OnEvent", function()
+events:SetScript("OnEvent", function(_, event)
+    if event == "PLAYER_ENTERING_WORLD" then
+        for _, unit in ipairs(CONFIG.UNITS) do
+            local bar = HealthBar(unit)
+            if bar then pcall(GlowFor, bar) end
+        end
+    end
     -- one frame later, after Blizzard has drawn the new target
     C_Timer.After(0, function() pcall(Update) end)
 end)

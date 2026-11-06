@@ -9,9 +9,9 @@ HOW TO INSTALL
   1. Download the .toc and .lua files from walkerwagoner.com/addons
      (or use "Download all addons" there).
   2. Make a folder named exactly "HideCrosshairs" and put both files in it.
-  3. Put that folder in your WoW Forever game folder under
+  3. Put that folder in your WoW Forever game folder (_forever_) under
      Interface/AddOns/ (so the .toc ends up at
-     Interface/AddOns/HideCrosshairs/HideCrosshairs.toc).
+     _forever_/Interface/AddOns/HideCrosshairs/HideCrosshairs.toc).
   4. Start the game, or /reload if it is already running (in gamepad mode
      use a macro that runs /reload). Check the AddOns list on the
      character screen: it should be enabled and not red.
@@ -37,4 +37,4 @@ MACRO (created for you)
              uses. Only needed if a game patch brings the icons back.
 
 NOTES
-  - Tested on the Forever beta, client 1.60.1, in gamepad mode.
+  - Built for WoW: Forever, client 1.60.1 (live build 70790); tested in gamepad mode.

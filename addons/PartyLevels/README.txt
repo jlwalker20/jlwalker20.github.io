@@ -15,9 +15,9 @@ HOW TO INSTALL
   1. Download the .toc and .lua files from walkerwagoner.com/addons
      (or use "Download all addons" there).
   2. Make a folder named exactly "PartyLevels" and put both files in it.
-  3. Put that folder in your WoW Forever game folder under
+  3. Put that folder in your WoW Forever game folder (_forever_) under
      Interface/AddOns/ (so the .toc ends up at
-     Interface/AddOns/PartyLevels/PartyLevels.toc).
+     _forever_/Interface/AddOns/PartyLevels/PartyLevels.toc).
   4. Start the game, or /reload if it is already running (in gamepad mode
      use a macro that runs /reload). Check the AddOns list on the
      character screen: it should be enabled and not red.
@@ -43,4 +43,4 @@ COMMANDS
   None. No macros, nothing in chat.
 
 NOTES
-  - Tested on the Forever beta, client 1.60.1.
+  - Built for WoW: Forever, client 1.60.1 (live build 70790).

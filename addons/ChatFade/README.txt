@@ -12,9 +12,9 @@ The combat log tab is ignored, so fight spam does not keep chat awake.
 HOW TO INSTALL
   1. Download the .toc and .lua files from walkerwagoner.com/addons.
   2. Make a folder named exactly "ChatFade" and put both files in it.
-  3. Put that folder in your WoW Forever game folder under
+  3. Put that folder in your WoW Forever game folder (_forever_) under
      Interface/AddOns/ (so the .toc ends up at
-     Interface/AddOns/ChatFade/ChatFade.toc).
+     _forever_/Interface/AddOns/ChatFade/ChatFade.toc).
   4. Start the game, or type /reload if it is already running (in gamepad
      mode use a macro that runs /reload, see below). Check the AddOns list
      on the character screen: it should be enabled and not red.
@@ -22,7 +22,7 @@ HOW TO INSTALL
 IF IT SHOWS RED / "OUT OF DATE" AFTER A GAME PATCH
   Tick "Load out of date AddOns" on the AddOns screen, or open
   ChatFade.toc in a text editor and change the "## Interface:" number to
-  match the new client build (it is 16001 for client 1.60.1, build 70170).
+  match the new client build (it is 16001 for client 1.60.1).
 
 SETTINGS
   Open ChatFade.lua in a text editor. The CONFIG block at the top has:
@@ -37,9 +37,9 @@ COMMANDS
 
 NOTES
   - It never hooks or changes the chat input box. That is on purpose:
-    opening the chat box in gamepad mode can freeze the Forever beta
-    client (a Blizzard bug). To notice the box opening it only checks
+    opening the chat box in gamepad mode can freeze the game (a Blizzard bug
+    seen in the beta). To notice the box opening it only checks
     whether it is open, a few times a second, and only while the chat is
     faded.
   - Works alongside ShortChannels.
-  - Tested on the Forever beta, client 1.60.1 (70170).
+  - Built for WoW: Forever, client 1.60.1 (live build 70790).

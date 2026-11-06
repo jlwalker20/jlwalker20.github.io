@@ -7,8 +7,8 @@ item a quest still needs. The mark goes away once the quest no longer needs it.
 HOW TO INSTALL
   1. Download the .toc and .lua files from walkerwagoner.com/addons.
   2. Make a folder named exactly "QuestMarks" and put both files in it.
-  3. Put that folder in Interface/AddOns/ (so the .toc ends up at
-     Interface/AddOns/QuestMarks/QuestMarks.toc).
+  3. Put that folder in _forever_/Interface/AddOns/ (so the .toc ends up at
+     _forever_/Interface/AddOns/QuestMarks/QuestMarks.toc).
   4. Start the game, or /reload (in gamepad mode use a macro).
 
 HOW IT WORKS
@@ -28,4 +28,4 @@ COMMANDS
   "QM Debug" shows what the game reports for each plate on screen.
 
 NOTES
-  - Beta: built for the Forever beta, client 1.60.1.
+  - Built for WoW: Forever, client 1.60.1 (live build 70790).

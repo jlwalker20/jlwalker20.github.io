@@ -22,9 +22,9 @@ HOW IT KNOWS THE TIME
 HOW TO INSTALL
   1. Download the .toc and .lua files from walkerwagoner.com/addons.
   2. Make a folder named exactly "FlightTimer" and put both files in it.
-  3. Put that folder in your WoW Forever game folder under
+  3. Put that folder in your WoW Forever game folder (_forever_) under
      Interface/AddOns/ (so the .toc ends up at
-     Interface/AddOns/FlightTimer/FlightTimer.toc).
+     _forever_/Interface/AddOns/FlightTimer/FlightTimer.toc).
   4. Start the game, or type /reload if it is already running (in gamepad
      mode use a macro that runs /reload, see below). Check the AddOns list
      on the character screen: it should be enabled and not red.
@@ -32,7 +32,7 @@ HOW TO INSTALL
 IF IT SHOWS RED / "OUT OF DATE" AFTER A GAME PATCH
   Tick "Load out of date AddOns" on the AddOns screen, or open
   FlightTimer.toc in a text editor and change the "## Interface:" number to
-  match the new client build (it is 16001 for client 1.60.1, build 70170).
+  match the new client build (it is 16001 for client 1.60.1).
 
 MACROS (created for you)
   Typing in chat can freeze the game in gamepad mode (a Blizzard bug), so
@@ -72,4 +72,4 @@ TYPED COMMANDS (keyboard and mouse only)
 
 NOTES
   - Saved data lives in WTF/Account/<account>/SavedVariables/FlightTimer.lua
-  - Tested on the Forever beta, client 1.60.1 (70170).
+  - Built for WoW: Forever, client 1.60.1 (live build 70790).

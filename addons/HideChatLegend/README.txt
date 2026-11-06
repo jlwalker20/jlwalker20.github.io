@@ -9,9 +9,9 @@ HOW TO INSTALL
   1. Download the .toc and .lua files from walkerwagoner.com/addons
      (or use "Download all addons" there).
   2. Make a folder named exactly "HideChatLegend" and put both files in it.
-  3. Put that folder in your WoW Forever game folder under
+  3. Put that folder in your WoW Forever game folder (_forever_) under
      Interface/AddOns/ (so the .toc ends up at
-     Interface/AddOns/HideChatLegend/HideChatLegend.toc).
+     _forever_/Interface/AddOns/HideChatLegend/HideChatLegend.toc).
   4. Start the game, or /reload (in gamepad mode use a macro that runs /reload).
 
 HOW IT WORKS
@@ -26,4 +26,4 @@ COMMANDS
   Macro "HCL Debug" (created for you): says whether the legend was found.
 
 NOTES
-  - Beta: built for the Forever beta, client 1.60.1.
+  - Built for WoW: Forever, client 1.60.1 (live build 70790).

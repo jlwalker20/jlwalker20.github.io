@@ -1,4 +1,7 @@
--- ShortChannels 1.2
+-- ShortChannels 1.4
+-- 1.4: fixes channels 1-5 disappearing on the live client (short labels are padded
+--      with invisible codes so the game's length check still passes)
+-- 1.3: channel 6 shows as "OOC" (BY_NUMBER table below), plus an "OOC" name entry
 -- Shortens chat channel names:  [2. Trade - Orgrimmar] -> [2. T]
 --
 -- 1.2: rebuilt to stop the gamepad chat hang / "blocked from an action"
@@ -28,6 +31,14 @@ local SHORT = {
     lookingforgroup = "LFG",
     services        = "S",
     newcomers       = "N",
+    ooc             = "OOC",
+    outofcharacter  = "OOC",
+}
+
+-- By channel NUMBER, whatever the channel is called: these win over the names above.
+-- e.g. [6] = "OOC" shows every channel-6 message as [6. OOC]
+local BY_NUMBER = {
+    [6] = "OOC",
 }
 
 -- Chat events whose 4th argument is the channel string, e.g. "2. Trade - Orgrimmar"
@@ -58,7 +69,7 @@ end
 local function Shorten(channelString)
     local num, name = channelString:match("^(%d+)%. (.+)$")
     if num then
-        local short = ShortName(name)
+        local short = BY_NUMBER[tonumber(num)] or ShortName(name)
         return short and (num .. ". " .. short) or nil
     end
     return ShortName(channelString)
@@ -68,6 +79,13 @@ local function Filter(_, _, arg1, arg2, arg3, arg4, ...)
     if type(arg4) ~= "string" or IsSecret(arg4) or arg4 == "" then return false end
     local ok, short = pcall(Shorten, arg4)
     if not (ok and short) then return false end
+    -- The live client only shows a channel message if this label is LONGER
+    -- than the channel's own name (it compares lengths before matching the
+    -- channel to your chat tab). "2. T" is shorter than "Trade", so the game
+    -- dropped the message. Pad the short label back to the original length
+    -- with "|r" codes: they print nothing, so you still see just [2. T].
+    local missing = #arg4 - #short
+    if missing > 0 then short = short .. string.rep("|r", math.ceil(missing / 2)) end
     -- pass every other argument through exactly as received
     return false, arg1, arg2, arg3, short, ...
 end

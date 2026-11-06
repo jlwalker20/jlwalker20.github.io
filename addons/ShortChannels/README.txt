@@ -1,4 +1,4 @@
-ShortChannels 1.2
+ShortChannels 1.4
 =================
 Shortens chat channel names in your chat windows.
 
@@ -6,12 +6,14 @@ Shortens chat channel names in your chat windows.
   [2. Trade - Orgrimmar]            ->  [2. T]
   [4. Trade (Services) - English]   ->  [4. TS]
   [5. Trade (Local) - Thunder Bluff] -> [5. TL]
+  [6. anything]                     ->  [6. OOC]
 
 Built-in abbreviations
   General = G            Trade = T
   Trade (Local) = TL     Trade (Services) = TS
   LocalDefense = LD      WorldDefense = WD
   LookingForGroup = LFG  Services = S       Newcomers = N
+  OOC = OOC              and channel 6 always shows as OOC
 
 Channels it does not know are left exactly as the game shows them.
 The combat log tab is never touched.
@@ -19,9 +21,9 @@ The combat log tab is never touched.
 HOW TO INSTALL
   1. Download the .toc and .lua files from walkerwagoner.com/addons.
   2. Make a folder named exactly "ShortChannels" and put both files in it.
-  3. Put that folder in your WoW Forever game folder under
+  3. Put that folder in your WoW Forever game folder (_forever_) under
      Interface/AddOns/ (so the .toc ends up at
-     Interface/AddOns/ShortChannels/ShortChannels.toc).
+     _forever_/Interface/AddOns/ShortChannels/ShortChannels.toc).
   4. Start the game, or type /reload if it is already running (in gamepad
      mode use a macro that runs /reload, see below). Check the AddOns list
      on the character screen: it should be enabled and not red.
@@ -29,7 +31,7 @@ HOW TO INSTALL
 IF IT SHOWS RED / "OUT OF DATE" AFTER A GAME PATCH
   Tick "Load out of date AddOns" on the AddOns screen, or open
   ShortChannels.toc in a text editor and change the "## Interface:" number to
-  match the new client build (it is 16001 for client 1.60.1, build 70170).
+  match the new client build (it is 16001 for client 1.60.1).
 
 CHANGING AN ABBREVIATION
   Open ShortChannels.lua in a text editor. The list at the top (the
@@ -37,6 +39,9 @@ CHANGING AN ABBREVIATION
   in lowercase with spaces and punctuation removed, so "Trade (Services)"
   is "tradeservices". The part after " - " (city or language) is ignored.
   Save the file and /reload.
+  To shorten by channel NUMBER instead (whatever the channel is called),
+  use the "BY_NUMBER" table just below it: [6] = "OOC" turns every
+  channel-6 message into [6. OOC]. Remove that line to turn it off.
 
 COMMANDS
   None. Nothing to configure in game.
@@ -50,4 +55,4 @@ NOTES
     and instance situations), that message shows the full channel name.
   - If you add another chat addon that rewrites channel names, the two
     may fight; disable one.
-  - Tested on the Forever beta, client 1.60.1.
+  - Built for WoW: Forever, client 1.60.1 (live build 70790).

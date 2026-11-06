@@ -1,0 +1,7 @@
+## Interface: 16001
+## Title: TargetCastBarPlus
+## Notes: Taller target and focus cast bars with the spell name inside the bar and a cast timer on its right edge.
+## Author: You
+## Version: 0.7
+
+TargetCastBarPlus.lua

@@ -1,4 +1,4 @@
-DarkIronUI 1.13 - for World of Warcraft: Forever (client 1.60.1)
+DarkIronUI 1.15 - for World of Warcraft: Forever (client 1.60.1)
 =================================================================
 
 One addon that recolors the default Blizzard UI from gold/brown to a
@@ -7,7 +7,8 @@ other "meaningful" colors are left alone.
 
 WHAT IT COVERS
   Unit frames      Player, Target and Focus frames; grey elite dragon on
-                   your player frame; your own level circle hidden
+                   your player frame; your own level circle hidden;
+                   PvP flag and its timer drawn in front
   Gamepad bars     Flat light-grey rings, darkened empty slots
   Keyboard bars    Main bar, extra bars, stance and pet bars
   XP bar           Frame and background (XP / rested fill keep color)
@@ -21,8 +22,8 @@ WHAT IT COVERS
   Tooltips         Borders (item-quality colors kept)
 
 INSTALL
-  1. Copy the DarkIronUI folder into your game's Interface/AddOns/
-     (so the .toc ends up at Interface/AddOns/DarkIronUI/DarkIronUI.toc).
+  1. Copy the DarkIronUI folder into your game's _forever_/Interface/AddOns/
+     (so the .toc ends up at _forever_/Interface/AddOns/DarkIronUI/DarkIronUI.toc).
   2. Delete any older versions: FlatUnitFrames, GamepadDarkMode,
      DarkMinimap, DarkTracker, DarkTooltip, DarkUI, DarkIronUI_Tracker.
   3. Use EITHER the full DarkIronUI folder OR the single DarkIronUI_*
