@@ -1,0 +1,12 @@
+## Interface: 16001
+## Title: PartyFramesImproved
+## Notes: Party Frames Improved: bottom-up class-sorted party frames, levels on names, leader / marker / PvP icons.
+## Author: You
+## Version: 2.2
+## SavedVariables: PartyFramesImprovedDB
+
+Core.lua
+Levels.lua
+Layout.lua
+Icons.lua
+HealPrediction.lua

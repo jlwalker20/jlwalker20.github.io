@@ -1,4 +1,4 @@
-TargetCastBarPlus 0.7
+TargetCastBarPlus 0.10
 =====================
 Reshapes your target's and focus's cast bars the way CastBarPlus does yours:
 taller, the spell name inside the bar (centered), and a cast
@@ -23,6 +23,10 @@ SETTINGS (top of TargetCastBarPlus.lua, then /reload)
                    into the timer
   BORDER_SLICE   keeps the border's corners and edges at their real size and
                  stretches only the middle (default 4; try 3-5; nil = Blizzard's stretch)
+  POSITION       "top" (default): the bar sits above the target / focus frame;
+                 "bottom": Blizzard's spot below it
+  TOP_X / TOP_Y  where it sits when on top (sideways offset, gap above)
+  FRONT          true (default): bar drawn in front of the frame's buff icons
   HIDE_NAME_BOX    hide the dark box Blizzard draws under the bar for the name
 
 HOW IT WORKS
@@ -32,8 +36,12 @@ HOW IT WORKS
   game may hide other units' cast timing from addons in combat; then the
   timer simply stays blank.
 
-COMMANDS
-  Macro "TCB Debug" (created for you): lists what it found on the cast bars.
+COMMANDS (macros are created for you, if you have free macro slots)
+  TCB Debug   /tcb          lists what it found on the cast bars
+  TCB Target  /tcb target   target bar: above the frame <-> below (Blizzard's spot)
+  TCB Focus   /tcb focus    focus bar:  above the frame <-> below; saved per bar
+  TCB Up / Down / Left / Right   /tcb up (etc.)   nudge the bar 2 pixels;
+                            saved between sessions. /tcb reset puts it back.
 
 NOTES
   - Works on its own or together with CastBarPlus.

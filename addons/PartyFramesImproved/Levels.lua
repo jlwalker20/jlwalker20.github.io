@@ -1,11 +1,11 @@
--- PartyLevels
+-- PartyFramesImproved: Levels (was PartyLevels 1.0)
 -- Adds each group member's level to their name on Blizzard's raid-style
 -- party and raid frames:  "52 Thrall"
 --
 -- How it stays safe: it only changes the NAME TEXT, right after Blizzard
 -- writes it. It never calls Blizzard's frame code, never writes anything
 -- onto Blizzard's frames (its notes live in its own table), never touches
--- nameplates, the chat box or the gamepad UI, and has no commands.
+-- nameplates, the chat box or the gamepad UI.
 
 local CONFIG = {
     POSITION = "before",          -- "before" -> "52 Thrall", "after" -> "Thrall 52"

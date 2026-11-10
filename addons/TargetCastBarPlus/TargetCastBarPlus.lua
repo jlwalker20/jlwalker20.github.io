@@ -1,4 +1,7 @@
--- TargetCastBarPlus 0.7
+-- TargetCastBarPlus 0.10
+-- 0.10: bars drawn in front of the target / focus buff icons (FRONT)
+-- 0.9: top / bottom toggle per bar (/tcb target, /tcb focus); focus bar found more ways
+-- 0.8: bar moved above the target / focus frame (POSITION), with nudge macros
 -- 0.7: border slice 4 (the art is only ~11px tall, so 8 overlapped)
 -- 0.6: border drawn 9-slice (corners and edges keep their size) instead of stretched
 -- 0.5: font size 10 to suit the shorter target bar
@@ -33,22 +36,82 @@ local CONFIG = {
     -- the border: instead of stretching the whole picture, keep its corners and
     -- edges at their real size and stretch only the middle (9-slice)
     BORDER_SLICE = 4,       -- size of the kept corners/edges, in the art's pixels (try 3-5); nil = Blizzard's stretching
+    -- where the bar sits: "top" = above the target / focus frame, "bottom" = Blizzard's spot below it
+    POSITION = "top",
+    FRONT = true,           -- draw the bars in front of the frame's buff / debuff icons
+    TOP_X = -20,            -- sideways offset from the frame's center (the bar is centered over the frame's bars)
+    TOP_Y = 6,              -- gap above the frame
 }
 
+local ADDON_NAME = ...
 local function IsSecret(v) return issecretvalue and issecretvalue(v) end
 local function Say(m) print("|cff9999ffTargetCastBarPlus:|r " .. m) end
 
 -- the cast bars we restyle: yours, your target's and your focus's (icons stay as they are)
 local BARS = {
-    { unit = "target", names = { "TargetFrameSpellBar" }, height = "TARGET_HEIGHT" },
-    { unit = "focus",  names = { "FocusFrameSpellBar" },  height = "TARGET_HEIGHT" },
+    { unit = "target", names = { "TargetFrameSpellBar" }, height = "TARGET_HEIGHT", frame = "TargetFrame" },
+    { unit = "focus",  names = { "FocusFrameSpellBar", "FocusFrameCastBar", "FocusCastingBar" },  height = "TARGET_HEIGHT", frame = "FocusFrame" },
 }
+
+local DB   -- saved nudges (TargetCastBarPlusDB)
+
+-- put the bar above its unit frame (Blizzard moves it below, and again whenever
+-- the target's buffs change, so this runs after each of those)
+local moving = false
+local function WantTop(def)
+    local v = DB and DB.pos and DB.pos[def.unit]
+    if v == nil then return CONFIG.POSITION == "top" end
+    return v == "top"
+end
+
+local function MoveToTop(bar, def)
+    if not WantTop(def) or moving then return end
+    local owner = _G[def.frame]
+    if not owner then return end
+    local x = CONFIG.TOP_X + ((DB and DB.dx) or 0)
+    local y = CONFIG.TOP_Y + ((DB and DB.dy) or 0)
+    local p, rel, rp, px, py = bar:GetPoint(1)
+    if p == "BOTTOM" and rel == owner and rp == "TOP" and px == x and py == y and bar:GetNumPoints() == 1 then return end
+    moving = true
+    pcall(function()
+        bar:ClearAllPoints()
+        bar:SetPoint("BOTTOM", owner, "TOP", x, y)
+    end)
+    moving = false
+end
+
+-- one drawing layer above the unit frame's, so its buff icons sit behind the bar
+local STRATA = { "BACKGROUND", "LOW", "MEDIUM", "HIGH", "DIALOG", "FULLSCREEN", "FULLSCREEN_DIALOG", "TOOLTIP" }
+local frontNote = {}
+local function BringToFront(bar, def)
+    if not CONFIG.FRONT or (InCombatLockdown and InCombatLockdown()) then return end
+    local owner = _G[def.frame]
+    if not (owner and owner.GetFrameStrata and bar.SetFrameStrata) then return end
+    local ok, os = pcall(owner.GetFrameStrata, owner)
+    if not ok then return end
+    local want
+    for i, n in ipairs(STRATA) do if n == os then want = STRATA[math.min(i + 1, #STRATA)] end end
+    if not want then return end
+    local okB, cur = pcall(bar.GetFrameStrata, bar)
+    if okB and cur ~= want then pcall(bar.SetFrameStrata, bar, want) end
+    frontNote[def.unit] = os .. " -> " .. want
+end
 
 local function BarOf(def)
     for _, n in ipairs(def.names) do
         local f = _G[n]
         if type(f) == "table" and f.GetObjectType then return f end
     end
+    -- some clients only keep it as a field on the unit frame
+    local owner = _G[def.frame]
+    local f = owner and (rawget(owner, "spellbar") or rawget(owner, "castBar") or rawget(owner, "CastBar"))
+    if type(f) == "table" and f.GetObjectType then return f end
+end
+
+-- give a bar back to Blizzard's spot below the frame
+local function BackToBottom(bar)
+    if type(bar.AdjustPosition) == "function" then pcall(bar.AdjustPosition, bar) end
+    if type(_G.Target_Spellbar_AdjustPosition) == "function" then pcall(_G.Target_Spellbar_AdjustPosition, bar) end
 end
 
 local function NameText(bar)
@@ -94,6 +157,8 @@ local placing = false
 local function PlaceBar(def)
     local bar = BarOf(def)
     if not bar then return end
+    pcall(MoveToTop, bar, def)
+    pcall(BringToFront, bar, def)
     -- height (out of combat only; your bar's size is left to CastBarFix if that's installed)
     local h = CONFIG[def.height]
     local sizeOwner = false
@@ -198,6 +263,11 @@ local function Hook()
             if type(bar.SetLook) == "function" then
                 pcall(hooksecurefunc, bar, "SetLook", function() pcall(Place) end)
             end
+            -- Blizzard re-places the bar under the frame whenever buffs/debuffs change
+            if type(bar.AdjustPosition) == "function" then
+                pcall(hooksecurefunc, bar, "AdjustPosition", function(self) pcall(MoveToTop, self, def) end)
+            end
+            pcall(hooksecurefunc, bar, "SetPoint", function(self) if not moving then pcall(MoveToTop, self, def) end end)
             bar:HookScript("OnShow", function() pcall(Place) end)
             bar:HookScript("OnUpdate", function(self)
                 local o = ownTimers[self]
@@ -212,13 +282,30 @@ local function Hook()
     end
 end
 
+-- older clients reposition through a global function
+for _, fn in ipairs({ "Target_Spellbar_AdjustPosition", "Focus_Spellbar_AdjustPosition" }) do
+    if type(_G[fn]) == "function" then
+        hooksecurefunc(fn, function(bar)
+            for _, def in ipairs(BARS) do if BarOf(def) == bar then pcall(MoveToTop, bar, def) end end
+        end)
+    end
+end
+
 local events = CreateFrame("Frame")
-for _, e in ipairs({ "PLAYER_ENTERING_WORLD", "PLAYER_REGEN_ENABLED", "EDIT_MODE_LAYOUTS_UPDATED",
+for _, e in ipairs({ "ADDON_LOADED", "PLAYER_ENTERING_WORLD", "UNIT_AURA", "PLAYER_REGEN_ENABLED", "EDIT_MODE_LAYOUTS_UPDATED",
                      "PLAYER_TARGET_CHANGED", "PLAYER_FOCUS_CHANGED",
                      "UNIT_SPELLCAST_START", "UNIT_SPELLCAST_CHANNEL_START" }) do
     pcall(events.RegisterEvent, events, e)
 end
 events:SetScript("OnEvent", function(_, event, unit)
+    if event == "ADDON_LOADED" then
+        if unit == ADDON_NAME then
+            TargetCastBarPlusDB = TargetCastBarPlusDB or {}
+            DB = TargetCastBarPlusDB
+        end
+        return
+    end
+    if event == "UNIT_AURA" and unit ~= "target" and unit ~= "focus" then return end
     if event == "UNIT_SPELLCAST_START" or event == "UNIT_SPELLCAST_CHANNEL_START" then
         if unit ~= "target" and unit ~= "focus" then return end
     end
@@ -228,13 +315,49 @@ end)
 
 ---------------------------------------------------------------- debug macro
 SLASH_TARGETCASTBARPLUS1 = "/tcb"
-SlashCmdList["TARGETCASTBARPLUS"] = function()
+SlashCmdList["TARGETCASTBARPLUS"] = function(msg)
+    msg = (msg or ""):lower()
+    local step = { up = { 0, 2 }, down = { 0, -2 }, left = { -2, 0 }, right = { 2, 0 } }
+    for word, d in pairs(step) do
+        if msg:find(word) then
+            if not DB then return end
+            DB.dx = (DB.dx or 0) + d[1]; DB.dy = (DB.dy or 0) + d[2]
+            pcall(Place)
+            Say(("cast bar moved to %d, %d (from the default spot)"):format(DB.dx, DB.dy))
+            return
+        end
+    end
+    for _, def in ipairs(BARS) do
+        if msg:find(def.unit) then
+            if not DB then return end
+            if InCombatLockdown and InCombatLockdown() then Say("can't move that in combat"); return end
+            DB.pos = DB.pos or {}
+            DB.pos[def.unit] = WantTop(def) and "bottom" or "top"
+            local bar = BarOf(def)
+            if bar then
+                if DB.pos[def.unit] == "top" then pcall(MoveToTop, bar, def) else BackToBottom(bar) end
+            end
+            Say(("%s cast bar: %s%s"):format(def.unit, DB.pos[def.unit] == "top" and "above the frame" or "below the frame (Blizzard's spot)",
+                (bar or def.unit == "target") and "" or " - bar not found yet"))
+            if DB.pos[def.unit] == "bottom" then Say("if it doesn't drop back right away, /reload") end
+            return
+        end
+    end
+    if msg:find("reset") then
+        if DB then DB.dx, DB.dy = 0, 0 end
+        pcall(Place)
+        Say("cast bar back to its default spot")
+        return
+    end
     for _, def in ipairs(BARS) do
         local bar = BarOf(def)
         if not bar then
             Say(def.unit .. " cast bar: not found")
         else
             local _, own = TimerText(bar, def.unit)
+            local pp, prel, prp = bar:GetPoint(1)
+            Say(("  %s: set to %s; now %s to %s %s; layer %s"):format(def.unit, WantTop(def) and "top" or "bottom", tostring(pp),
+                prel and prel.GetName and (prel:GetName() or "?") or tostring(prel), tostring(prp), frontNote[def.unit] or "unchanged"))
             Say(("%s cast bar: %s, %dx%d%s; name %s, timer %s, name box %s"):format(def.unit, bar:GetName() or "?",
                 bar:GetWidth() or 0, bar:GetHeight() or 0,
                 "",
@@ -265,10 +388,13 @@ mf:SetScript("OnEvent", function()
     made = true
     if not (GetMacroIndexByName and CreateMacro and GetNumMacros) then return end
     pcall(function()
-        local idx = GetMacroIndexByName("TCB Debug")
-        if not (idx and idx > 0) and GetNumMacros() < (MAX_ACCOUNT_MACROS or 36) then
-            if not pcall(CreateMacro, "TCB Debug", "Spell_Fire_FlameBolt", "/tcb", nil) then
-                pcall(CreateMacro, "TCB Debug", "INV_MISC_QUESTIONMARK", "/tcb", nil)
+        for _, m in ipairs({ { "TCB Debug", "/tcb" }, { "TCB Target", "/tcb target" }, { "TCB Focus", "/tcb focus" }, { "TCB Up", "/tcb up" }, { "TCB Down", "/tcb down" },
+                             { "TCB Left", "/tcb left" }, { "TCB Right", "/tcb right" } }) do
+            local idx = GetMacroIndexByName(m[1])
+            if not (idx and idx > 0) and GetNumMacros() < (MAX_ACCOUNT_MACROS or 36) then
+                if not pcall(CreateMacro, m[1], "Spell_Fire_FlameBolt", m[2], nil) then
+                    pcall(CreateMacro, m[1], "INV_MISC_QUESTIONMARK", m[2], nil)
+                end
             end
         end
     end)

@@ -1,0 +1,8 @@
+## Interface: 16001
+## Title: HideChatButtons
+## Notes: Hides the buttons on the left side of the chat window (social, chat channels, chat menu) and the side strip behind them.
+## Author: You
+## Version: 0.2
+## SavedVariables: HideChatButtonsDB
+
+HideChatButtons.lua
