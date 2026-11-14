@@ -50,6 +50,7 @@
           border: 1px solid var(--teal-deep); border-radius: 14px; padding: 22px 20px 20px; margin-bottom: 40px; }
   .beta h2 { font-family: Cinzel, Georgia, serif; font-size: 1.35rem; color: var(--bone); margin: 10px 0 6px; font-weight: 700; }
   .beta h2 .ver { font-family: Inter, sans-serif; }
+  .beta p .pill { font-size: 0.6rem; padding: 1px 7px; vertical-align: 2px; }
   .beta p { color: var(--muted); margin: 0 0 12px; }
   .beta ul { color: var(--muted); margin: 0 0 16px; padding-left: 18px; font-size: 0.9rem; }
   .beta li { margin: 3px 0; }
@@ -75,6 +76,11 @@
   .ver { font-size: 0.78rem; color: var(--faint); }
   .addon p { color: var(--muted); font-size: 0.9rem; margin: 0 0 12px; }
 
+  .beta .btn.big { margin-top: 4px; }
+  .sublinks { margin-top: 10px; }
+  .beta p.small { font-size: 0.84rem; margin: 14px 0 0; }
+  .beta h2 .pill { vertical-align: middle; }
+  .indiv { margin-top: 34px; }
   .note { margin-top: 40px; font-size: 0.8rem; color: var(--faint); border-top: 1px solid var(--border); padding-top: 16px; }
 
   .shots { display: flex; gap: 8px; overflow-x: auto; margin: 0 0 12px; -webkit-overflow-scrolling: touch; }
@@ -97,30 +103,31 @@
   <span class="rule"></span>
 </header>
 
-<section class="beta" id="beta">
-  <span class="pill">Beta</span>
-  <h2>Jaff's Better Forever UI <span class="ver">v0.4</span></h2>
-  <p>One in-game options panel for every addon on this page. It finds the ones you have installed and gives each a tab, so you can change settings without editing files.</p>
+<section class="beta" id="full">
+  <span class="pill">Full package</span>
+  <h2>Everything: panel + all addons</h2>
+  <p>Every addon on this page plus <b>Jaff's Better Forever UI</b> <span class="pill">Beta</span>, the in-game options panel that gives each installed addon a tab, so you can change settings without editing files.</p>
   <ul>
-    <li>Open it with <code>/jaffs</code> (or the <b>Jaffs UI</b> macro), or from the minimap's addon button.</li>
+    <li>Open the panel with <code>/jaffs</code> (or the <b>Jaffs UI</b> macro), or from the minimap's addon button.</li>
     <li>Every tab has an on/off switch for that addon, and a <b>Reload</b> button for settings that need one.</li>
     <li>Gamepad controls for the panel are still to come; use the mouse for now.</li>
   </ul>
-  <div class="links">
-    <a class="btn" href="/addons/JaffsBetterForeverUI.zip" download>Download the beta</a>
-    <a class="btn ghost" href="/addons/JaffsBetterForeverUI/README.txt">README</a>
+  <a class="btn big" href="/addons/JaffsBetterForeverUI-Full.zip" download>Download the full package (.zip)</a>
+  <div class="links sublinks">
+    <a class="btn ghost" href="/addons/JaffsBetterForeverUI.zip" download>Panel only</a>
+    <a class="btn ghost" href="/addons/JaffsBetterForeverUI/README.txt">Panel README</a>
   </div>
+  <p class="small"><b>Installing a zip:</b> on the <b>Steam Deck</b>, open Downloads in Dolphin, right-click the zip, <b>Extract &rarr; Extract archive here</b>, then drag the folders into <code>_forever_/Interface/AddOns/</code> and replace when asked. On a <b>PC</b>, right-click, Extract All, and drag the same way. Then <code>/reload</code> or restart the game.</p>
 </section>
 
-<div class="stable-head"><h2>The addons</h2><span class="pill stable">Stable</span></div>
-<p class="stable-sub">Each one works on its own. With the beta panel installed, their settings also show up there.</p>
-
+<div class="stable-head"><h2>Addons only</h2><span class="pill stable">Stable</span></div>
+<p class="stable-sub">All the addons without the panel. Each one works on its own.</p>
 <div class="all">
-  <a class="btn big" href="/addons/WoWForeverAddons.zip" download>Download every addon (.zip)</a>
-  <p>One zip with all of the addons below, each already in its own folder (the beta panel is a separate download above). <b>Steam Deck:</b> open Downloads in Dolphin, right-click the zip, <b>Extract &rarr; Extract archive here</b>, then drag the folders into <code>_forever_/Interface/AddOns/</code> and replace when asked. <b>PC:</b> right-click, Extract All, and drag the same way.</p>
+  <a class="btn big" href="/addons/WoWForeverAddons.zip" download>Download all addons (.zip)</a>
 </div>
-<div class="how"><b>One addon at a time:</b> each Download is a zip holding the addon's folder. Extract it into <code>_forever_/Interface/AddOns/</code>, then <code>/reload</code> or restart the game.</div>
 
+<div class="stable-head indiv"><h2>One at a time</h2></div>
+<p class="stable-sub">Each Download is a zip holding that addon's folder; extract it into <code>_forever_/Interface/AddOns/</code>. With the panel installed, their settings show up there too.</p>
 <section class="group">
   <h2 class="sec">Look</h2>
   <p class="secsub">A full dark-grey reskin of the default UI, plus reshaped cast bars and a square minimap.</p>
