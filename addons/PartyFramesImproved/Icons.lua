@@ -11,13 +11,18 @@ local ADDON, ns = ...
 
 local CONFIG = {
     -- spots are on the HEALTH BAR (corner, x, y)
-    LEADER       = true,  LEADER_SIZE = 12, LEADER_POINT = { "TOPRIGHT", -2, -2 },
-    MARKER       = true,  MARKER_SIZE = 16, MARKER_POINT = { "BOTTOMRIGHT", -2, 2 },
+    LEADER       = true,  LEADER_SIZE = 12, LEADER_POINT = { "LEFT", 3, 0 },
+    MARKER       = true,  MARKER_SIZE = 16, MARKER_POINT = { "RIGHT", -2, 0 },
     -- the PvP flag goes where Blizzard's role icon sits (top-left of the health bar)
     PVP          = true,  PVP_SIZE = 16, PVP_POINT = { "TOPLEFT", 2, -2 },
     PVP_ALWAYS   = true,  -- always show the faction icon: gray when not flagged, full color when flagged
     PVP_GRAY_ALPHA = 0.6,
-    HIDE_ROLE    = true,
+    -- what sits at the top-left of the health bar, before the name:
+    --   "pvp"  = the faction / PvP icon (Blizzard's role icon hidden)
+    --   "role" = Blizzard's role icon (no faction icon)
+    --   "none" = nothing: the name moves flush left
+    LEFT_SLOT    = "pvp",
+    NAME_PAD     = 3,     -- left padding for the name in "none" (pixels)
 
 }
 
@@ -177,6 +182,74 @@ end
 local roleHidden = {}
 local roleErr
 
+local function Slot()
+    local v = DB and DB.slot
+    if v == "pvp" or v == "role" or v == "none" then return v end
+    return CONFIG.LEFT_SLOT
+end
+
+-- the name: flush left in "none"; given back to Blizzard otherwise
+local nameMoved, nameHooked, nameBusy, nameSaved = {}, {}, false, {}
+local function PlaceName(f)
+    local n = rawget(f, "name")
+    local hb = rawget(f, "healthBar")
+    if type(n) ~= "table" or not n.SetPoint or (n.IsForbidden and n:IsForbidden()) then return end
+    if type(hb) ~= "table" then hb = f end
+    if Slot() == "none" then
+        if InCombat() then return end
+        if not nameHooked[n] then
+            nameHooked[n] = true
+            -- Blizzard re-places the name when roles change; put it back right after
+            hooksecurefunc(n, "SetPoint", function()
+                if nameBusy then return end
+                if nameMoved[n] and Slot() == "none" and not InCombat() then
+                    C_Timer.After(0, function() PlaceName(f) end)
+                elseif not nameMoved[n] then
+                    nameSaved[n] = nil   -- Blizzard chose a new spot; re-read it next time
+                end
+            end)
+        end
+        -- remember Blizzard's own spot for the name, the first time only
+        if nameSaved[n] == nil and not nameMoved[n] then
+            local list, ok = {}, true
+            local okN, cnt = pcall(n.GetNumPoints, n)
+            if okN and type(cnt) == "number" and not Secret(cnt) then
+                for i = 1, cnt do
+                    local okP, p, rel, rp, x, y = pcall(n.GetPoint, n, i)
+                    if not okP or Secret(p) or Secret(rel) or Secret(rp) or Secret(x) or Secret(y) then ok = false; break end
+                    list[#list + 1] = { p, rel, rp, x or 0, y or 0 }
+                end
+            else ok = false end
+            nameSaved[n] = ok and list or false
+        end
+        nameBusy = true
+        pcall(function()
+            n:ClearAllPoints()
+            n:SetPoint("TOPLEFT", hb, "TOPLEFT", CONFIG.NAME_PAD, -2)
+            n:SetPoint("TOPRIGHT", hb, "TOPRIGHT", -3, -2)
+        end)
+        nameBusy = false
+        nameMoved[n] = true
+    elseif nameMoved[n] then
+        if InCombat() then return end
+        nameMoved[n] = nil
+        -- put the name back exactly where Blizzard had it (saved before we moved it)
+        local saved = nameSaved[n]
+        nameBusy = true
+        pcall(function()
+            n:ClearAllPoints()
+            if type(saved) == "table" and #saved > 0 then
+                for _, pt in ipairs(saved) do n:SetPoint(pt[1], pt[2], pt[3], pt[4], pt[5]) end
+            else
+                local r = rawget(f, "roleIcon")
+                n:SetPoint("TOPLEFT", r or hb, r and "TOPRIGHT" or "TOPLEFT", r and 0 or 16, -1)
+                n:SetPoint("TOPRIGHT", hb, "TOPRIGHT", -3, -2)
+            end
+        end)
+        nameBusy = false
+    end
+end
+
 local function HideRole(f, hide)
     local r = rawget(f, "roleIcon")
     if type(r) ~= "table" or not r.SetAlpha then return end
@@ -197,8 +270,9 @@ local function UpdateFrame(f)
         if InCombat() then return end
         o = MakeOverlay(f); overlays[f] = o
     end
-    local okR, errR = pcall(HideRole, f, CONFIG.HIDE_ROLE and not (DB and DB.roleShown))
+    local okR, errR = pcall(HideRole, f, Slot() ~= "role")
     if not okR then roleErr = tostring(errR) end
+    pcall(PlaceName, f)
     local unit = UnitOf(f)
     local on = unit and f.IsVisible and f:IsVisible() and not (DB and DB.off)
     -- leader
@@ -225,7 +299,7 @@ local function UpdateFrame(f)
     if shown then o.marker:Show() else o.marker:Hide() end
     -- pvp flag
     local key, flagged
-    if on and CONFIG.PVP then key, flagged = PvPState(unit) end
+    if on and CONFIG.PVP and Slot() == "pvp" then key, flagged = PvPState(unit) end
     if key and (flagged or CONFIG.PVP_ALWAYS) then
         if o.pvpKey ~= key or not o.pvpCopied then o.pvpCopied = SetFactionArt(o.pvp, key); o.pvpKey = key end
         if flagged then
@@ -283,6 +357,7 @@ ns.IconsCmd = function(msg)
                     (type(r) ~= "table" and "not found") or ((r.IsForbidden and r:IsForbidden()) and "locked") or ((roleHidden[r] == "failed" and "can't be changed") or (roleHidden[r] and "hidden") or "shown")))
             end
         end
+        Say("  top-left of the bar: " .. Slot())
         Say(("icons: %d frames%s; APIs: leader %s, pvp %s, marker %s"):format(n, DB.off and ", turned OFF" or "",
             type(UnitIsGroupLeader) == "function" and "yes" or "NO", type(UnitIsPVP) == "function" and "yes" or "NO",
             type(GetRaidTargetIndex) == "function" and "yes" or "NO"))
@@ -302,15 +377,21 @@ ns.IconsCmd = function(msg)
         if roleErr then Say("  role icon error: " .. roleErr) end
         return
     end
+    local SLOT_TEXT = { pvp = "faction / PvP icon", role = "Blizzard's role icon", none = "nothing (name flush left)" }
+    if msg == "pvp" or msg == "role" or msg == "none" or msg == "slot" then
+        if InCombat() then Say("can't change that in combat"); return end
+        if msg == "slot" then
+            local nxt = { pvp = "role", role = "none", none = "pvp" }
+            DB.slot = nxt[Slot()]
+        else DB.slot = msg end
+        UpdateAll()
+        Say("top-left of the bar: " .. SLOT_TEXT[Slot()])
+        return
+    end
     if msg == "resetart" then
         DB.art = nil; playerArt = nil; nextLook = 0
         for f, o in pairs(overlays) do o.pvpCopied = nil end
         Say("saved PvP art forgotten; it is copied again next time you're flagged")
-        return
-    end
-    if msg == "role" then
-        DB.roleShown = not DB.roleShown; UpdateAll()
-        Say(DB.roleShown and "Blizzard role icon shown" or "Blizzard role icon hidden")
         return
     end
     DB.off = not DB.off; UpdateAll()

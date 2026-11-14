@@ -116,6 +116,29 @@ local function Restore()
     if CompactPartyFrame and CompactPartyFrame.Layout then pcall(CompactPartyFrame.Layout, CompactPartyFrame) end
 end
 
+-- you (if kept on top), then class order, then Blizzard's order; returns a new list
+function ns.OrderTopDown(m)
+    local topDown = {}
+    for i, f in ipairs(m) do topDown[i] = f end
+    if #m < 2 or not (PlayerOnTop() or SortOn()) then return topDown end
+    local pos, key = {}, {}
+    for i, f in ipairs(m) do
+        pos[f] = i
+        local r = SortOn() and RankOf(f) or 0
+        if PlayerOnTop() and IsMe(f) then r = -1 end
+        key[f] = r
+    end
+    table.sort(topDown, function(a, b)
+        if key[a] ~= key[b] then return key[a] < key[b] end
+        return pos[a] < pos[b]
+    end)
+    if not PlayerOnTop() and SortOn() then
+        for i, f in ipairs(topDown) do if IsMe(f) then table.remove(topDown, i); topDown[#topDown + 1] = f; break end end
+    end
+    return topDown
+end
+ns.ClassOf = ClassOf
+
 Apply = function()
     if InCombatLockdown and InCombatLockdown() then return end
     for i = 1, 5 do local f = _G["CompactPartyFrameMember" .. i]; if f then Hook(f) end end
@@ -132,27 +155,11 @@ Apply = function()
     if not base or Horizontal(m1, m[2]) then return end
     local h = m1:GetHeight() or 0
     if h <= 0 then return end
-    -- order top to bottom: you (if kept on top), then by role, then Blizzard's order
-    if #m > 1 and (PlayerOnTop() or SortOn()) then
-        local pos, key = {}, {}
-        for i, f in ipairs(m) do
-            pos[f] = i
-            local r = SortOn() and RankOf(f) or 0
-            if PlayerOnTop() and IsMe(f) then r = -1 end
-            key[f] = r
-        end
-        local topDown = {}
-        for i, f in ipairs(m) do topDown[i] = f end
-        table.sort(topDown, function(a, b)
-            if key[a] ~= key[b] then return key[a] < key[b] end
-            return pos[a] < pos[b]
-        end)
-        if not PlayerOnTop() and SortOn() then
-            -- you asked to sit at the bottom: you go last
-            for i, f in ipairs(topDown) do if IsMe(f) then table.remove(topDown, i); topDown[#topDown + 1] = f; break end end
-        end
+    -- order top to bottom (shared with the raid layout), then build bottom first
+    if #m > 1 then
+        local topDown = ns.OrderTopDown(m)
         m = {}
-        for i = #topDown, 1, -1 do m[#m + 1] = topDown[i] end   -- stack is built bottom first
+        for i = #topDown, 1, -1 do m[#m + 1] = topDown[i] end
     end
     local bottomFrame = m[1]
     local rel, rp, x, y, bp = base[1], base[2], base[3], base[4], base[5]

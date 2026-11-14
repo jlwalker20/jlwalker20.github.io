@@ -1,0 +1,8 @@
+## Interface: 16001
+## Title: WeakenedSoulTracker
+## Notes: Cooldown-style icons with each player's portrait and a countdown for the Weakened Soul you put on them. Movable.
+## Author: You
+## Version: 0.6
+## SavedVariables: WeakenedSoulTrackerDB
+
+WeakenedSoulTracker.lua

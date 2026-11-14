@@ -27,8 +27,10 @@ local HELP = {
     "/pfi sort       class order on / off",
     "/pfi label      hide / show the \"Party\" label",
     "/pfi icons      leader / PvP / marker icons on / off",
-    "/pfi role       Blizzard's role icon hidden / shown",
+    "/pfi slot       top-left of the bar: PvP icon > role icon > nothing",
+    "/pfi pvp | role | none   pick one directly",
     "/pfi heals      incoming heal / shield bars on / off",
+    "/pfi raid       raid layout (bottom-right, class order) on / off",
     "/pfi debug      what every part sees",
 }
 
@@ -40,11 +42,16 @@ SlashCmdList["PARTYFRAMESIMPROVED"] = function(msg)
         if ns.LayoutCmd then ns.LayoutCmd("debug") end
         if ns.IconsCmd then ns.IconsCmd("debug") end
         if ns.HealsCmd then ns.HealsCmd("debug") end
+        if ns.RaidCmd then ns.RaidCmd("debug") end
         return
     end
     if msg:find("icons") then if ns.IconsCmd then ns.IconsCmd("icons") end; return end
+    if msg:find("pvp") then if ns.IconsCmd then ns.IconsCmd("pvp") end; return end
+    if msg:find("none") then if ns.IconsCmd then ns.IconsCmd("none") end; return end
+    if msg:find("slot") then if ns.IconsCmd then ns.IconsCmd("slot") end; return end
     if msg:find("resetart") then if ns.IconsCmd then ns.IconsCmd("resetart") end; return end
     if msg:find("role") then if ns.IconsCmd then ns.IconsCmd("role") end; return end
+    if msg:find("raid") then if ns.RaidCmd then ns.RaidCmd("") end; return end
     if msg:find("heal") then if ns.HealsCmd then ns.HealsCmd("") end; return end
     if ns.LayoutCmd then ns.LayoutCmd(msg) end
 end
