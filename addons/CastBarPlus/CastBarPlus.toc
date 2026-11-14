@@ -2,6 +2,7 @@
 ## Title: CastBarPlus
 ## Notes: Taller player cast bar with the spell name inside the bar and the cast timer on its right edge.
 ## Author: You
-## Version: 0.8
+## Version: 0.9
+## SavedVariables: CastBarPlusDB
 
 CastBarPlus.lua

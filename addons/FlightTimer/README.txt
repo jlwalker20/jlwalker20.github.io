@@ -1,4 +1,4 @@
-FlightTimer 1.4
+FlightTimer 1.5
 ===============
 A plain text countdown for your current flight path, shown lower-middle
 of the screen in the default UI font.
@@ -73,3 +73,7 @@ TYPED COMMANDS (keyboard and mouse only)
 NOTES
   - Saved data lives in WTF/Account/<account>/SavedVariables/FlightTimer.lua
   - Built for WoW: Forever, client 1.60.1 (live build 70790).
+
+OPTIONS PANEL
+  With "Jaff's Better Forever UI" installed, these settings can be changed in
+  /jaffs instead of editing the .lua (they are saved).

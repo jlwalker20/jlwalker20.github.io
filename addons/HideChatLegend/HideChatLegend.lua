@@ -178,3 +178,11 @@ mf:SetScript("OnEvent", function()
         end
     end)
 end)
+
+-- ---------------------------------------------------------------- options for Jaff's Better Forever UI
+local def = { addon = "HideChatLegend", options = {
+    { type = "note", text = "Nothing to set: it just works. Use the switch above to turn it off." },
+    { type = "button", label = "What it found", button = "Show in chat", func = function() SlashCmdList["HIDECHATLEGEND"]("") end },
+} }
+if JaffsUI and JaffsUI.Register then JaffsUI:Register(def)
+else JaffsUI_Queue = JaffsUI_Queue or {}; table.insert(JaffsUI_Queue, def) end

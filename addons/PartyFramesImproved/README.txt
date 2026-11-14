@@ -1,4 +1,4 @@
-PartyFramesImproved 2.9 (test)
+PartyFramesImproved 3.0 (test)
 ==============================
 Party Frames Improved: one addon for Blizzard's raid-style party/raid frames.
 Replaces PartyGrowUp, PartyLevels and DispelGlow: delete those three folders
@@ -50,3 +50,7 @@ SETTINGS
   HealPrediction.lua  HEAL_COLOR, SHIELD_COLOR, SHIELD_ICON, TEXTURE (nil = match health bar)
 
 Built for WoW: Forever, client 1.60.1 (live build 70790).
+
+OPTIONS PANEL
+  With "Jaff's Better Forever UI" installed, every setting above (party and
+  raid layout, icons, levels, heal bars) is in its tab in /jaffs (saved).

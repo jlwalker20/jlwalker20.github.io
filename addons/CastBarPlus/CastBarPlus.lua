@@ -1,4 +1,6 @@
--- CastBarPlus 0.8
+-- CastBarPlus 0.9
+-- 0.9: settings saved and changeable in Jaff's Better Forever UI (/jaffs)
+-- 0.8
 -- 0.8: border slice 4 (the art is only ~11px tall, so 8 overlapped)
 -- 0.7: border drawn 9-slice (corners and edges keep their size) instead of stretched
 -- 0.6: font size 13; timer shows just the number (no "s")
@@ -267,3 +269,37 @@ mf:SetScript("OnEvent", function()
         end
     end)
 end)
+
+-- ---------------------------------------------------------------- options for Jaff's Better Forever UI
+local JDEFAULTS = {}
+for k, v in pairs(CONFIG) do if type(v) ~= "table" then JDEFAULTS[k] = v end end
+local JDB
+local function JChanged() pcall(Place) end
+local jlf = CreateFrame("Frame")
+jlf:RegisterEvent("ADDON_LOADED")
+jlf:SetScript("OnEvent", function(_, _, n)
+    if n ~= "CastBarPlus" then return end
+    CastBarPlusDB = CastBarPlusDB or {}
+    CastBarPlusDB.cfg = CastBarPlusDB.cfg or {}
+    JDB = CastBarPlusDB.cfg
+    for k, v in pairs(JDB) do if JDEFAULTS[k] ~= nil then CONFIG[k] = v end end
+end)
+local function Opt(t, key)
+    t.get = function() return CONFIG[key] end
+    t.set = function(v) CONFIG[key] = v; if JDB then JDB[key] = v end; JChanged() end
+    return t
+end
+local function JReset() for k, v in pairs(JDEFAULTS) do CONFIG[k] = v; if JDB then JDB[k] = nil end end; JChanged() end
+local OUTLINES = { { "", "Plain (shadow)" }, { "OUTLINE", "Outline" }, { "THICKOUTLINE", "Thick outline" } }
+local def = { addon = "CastBarPlus", options = {
+    Opt({ type = "slider", label = "Bar height", min = 10, max = 40, step = 1, desc = "Your cast bar's height in pixels." }, "BAR_HEIGHT"),
+    Opt({ type = "slider", label = "Text size", min = 8, max = 20, step = 1 }, "FONT_SIZE"),
+    Opt({ type = "choice", label = "Text outline", choices = OUTLINES }, "FONT_OUTLINE"),
+    Opt({ type = "toggle", label = "Timer as a plain number", desc = "1.5 instead of 1.5s." }, "TIMER_NUMBER_ONLY"),
+    Opt({ type = "slider", label = "Timer gap from the right", min = 0, max = 20, step = 1 }, "TIMER_PAD"),
+    Opt({ type = "toggle", label = "Hide the name box", desc = "The dark box Blizzard draws under the bar.", reload = true }, "HIDE_NAME_BOX"),
+    Opt({ type = "slider", label = "Border corner size", desc = "Larger keeps more of the border's corners unstretched.", min = 2, max = 8, step = 1, reload = true }, "BORDER_SLICE"),
+    { type = "button", label = "Defaults", button = "Reset to defaults", func = JReset },
+} }
+if JaffsUI and JaffsUI.Register then JaffsUI:Register(def)
+else JaffsUI_Queue = JaffsUI_Queue or {}; table.insert(JaffsUI_Queue, def) end

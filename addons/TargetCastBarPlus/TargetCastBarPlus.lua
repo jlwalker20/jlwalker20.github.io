@@ -1,4 +1,5 @@
--- TargetCastBarPlus 0.10
+-- TargetCastBarPlus 0.11
+-- 0.11: settings changeable in Jaff's Better Forever UI (/jaffs)
 -- 0.10: bars drawn in front of the target / focus buff icons (FRONT)
 -- 0.9: top / bottom toggle per bar (/tcb target, /tcb focus); focus bar found more ways
 -- 0.8: bar moved above the target / focus frame (POSITION), with nudge macros
@@ -399,3 +400,47 @@ mf:SetScript("OnEvent", function()
         end
     end)
 end)
+
+-- ---------------------------------------------------------------- options for Jaff's Better Forever UI
+local JDEFAULTS = {}
+for k, v in pairs(CONFIG) do if type(v) ~= "table" then JDEFAULTS[k] = v end end
+local JDB
+local function JChanged() pcall(Place) end
+local jlf = CreateFrame("Frame")
+jlf:RegisterEvent("ADDON_LOADED")
+jlf:SetScript("OnEvent", function(_, _, n)
+    if n ~= "TargetCastBarPlus" then return end
+    TargetCastBarPlusDB = TargetCastBarPlusDB or {}
+    TargetCastBarPlusDB.cfg = TargetCastBarPlusDB.cfg or {}
+    JDB = TargetCastBarPlusDB.cfg
+    for k, v in pairs(JDB) do if JDEFAULTS[k] ~= nil then CONFIG[k] = v end end
+end)
+local function Opt(t, key)
+    t.get = function() return CONFIG[key] end
+    t.set = function(v) CONFIG[key] = v; if JDB then JDB[key] = v end; JChanged() end
+    return t
+end
+local function JReset() for k, v in pairs(JDEFAULTS) do CONFIG[k] = v; if JDB then JDB[k] = nil end end; JChanged() end
+local OUTLINES = { { "", "Plain (shadow)" }, { "OUTLINE", "Outline" }, { "THICKOUTLINE", "Thick outline" } }
+local def = { addon = "TargetCastBarPlus", options = {
+    { type = "choice", label = "Target bar", choices = { { "top", "Above the frame" }, { "bottom", "Below (Blizzard's spot)" } },
+      get = function() return WantTop({ unit = "target" }) and "top" or "bottom" end,
+      set = function(v) if (WantTop({ unit = "target" }) and "top" or "bottom") ~= v then SlashCmdList["TARGETCASTBARPLUS"]("target") end end },
+    { type = "choice", label = "Focus bar", choices = { { "top", "Above the frame" }, { "bottom", "Below (Blizzard's spot)" } },
+      get = function() return WantTop({ unit = "focus" }) and "top" or "bottom" end,
+      set = function(v) if (WantTop({ unit = "focus" }) and "top" or "bottom") ~= v then SlashCmdList["TARGETCASTBARPLUS"]("focus") end end },
+    { type = "button", label = "Nudge up", button = "Up", func = function() SlashCmdList["TARGETCASTBARPLUS"]("up") end },
+    { type = "button", label = "Nudge down", button = "Down", func = function() SlashCmdList["TARGETCASTBARPLUS"]("down") end },
+    { type = "button", label = "Nudge left", button = "Left", func = function() SlashCmdList["TARGETCASTBARPLUS"]("left") end },
+    { type = "button", label = "Nudge right", button = "Right", func = function() SlashCmdList["TARGETCASTBARPLUS"]("right") end },
+    { type = "button", label = "Position", button = "Reset nudges", func = function() SlashCmdList["TARGETCASTBARPLUS"]("reset") end },
+    { type = "header", label = "Look" },
+    Opt({ type = "slider", label = "Bar height", min = 10, max = 30, step = 1 }, "TARGET_HEIGHT"),
+    Opt({ type = "slider", label = "Text size", min = 8, max = 18, step = 1 }, "FONT_SIZE"),
+    Opt({ type = "choice", label = "Text outline", choices = OUTLINES }, "FONT_OUTLINE"),
+    Opt({ type = "toggle", label = "In front of buff icons", reload = true }, "FRONT"),
+    Opt({ type = "toggle", label = "Hide the name box", reload = true }, "HIDE_NAME_BOX"),
+    { type = "button", label = "Defaults", button = "Reset to defaults", func = JReset },
+} }
+if JaffsUI and JaffsUI.Register then JaffsUI:Register(def)
+else JaffsUI_Queue = JaffsUI_Queue or {}; table.insert(JaffsUI_Queue, def) end

@@ -1,4 +1,4 @@
-ShortChannels 1.4
+ShortChannels 1.5
 =================
 Shortens chat channel names in your chat windows.
 
@@ -56,3 +56,7 @@ NOTES
   - If you add another chat addon that rewrites channel names, the two
     may fight; disable one.
   - Built for WoW: Forever, client 1.60.1 (live build 70790).
+
+OPTIONS PANEL
+  With "Jaff's Better Forever UI" installed, these settings can be changed in
+  /jaffs instead of editing the .lua (they are saved).

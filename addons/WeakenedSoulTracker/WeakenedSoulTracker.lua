@@ -1,4 +1,5 @@
--- WeakenedSoulTracker 0.6 (test)
+-- WeakenedSoulTracker 0.7 (test)
+-- 0.7: settings changeable in Jaff's Better Forever UI (/jaffs)
 -- 0.6: names in class color
 -- 0.5: /ws help
 -- 0.4: three named spots (position + grow direction each), switch with /ws spot
@@ -475,3 +476,52 @@ mf:SetScript("OnEvent", function()
         end
     end)
 end)
+
+-- ---------------------------------------------------------------- options for Jaff's Better Forever UI
+local JDEFAULTS = {}
+for k, v in pairs(CONFIG) do if type(v) ~= "table" then JDEFAULTS[k] = v end end
+local JDB
+local function JChanged() pcall(Layout) end
+local jlf = CreateFrame("Frame")
+jlf:RegisterEvent("ADDON_LOADED")
+jlf:SetScript("OnEvent", function(_, _, n)
+    if n ~= "WeakenedSoulTracker" then return end
+    WeakenedSoulTrackerDB = WeakenedSoulTrackerDB or {}
+    WeakenedSoulTrackerDB.cfg = WeakenedSoulTrackerDB.cfg or {}
+    JDB = WeakenedSoulTrackerDB.cfg
+    for k, v in pairs(JDB) do if JDEFAULTS[k] ~= nil then CONFIG[k] = v end end
+end)
+local function Opt(t, key)
+    t.get = function() return CONFIG[key] end
+    t.set = function(v) CONFIG[key] = v; if JDB then JDB[key] = v end; JChanged() end
+    return t
+end
+local function JReset() for k, v in pairs(JDEFAULTS) do CONFIG[k] = v; if JDB then JDB[k] = nil end end; JChanged() end
+local OUTLINES = { { "", "Plain (shadow)" }, { "OUTLINE", "Outline" }, { "THICKOUTLINE", "Thick outline" } }
+local def = { addon = "WeakenedSoulTracker", options = {
+    { type = "toggle", label = "Unlocked (show the box to move it)", get = function() return bar.unlocked end,
+      set = function(v) if (bar.unlocked and true or false) ~= v then SlashCmdList["WEAKENEDSOULTRACKER"]("unlock") end end },
+    { type = "choice", label = "Spot in use", choices = { { 1, "Spot 1" }, { 2, "Spot 2" }, { 3, "Spot 3" } },
+      get = function() return DB and DB.active or 1 end,
+      set = function(v) SlashCmdList["WEAKENEDSOULTRACKER"]("spot " .. v) end },
+    { type = "choice", label = "Grow", choices = { { "RIGHT", "To the right" }, { "LEFT", "To the left" } },
+      get = function() return Grow() end,
+      set = function(v) if Grow() ~= v then SlashCmdList["WEAKENEDSOULTRACKER"]("grow") end end },
+    { type = "button", label = "Nudge up", button = "Up", func = function() SlashCmdList["WEAKENEDSOULTRACKER"]("up") end },
+    { type = "button", label = "Nudge down", button = "Down", func = function() SlashCmdList["WEAKENEDSOULTRACKER"]("down") end },
+    { type = "button", label = "Nudge left", button = "Left", func = function() SlashCmdList["WEAKENEDSOULTRACKER"]("left") end },
+    { type = "button", label = "Nudge right", button = "Right", func = function() SlashCmdList["WEAKENEDSOULTRACKER"]("right") end },
+    { type = "button", label = "Position", button = "Reset", func = function() SlashCmdList["WEAKENEDSOULTRACKER"]("reset") end },
+    { type = "button", label = "Sample icons", button = "Show test", func = function() SlashCmdList["WEAKENEDSOULTRACKER"]("test") end },
+    { type = "header", label = "Look" },
+    Opt({ type = "slider", label = "Icon size", min = 20, max = 64, step = 2, reload = true }, "ICON_SIZE"),
+    Opt({ type = "slider", label = "Spacing", min = 0, max = 20, step = 1 }, "SPACING"),
+    Opt({ type = "choice", label = "Shape", choices = { { "square", "Square" }, { "round", "Round" } }, reload = true }, "SHAPE"),
+    Opt({ type = "choice", label = "Picture", choices = { { "portrait", "Portrait" }, { "class", "Class icon" } } }, "ICON_STYLE"),
+    Opt({ type = "toggle", label = "Show names" }, "SHOW_NAME"),
+    Opt({ type = "toggle", label = "Names in class color" }, "CLASS_COLOR"),
+    Opt({ type = "slider", label = "Name length", min = 3, max = 12, step = 1 }, "NAME_LENGTH"),
+    { type = "button", label = "Defaults", button = "Reset to defaults", func = JReset },
+} }
+if JaffsUI and JaffsUI.Register then JaffsUI:Register(def)
+else JaffsUI_Queue = JaffsUI_Queue or {}; table.insert(JaffsUI_Queue, def) end

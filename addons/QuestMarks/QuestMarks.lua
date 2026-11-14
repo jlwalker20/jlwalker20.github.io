@@ -1,4 +1,5 @@
--- QuestMarks 0.6
+-- QuestMarks 0.7
+-- 0.7: mark, color and on/off changeable in Jaff's Better Forever UI (/jaffs)
 -- 0.6: follows objective progress: once you have finished a mob's part of a
 --      quest (e.g. 4/4 slain), its mark goes away
 -- 0.5: no chat message at login (it was only there for testing)
@@ -200,6 +201,8 @@ events:SetScript("OnEvent", function(_, event, arg1)
             QuestMarksDB = QuestMarksDB or {}
             DB = QuestMarksDB
             if DB.enabled == nil then DB.enabled = true end
+            if type(DB.mark) == "string" then MARK = DB.mark end
+            if type(DB.color) == "table" then COLOR = DB.color end
         end
         return
     end
@@ -285,3 +288,33 @@ mf:SetScript("OnEvent", function()
         end
     end)
 end)
+
+-- ---------------------------------------------------------------- options for Jaff's Better Forever UI
+local COLORS = {
+    yellow = { 1, 0.82, 0 }, white = { 1, 1, 1 }, green = { 0.3, 1, 0.3 }, red = { 1, 0.3, 0.3 }, blue = { 0.4, 0.75, 1 },
+}
+local function Repaint()
+    for _, l in pairs(labels) do
+        local fs = type(l) == "table" and l.fs
+        if fs and fs.SetText then pcall(fs.SetText, fs, MARK); pcall(fs.SetTextColor, fs, COLOR[1], COLOR[2], COLOR[3]) end
+    end
+    pcall(RefreshAll)
+end
+local function ColorName()
+    for k, c in pairs(COLORS) do if c[1] == COLOR[1] and c[2] == COLOR[2] and c[3] == COLOR[3] then return k end end
+    return "yellow"
+end
+local def = { addon = "QuestMarks", options = {
+    { type = "toggle", label = "Show quest marks", desc = "Same as /qm.",
+      get = function() return DB and DB.enabled ~= false end,
+      set = function(v) if DB then DB.enabled = v end; pcall(RefreshAll) end },
+    { type = "choice", label = "Mark", choices = { { "*", "*" }, { "!", "!" }, { "?", "?" }, { "+", "+" }, { "<<", "<<" } },
+      get = function() return MARK end,
+      set = function(v) MARK = v; if DB then DB.mark = v end; Repaint() end },
+    { type = "choice", label = "Color",
+      choices = { { "yellow", "Quest yellow" }, { "white", "White" }, { "green", "Green" }, { "red", "Red" }, { "blue", "Blue" } },
+      get = ColorName,
+      set = function(v) COLOR = COLORS[v] or COLORS.yellow; if DB then DB.color = COLOR end; Repaint() end },
+} }
+if JaffsUI and JaffsUI.Register then JaffsUI:Register(def)
+else JaffsUI_Queue = JaffsUI_Queue or {}; table.insert(JaffsUI_Queue, def) end

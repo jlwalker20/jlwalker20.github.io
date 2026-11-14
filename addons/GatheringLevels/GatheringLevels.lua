@@ -1,4 +1,5 @@
--- GatheringLevels
+-- GatheringLevels 0.4
+-- 0.4: settings saved and changeable in Jaff's Better Forever UI (/jaffs)
 -- When the world map shows a single zone, a few lines of text in its top-left
 -- corner give that zone's skill ranges for the gathering professions YOU
 -- have (Herbalism, Mining, Skinning, Fishing). Nothing on continent or
@@ -208,3 +209,36 @@ events:SetScript("OnEvent", function(_, event)
         lastMap = nil -- redraw with new skills
     end
 end)
+
+-- ---------------------------------------------------------------- options for Jaff's Better Forever UI
+local DEFAULTS = {}
+for k, v in pairs(CONFIG) do DEFAULTS[k] = v end
+local DB
+local lf = CreateFrame("Frame")
+lf:RegisterEvent("ADDON_LOADED")
+lf:SetScript("OnEvent", function(_, _, n)
+    if n ~= "GatheringLevels" then return end
+    GatheringLevelsDB = GatheringLevelsDB or {}
+    DB = GatheringLevelsDB
+    for k, v in pairs(DB) do if DEFAULTS[k] ~= nil then CONFIG[k] = v end end
+end)
+local function Opt(t, key)
+    t.get = function() return CONFIG[key] end
+    t.set = function(v) CONFIG[key] = v; if DB then DB[key] = v end end
+    return t
+end
+local def = { addon = "GatheringLevels", options = {
+    Opt({ type = "toggle", label = "Show your skill", desc = "Adds \"(you 42)\" after each range. Shows the next time the map updates." }, "SHOW_YOUR_SKILL"),
+    { type = "header", label = "Text" },
+    Opt({ type = "slider", label = "Text size", min = 10, max = 24, step = 1, reload = true }, "FONT_SIZE"),
+    Opt({ type = "slider", label = "Heading size", min = 10, max = 26, step = 1, reload = true }, "HEADER_SIZE"),
+    { type = "header", label = "Position on the map" },
+    Opt({ type = "choice", label = "Corner", reload = true,
+          choices = { { "TOPLEFT", "Top left" }, { "TOPRIGHT", "Top right" }, { "BOTTOMLEFT", "Bottom left" }, { "BOTTOMRIGHT", "Bottom right" } } }, "POINT"),
+    Opt({ type = "slider", label = "Sideways", desc = "Pixels from the corner (+ is right).", min = -300, max = 300, step = 2, reload = true }, "X"),
+    Opt({ type = "slider", label = "Up / down", desc = "Pixels from the corner (+ is up).", min = -300, max = 300, step = 2, reload = true }, "Y"),
+    { type = "button", label = "Defaults", button = "Reset to defaults", desc = "Reload afterwards for sizes and position.",
+      func = function() for k, v in pairs(DEFAULTS) do CONFIG[k] = v; if DB then DB[k] = nil end end end },
+} }
+if JaffsUI and JaffsUI.Register then JaffsUI:Register(def)
+else JaffsUI_Queue = JaffsUI_Queue or {}; table.insert(JaffsUI_Queue, def) end

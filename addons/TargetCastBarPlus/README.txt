@@ -1,4 +1,4 @@
-TargetCastBarPlus 0.10
+TargetCastBarPlus 0.11
 =====================
 Reshapes your target's and focus's cast bars the way CastBarPlus does yours:
 taller, the spell name inside the bar (centered), and a cast
@@ -46,3 +46,7 @@ COMMANDS (macros are created for you, if you have free macro slots)
 NOTES
   - Works on its own or together with CastBarPlus.
   - Built for WoW: Forever, client 1.60.1 (live build 70790).
+
+OPTIONS PANEL
+  With "Jaff's Better Forever UI" installed, its settings (and an on/off
+  switch) are in /jaffs instead of the .lua (they are saved).

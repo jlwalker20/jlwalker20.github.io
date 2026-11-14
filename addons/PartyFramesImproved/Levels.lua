@@ -7,6 +7,8 @@
 -- onto Blizzard's frames (its notes live in its own table), never touches
 -- nameplates, the chat box or the gamepad UI.
 
+local _, ns = ...
+
 local CONFIG = {
     POSITION = "before",          -- "before" -> "52 Thrall", "after" -> "Thrall 52"
     COLOR_BY_DIFFICULTY = true,   -- color the level like the target frame does
@@ -96,3 +98,12 @@ events:SetScript("OnEvent", function(_, event, unit)
         Relevel(unit)
     end
 end)
+
+-- for the options panel
+ns.cfg = ns.cfg or {}; ns.cfg.levels = CONFIG
+ns.LevelsRefresh = function()
+    local units = { "player" }
+    for i = 1, 4 do units[#units + 1] = "party" .. i end
+    for i = 1, 40 do units[#units + 1] = "raid" .. i end
+    for _, u in ipairs(units) do pcall(Relevel, u) end
+end

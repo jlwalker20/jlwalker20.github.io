@@ -1,4 +1,5 @@
--- FlightTimer
+-- FlightTimer 1.5
+-- 1.5: move / reset / re-record / forget from Jaff's Better Forever UI (/jaffs)
 -- A plain text countdown for flight paths, lower-middle of the screen.
 --
 -- The game doesn't tell addons how long a flight takes, so this LEARNS it:
@@ -379,3 +380,22 @@ events:SetScript("OnEvent", function(_, event, arg1)
         end
     end
 end)
+
+-- ---------------------------------------------------------------- options for Jaff's Better Forever UI
+local function Run(cmd) local f = SlashCmdList["FLIGHTTIMER"]; if f then pcall(f, cmd) end end
+local def = { addon = "FlightTimer", options = {
+    { type = "toggle", label = "Unlocked (show it to move)", desc = "Shows a placeholder you can drag. Turn off to lock it in place.",
+      get = function() return unlocked end, set = function(v) Run(v and "unlock" or "lock") end },
+    { type = "button", label = "Nudge up", button = "Up", func = function() Run("up") end },
+    { type = "button", label = "Nudge down", button = "Down", func = function() Run("down") end },
+    { type = "button", label = "Nudge left", button = "Left", func = function() Run("left") end },
+    { type = "button", label = "Nudge right", button = "Right", func = function() Run("right") end },
+    { type = "button", label = "Position", button = "Reset", desc = "Back to the default spot.", func = function() Run("reset") end },
+    { type = "header", label = "Learned flight times" },
+    { type = "button", label = "Re-record the next flight", button = "Re-record", desc = "The next flight you take (or the one you're on) replaces that route's saved time.",
+      func = function() Run("redo") end },
+    { type = "button", label = "Forget this route", button = "Forget", desc = "Deletes the saved time for the current or last route.", func = function() Run("forget") end },
+    { type = "button", label = "Forget every route", button = "Clear all", desc = "Asks you to press it twice.", func = function() Run("clear") end },
+} }
+if JaffsUI and JaffsUI.Register then JaffsUI:Register(def)
+else JaffsUI_Queue = JaffsUI_Queue or {}; table.insert(JaffsUI_Queue, def) end

@@ -1,4 +1,5 @@
--- ChatFade
+-- ChatFade 1.2
+-- 1.2: settings saved and changeable in Jaff's Better Forever UI (/jaffs)
 -- Fades the chat window out after IDLE_SECONDS with no new chat line, and
 -- brings it straight back to full opacity when a line arrives. That
 -- includes system lines such as "Changed Channel: [1. G]" when you move
@@ -37,6 +38,10 @@ local EXTRA_PARTS = {
     "ChatFrameToggleVoiceMuteButton",
     "QuickJoinToastButton",
 }
+
+local DEFAULTS = {}
+for k, v in pairs(CONFIG) do DEFAULTS[k] = v end
+local DB
 
 local driver = CreateFrame("Frame")
 local alpha, target, speed = 1, 1, 0
@@ -128,6 +133,7 @@ local Watch
 
 local function Check()
     checkPending = false
+    if DB and DB.off then return end
     local idle = GetTime() - lastActivity
     if idle < CONFIG.IDLE_SECONDS then
         ScheduleCheck(CONFIG.IDLE_SECONDS - idle)
@@ -192,9 +198,45 @@ events:RegisterEvent("PLAYER_ENTERING_WORLD")
 events:RegisterEvent("ZONE_CHANGED_NEW_AREA")
 events:RegisterEvent("UPDATE_CHAT_WINDOWS")
 
-events:SetScript("OnEvent", function(self, event)
+events:RegisterEvent("ADDON_LOADED")
+events:SetScript("OnEvent", function(self, event, arg1)
+    if event == "ADDON_LOADED" then
+        if arg1 == "ChatFade" then
+            ChatFadeDB = ChatFadeDB or {}
+            DB = ChatFadeDB
+            for k in pairs(DEFAULTS) do if DB[k] ~= nil then CONFIG[k] = DB[k] end end
+        end
+        return
+    end
     if event == "PLAYER_LOGIN" or event == "UPDATE_CHAT_WINDOWS" then
         pcall(HookChatFrames)
     end
     pcall(Wake)
 end)
+
+-- ---------------------------------------------------------------- options for Jaff's Better Forever UI
+local function Setting(key)
+    return function() return CONFIG[key] end,
+           function(v) CONFIG[key] = v; if DB then DB[key] = v end; pcall(Wake) end
+end
+local function Opt(t, key) t.get, t.set = Setting(key); return t end
+
+local def = { addon = "ChatFade", options = {
+    { type = "toggle", label = "Fade the chat", desc = "Off keeps the chat fully visible.",
+      get = function() return not (DB and DB.off) end,
+      set = function(v) if DB then DB.off = not v end; pcall(Wake) end },
+    Opt({ type = "slider", label = "Fade after (seconds)", desc = "Seconds with no new chat line before the chat fades.",
+          min = 5, max = 120, step = 5 }, "IDLE_SECONDS"),
+    Opt({ type = "slider", label = "Faded opacity", desc = "0 hides the chat completely; higher leaves a faint ghost.",
+          min = 0, max = 0.8, step = 0.05, format = "%.2f" }, "FADED_ALPHA"),
+    Opt({ type = "slider", label = "Fade-out time (seconds)", min = 0.25, max = 5, step = 0.25, format = "%.2f" }, "FADE_OUT_TIME"),
+    Opt({ type = "slider", label = "Fade-in time (seconds)", min = 0, max = 2, step = 0.25, format = "%.2f" }, "FADE_IN_TIME"),
+    { type = "button", label = "Defaults", button = "Reset to defaults", desc = "Put every ChatFade setting back to how it shipped.",
+      func = function()
+          for k, v in pairs(DEFAULTS) do CONFIG[k] = v; if DB then DB[k] = nil end end
+          if DB then DB.off = nil end
+          pcall(Wake)
+      end },
+} }
+if JaffsUI and JaffsUI.Register then JaffsUI:Register(def)
+else JaffsUI_Queue = JaffsUI_Queue or {}; table.insert(JaffsUI_Queue, def) end

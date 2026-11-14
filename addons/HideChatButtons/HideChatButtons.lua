@@ -1,4 +1,5 @@
--- HideChatButtons 0.2
+-- HideChatButtons 0.3
+-- 0.3: each part can be switched in Jaff's Better Forever UI (/jaffs); saved
 -- Hides the buttons stacked on the left side of the chat window. Each one can
 -- be turned on or off below (true = hidden).
 --
@@ -88,7 +89,10 @@ events:RegisterEvent("ADDON_LOADED")
 events:RegisterEvent("PLAYER_ENTERING_WORLD")
 events:SetScript("OnEvent", function(_, event, arg1)
     if event == "ADDON_LOADED" then
-        if arg1 == ADDON then HideChatButtonsDB = HideChatButtonsDB or {}; DB = HideChatButtonsDB end
+        if arg1 == ADDON then
+            HideChatButtonsDB = HideChatButtonsDB or {}; DB = HideChatButtonsDB
+            if type(DB.hide) == "table" then for k, v in pairs(DB.hide) do if HIDE[k] ~= nil then HIDE[k] = v end end end
+        end
         return
     end
     pcall(Apply)
@@ -130,3 +134,36 @@ mf:SetScript("OnEvent", function()
         end
     end)
 end)
+
+-- ---------------------------------------------------------------- options for Jaff's Better Forever UI
+local DEFAULT_HIDE = {}
+for k, v in pairs(HIDE) do DEFAULT_HIDE[k] = v end
+local function Part(key, label, desc)
+    return { type = "toggle", label = label, desc = desc,
+             get = function() return HIDE[key] end,
+             set = function(v)
+                 HIDE[key] = v
+                 if DB then DB.hide = DB.hide or {}; DB.hide[key] = v end
+                 pcall(Apply)
+             end }
+end
+local def = { addon = "HideChatButtons", options = {
+    { type = "toggle", label = "Hide chat buttons", desc = "Off shows everything again (same as /hcb).",
+      get = function() return not (DB and DB.off) end,
+      set = function(v) if DB then DB.off = not v end; pcall(Apply) end },
+    { type = "header", label = "Which parts to hide" },
+    Part("social", "Social / friends button", "The friends button with the online count."),
+    Part("channels", "Chat channels button"),
+    Part("menu", "Chat menu button", "The speech-bubble button."),
+    Part("frame", "Side strip", "The dark strip behind those buttons, on every chat window."),
+    Part("voice", "Voice chat buttons", "Mute / deafen, if your client shows them."),
+    Part("scroll", "Scroll arrows", "Up / down / to-bottom arrows. Hiding these also hides their strip."),
+    { type = "button", label = "Defaults", button = "Reset to defaults",
+      func = function()
+          for k, v in pairs(DEFAULT_HIDE) do HIDE[k] = v end
+          if DB then DB.hide = nil; DB.off = nil end
+          pcall(Apply)
+      end },
+} }
+if JaffsUI and JaffsUI.Register then JaffsUI:Register(def)
+else JaffsUI_Queue = JaffsUI_Queue or {}; table.insert(JaffsUI_Queue, def) end

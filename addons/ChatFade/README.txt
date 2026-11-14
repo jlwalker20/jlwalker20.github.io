@@ -1,4 +1,4 @@
-ChatFade 1.1
+ChatFade 1.2
 ============
 Fades the chat window out after 30 seconds with no new message, and
 brings it back to full opacity the moment a new line arrives. That
@@ -43,3 +43,7 @@ NOTES
     faded.
   - Works alongside ShortChannels.
   - Built for WoW: Forever, client 1.60.1 (live build 70790).
+
+OPTIONS PANEL
+  With "Jaff's Better Forever UI" installed, these settings can be changed in
+  /jaffs instead of editing the .lua (they are saved).

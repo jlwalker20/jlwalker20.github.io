@@ -283,3 +283,11 @@ else
     local acc = 0
     events:SetScript("OnUpdate", function(_, e) acc = acc + e; if acc >= 1 then acc = 0; Recheck() end end)
 end
+
+-- ---------------------------------------------------------------- options for Jaff's Better Forever UI
+local def = { addon = "HideCrosshairs", options = {
+    { type = "note", text = "Nothing to set: it just works. Use the switch above to turn it off." },
+    { type = "button", label = "What it found", button = "Show in chat", func = function() SlashCmdList["HIDECROSSHAIRS"]("") end },
+} }
+if JaffsUI and JaffsUI.Register then JaffsUI:Register(def)
+else JaffsUI_Queue = JaffsUI_Queue or {}; table.insert(JaffsUI_Queue, def) end

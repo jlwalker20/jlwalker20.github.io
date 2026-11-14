@@ -1,4 +1,4 @@
-ShowTotemBar 1.1
+ShowTotemBar 1.2
 ================
 Keeps the Shaman totem bar visible. In gamepad mode the default totem bar
 can be hidden and its blue Edit Mode box does not appear, so you cannot
@@ -39,3 +39,7 @@ NOTES
     them mid-fight ("Interface action failed because of an AddOn"). Version
     1.0 did that; 1.1 waits until combat ends instead.
   - Built for WoW: Forever, client 1.60.1 (live build 70790); tested on a Shaman.
+
+OPTIONS PANEL
+  With "Jaff's Better Forever UI" installed, its settings (and an on/off
+  switch) are in /jaffs instead of the .lua (they are saved).

@@ -1,4 +1,4 @@
-HideChatButtons 0.2
+HideChatButtons 0.3
 ===================
 Hides the buttons stacked on the left side of the chat window:
 social (friends), chat channels, the chat menu (speech bubble),
@@ -28,3 +28,7 @@ COMMANDS / MACROS
                 side-strip textures it found
 
 Built for WoW: Forever, client 1.60.1 (live build 70790).
+
+OPTIONS PANEL
+  With "Jaff's Better Forever UI" installed, these settings can be changed in
+  /jaffs instead of editing the .lua (they are saved).

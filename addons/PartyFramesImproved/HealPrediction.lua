@@ -177,3 +177,8 @@ ns.HealsCmd = function(msg)
     DB.off = not DB.off; UpdateAll()
     Say(DB.off and "heal bars off" or "heal bars on")
 end
+
+-- for the options panel
+ns.cfg = ns.cfg or {}; ns.cfg.heals = CONFIG
+ns.HealsRefresh = function() pcall(UpdateAll) end
+ns.HealsOn = function() return not (DB and DB.off) end

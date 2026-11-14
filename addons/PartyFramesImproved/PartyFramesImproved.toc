@@ -2,7 +2,7 @@
 ## Title: PartyFramesImproved
 ## Notes: Party Frames Improved: bottom-up class-sorted party frames, levels on names, leader / marker / PvP icons.
 ## Author: You
-## Version: 2.9
+## Version: 3.0
 ## SavedVariables: PartyFramesImprovedDB
 
 Core.lua
@@ -11,3 +11,4 @@ Layout.lua
 Icons.lua
 HealPrediction.lua
 RaidLayout.lua
+Options.lua

@@ -2,7 +2,7 @@
 ## Title: TargetCastBarPlus
 ## Notes: Taller target and focus cast bars with the spell name inside the bar and a cast timer on its right edge.
 ## Author: You
-## Version: 0.10
+## Version: 0.11
 ## SavedVariables: TargetCastBarPlusDB
 
 TargetCastBarPlus.lua

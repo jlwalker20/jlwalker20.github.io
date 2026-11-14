@@ -1,4 +1,4 @@
-TargetClassColors 0.3
+TargetClassColors 0.4
 =====================
 When your target (or focus) is another player, the health bar on the
 target frame turns their class color: shaman blue, warrior tan, rogue
@@ -37,3 +37,7 @@ COMMANDS
 
 NOTES
   - Built for WoW: Forever, client 1.60.1 (live build 70790).
+
+OPTIONS PANEL
+  With "Jaff's Better Forever UI" installed, these settings can be changed in
+  /jaffs instead of editing the .lua (they are saved).

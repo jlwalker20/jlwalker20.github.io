@@ -1,4 +1,4 @@
-SquareMinimap 0.6 (test)
+SquareMinimap 0.7 (test)
 ========================
 Makes the minimap square and replaces the round ring with a square border
 built from Blizzard's own metal frame pieces (sharp corners, stretched edges),
@@ -31,3 +31,7 @@ SETTINGS (top of SquareMinimap.lua)
   ZOOM, ZOOM_GAP, ZOOM_X, ZOOM_Y
 
 Built for WoW: Forever, client 1.60.1 (live build 70790).
+
+OPTIONS PANEL
+  With "Jaff's Better Forever UI" installed, its settings (and an on/off
+  switch) are in /jaffs instead of the .lua (they are saved).

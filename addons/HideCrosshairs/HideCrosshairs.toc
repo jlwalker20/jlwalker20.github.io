@@ -2,6 +2,6 @@
 ## Title: HideCrosshairs
 ## Notes: Hides the red and green target crosshair buttons above the gamepad action bars.
 ## Author: You
-## Version: 0.7
+## Version: 0.8
 
 HideCrosshairs.lua

@@ -1,4 +1,4 @@
-WeakenedSoulTracker 0.6 (test)
+WeakenedSoulTracker 0.7 (test)
 ==============================
 A cooldown-style icon for each player you Power Word: Shield: their portrait,
 a cooldown sweep and a countdown until Weakened Soul wears off and you can
@@ -43,3 +43,7 @@ SETTINGS (top of WeakenedSoulTracker.lua)
   PORTRAIT_CROP (raise it if any dark corners remain), BORDER, SHOW_NAME, CLASS_COLOR, NAME_LENGTH, DURATION, NUDGE
 
 Built for WoW: Forever, client 1.60.1 (live build 70790).
+
+OPTIONS PANEL
+  With "Jaff's Better Forever UI" installed, its settings (and an on/off
+  switch) are in /jaffs instead of the .lua (they are saved).

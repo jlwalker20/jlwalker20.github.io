@@ -1,4 +1,5 @@
--- ShortChannels 1.4
+-- ShortChannels 1.5
+-- 1.5: on/off and each channel switchable in Jaff's Better Forever UI (/jaffs)
 -- 1.4: fixes channels 1-5 disappearing on the live client (short labels are padded
 --      with invisible codes so the game's length check still passes)
 -- 1.3: channel 6 shows as "OOC" (BY_NUMBER table below), plus an "OOC" name entry
@@ -56,12 +57,20 @@ local function Key(s)
     return (s:lower():gsub("[^%w]", ""))
 end
 
+local DB   -- saved settings (ShortChannelsDB): off, keep[key] = true to leave a channel as is
+
+-- which switch each name belongs to (the three trade channels share one)
+local GROUP = { tradelocal = "trade", tradeservices = "trade", outofcharacter = "ooc" }
+
 local function ShortName(name)
-    local short = SHORT[Key(name)]
+    local key = Key(name)
+    local short = SHORT[key]
     if not short then
         local base = name:match("^(.-) %- ") or name
-        short = SHORT[Key(base)]
+        key = Key(base)
+        short = SHORT[key]
     end
+    if short and DB and DB.keep and DB.keep[GROUP[key] or key] then return nil end
     return short
 end
 
@@ -69,13 +78,16 @@ end
 local function Shorten(channelString)
     local num, name = channelString:match("^(%d+)%. (.+)$")
     if num then
-        local short = BY_NUMBER[tonumber(num)] or ShortName(name)
+        local byNum = BY_NUMBER[tonumber(num)]
+        if byNum and DB and DB.keep and DB.keep["number" .. num] then byNum = nil end
+        local short = byNum or ShortName(name)
         return short and (num .. ". " .. short) or nil
     end
     return ShortName(channelString)
 end
 
 local function Filter(_, _, arg1, arg2, arg3, arg4, ...)
+    if DB and DB.off then return false end
     if type(arg4) ~= "string" or IsSecret(arg4) or arg4 == "" then return false end
     local ok, short = pcall(Shorten, arg4)
     if not (ok and short) then return false end
@@ -97,3 +109,34 @@ if AddFilter then
         AddFilter(event, Filter)
     end
 end
+
+-- ---------------------------------------------------------------- options for Jaff's Better Forever UI
+local lf = CreateFrame("Frame")
+lf:RegisterEvent("ADDON_LOADED")
+lf:SetScript("OnEvent", function(_, _, n)
+    if n ~= "ShortChannels" then return end
+    ShortChannelsDB = ShortChannelsDB or {}
+    DB = ShortChannelsDB
+    DB.keep = DB.keep or {}
+end)
+local function Chan(key, label, short)
+    return { type = "toggle", label = label .. "  ->  " .. short, desc = "Off leaves this channel's name as it is.",
+             get = function() return not (DB and DB.keep and DB.keep[key]) end,
+             set = function(v) if DB then DB.keep = DB.keep or {}; DB.keep[key] = (not v) or nil end end }
+end
+local def = { addon = "ShortChannels", options = {
+    { type = "toggle", label = "Shorten channel names", desc = "Applies to new messages.",
+      get = function() return not (DB and DB.off) end, set = function(v) if DB then DB.off = not v end end },
+    { type = "header", label = "Channels" },
+    Chan("general", "General", "G"),
+    Chan("trade", "Trade (all three)", "T / TL / TS"),
+    Chan("localdefense", "Local Defense", "LD"),
+    Chan("worlddefense", "World Defense", "WD"),
+    Chan("lookingforgroup", "Looking For Group", "LFG"),
+    Chan("services", "Services", "S"),
+    Chan("newcomers", "Newcomers", "N"),
+    Chan("ooc", "OOC", "OOC"),
+    Chan("number6", "Channel 6, whatever it is", "OOC"),
+} }
+if JaffsUI and JaffsUI.Register then JaffsUI:Register(def)
+else JaffsUI_Queue = JaffsUI_Queue or {}; table.insert(JaffsUI_Queue, def) end

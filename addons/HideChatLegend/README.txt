@@ -1,4 +1,4 @@
-HideChatLegend 0.2
+HideChatLegend 0.3
 ==================
 In gamepad mode, opening the chat input box shows a button legend under it:
 "A Send  X Chat Channels  Y Tab Settings  B Back". This addon makes that
@@ -27,3 +27,7 @@ COMMANDS
 
 NOTES
   - Built for WoW: Forever, client 1.60.1 (live build 70790).
+
+OPTIONS PANEL
+  With "Jaff's Better Forever UI" installed, its settings (and an on/off
+  switch) are in /jaffs instead of the .lua (they are saved).

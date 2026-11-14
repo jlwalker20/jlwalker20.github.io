@@ -1,4 +1,4 @@
-GatheringLevels 0.3
+GatheringLevels 0.4
 ===================
 Shows each zone's gathering skill ranges on the world map, for the
 gathering professions your character actually has (Herbalism, Mining,
@@ -61,3 +61,7 @@ COMMANDS
 NOTES
   - English zone names only.
   - Built for WoW: Forever, client 1.60.1 (live build 70790); tested in gamepad mode.
+
+OPTIONS PANEL
+  With "Jaff's Better Forever UI" installed, these settings can be changed in
+  /jaffs instead of editing the .lua (they are saved).

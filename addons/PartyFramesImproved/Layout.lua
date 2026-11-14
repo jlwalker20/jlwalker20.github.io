@@ -275,3 +275,9 @@ ns.LayoutCmd = function(msg)
     DB.off = not DB.off
     if DB.off then Restore(); Say("layout off: Blizzard's top-down order") else Apply(); Say("layout on: bottom-up") end
 end
+
+-- for the options panel
+ns.LayoutRefresh = function() Queue() end
+ns.LayoutState = function()
+    return { off = DB and DB.off, top = PlayerOnTop(), sort = SortOn(), label = LabelHidden() }
+end

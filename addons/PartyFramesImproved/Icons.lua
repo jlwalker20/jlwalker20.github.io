@@ -397,3 +397,9 @@ ns.IconsCmd = function(msg)
     DB.off = not DB.off; UpdateAll()
     Say(DB.off and "icons off" or "icons on")
 end
+
+-- for the options panel
+ns.cfg = ns.cfg or {}; ns.cfg.icons = CONFIG
+ns.IconsRefresh = function() pcall(UpdateAll) end
+ns.IconsSlot = function() return Slot() end
+ns.IconsOn = function() return not (DB and DB.off) end

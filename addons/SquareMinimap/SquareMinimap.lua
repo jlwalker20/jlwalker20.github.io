@@ -1,4 +1,5 @@
--- SquareMinimap 0.6 (test)
+-- SquareMinimap 0.7 (test)
+-- 0.7: settings changeable in Jaff's Better Forever UI (/jaffs)
 -- 0.6: /sqm frames lists the minimap's buttons; /sqm sun <number> picks the sun/moon
 -- 0.5: sun-button move turned off (it was moving the calendar button)
 -- 0.4: border outside DarkIronUI's reach (no flicker), edges/corners on separate layers;
@@ -521,3 +522,64 @@ mf:SetScript("OnEvent", function()
         end
     end)
 end)
+
+-- ---------------------------------------------------------------- options for Jaff's Better Forever UI
+local JDEFAULTS = {}
+for k, v in pairs(CONFIG) do if type(v) ~= "table" then JDEFAULTS[k] = v end end
+local JDB
+local function JChanged() pcall(Apply) end
+local jlf = CreateFrame("Frame")
+jlf:RegisterEvent("ADDON_LOADED")
+jlf:SetScript("OnEvent", function(_, _, n)
+    if n ~= "SquareMinimap" then return end
+    SquareMinimapDB = SquareMinimapDB or {}
+    SquareMinimapDB.cfg = SquareMinimapDB.cfg or {}
+    JDB = SquareMinimapDB.cfg
+    for k, v in pairs(JDB) do if JDEFAULTS[k] ~= nil then CONFIG[k] = v end end
+    if type(JDB.tint) == "number" then CONFIG.TINT = { JDB.tint, JDB.tint, JDB.tint } end
+end)
+local function Opt(t, key)
+    t.get = function() return CONFIG[key] end
+    t.set = function(v) CONFIG[key] = v; if JDB then JDB[key] = v end; JChanged() end
+    return t
+end
+local function JReset() for k, v in pairs(JDEFAULTS) do CONFIG[k] = v; if JDB then JDB[k] = nil end end; CONFIG.TINT = { 0.55, 0.55, 0.55 }; if JDB then JDB.tint = nil end; JChanged() end
+local OUTLINES = { { "", "Plain (shadow)" }, { "OUTLINE", "Outline" }, { "THICKOUTLINE", "Thick outline" } }
+local def = { addon = "SquareMinimap", options = {
+    { type = "toggle", label = "Square map", desc = "Off goes back to Blizzard's round map.",
+      get = function() return not (DB and DB.round) end, set = function(v) if DB then DB.round = not v end; pcall(Apply) end },
+    { type = "choice", label = "Border", desc = "Only styles whose art exists on this client.",
+      choices = (function()
+          local list = {}
+          for _, st in ipairs(STYLES) do list[#list + 1] = { st.key, st.label } end
+          return list
+      end)(),
+      get = function() local st = CurrentStyle(); return st and st.key end,
+      set = function(v)
+          for _, st in ipairs(Available()) do if st.key == v then DB.style = v; pcall(Apply); return end end
+          -- not on this client: skip to the next one that is
+          local avail = Available()
+          if #avail > 0 then
+              local keys = {}; for i, st in ipairs(STYLES) do keys[st.key] = i end
+              local want = keys[v] or 1
+              for i = 0, #STYLES - 1 do
+                  local k = STYLES[((want - 1 + i) % #STYLES) + 1].key
+                  for _, st in ipairs(avail) do if st.key == k then DB.style = k; pcall(Apply); return end end
+              end
+          end
+      end },
+    Opt({ type = "slider", label = "Corner size", min = 0.2, max = 1, step = 0.05, format = "%.2f" }, "SCALE"),
+    Opt({ type = "slider", label = "Border overlap", min = -4, max = 10, step = 1 }, "INSET"),
+    { type = "slider", label = "Border gray", desc = "0 is black, 1 is white.", min = 0.1, max = 1, step = 0.05, format = "%.2f",
+      get = function() return CONFIG.TINT[1] end,
+      set = function(v) CONFIG.TINT = { v, v, v }; if JDB then JDB.tint = v end; JChanged() end },
+    Opt({ type = "toggle", label = "Keep the north arrow" }, "NORTH"),
+    { type = "header", label = "Zoom buttons" },
+    Opt({ type = "toggle", label = "Move them under the map", reload = true }, "ZOOM"),
+    Opt({ type = "slider", label = "Up / down", min = -20, max = 20, step = 1 }, "ZOOM_Y"),
+    Opt({ type = "slider", label = "Sideways", min = -40, max = 40, step = 1 }, "ZOOM_X"),
+    Opt({ type = "slider", label = "Gap between them", min = 0, max = 12, step = 1 }, "ZOOM_GAP"),
+    { type = "button", label = "Defaults", button = "Reset to defaults", func = JReset },
+} }
+if JaffsUI and JaffsUI.Register then JaffsUI:Register(def)
+else JaffsUI_Queue = JaffsUI_Queue or {}; table.insert(JaffsUI_Queue, def) end

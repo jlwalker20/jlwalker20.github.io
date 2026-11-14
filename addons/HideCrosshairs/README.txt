@@ -1,4 +1,4 @@
-HideCrosshairs 0.7
+HideCrosshairs 0.8
 ==================
 Hides the red (enemy) and green (friendly) crosshair icons that the
 gamepad UI shows above the action bars on the bumpers (LB / RB). The
@@ -38,3 +38,7 @@ MACRO (created for you)
 
 NOTES
   - Built for WoW: Forever, client 1.60.1 (live build 70790); tested in gamepad mode.
+
+OPTIONS PANEL
+  With "Jaff's Better Forever UI" installed, its settings (and an on/off
+  switch) are in /jaffs instead of the .lua (they are saved).

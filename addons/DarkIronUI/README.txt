@@ -1,4 +1,4 @@
-DarkIronUI 1.16 - for World of Warcraft: Forever (client 1.60.1)
+DarkIronUI 1.17 - for World of Warcraft: Forever (client 1.60.1)
 =================================================================
 
 One addon that recolors the default Blizzard UI from gold/brown to a
@@ -60,3 +60,9 @@ KNOWN LIMITS
   Blizzard's look.
   Buffs/debuffs and nameplates keep Blizzard's look: the game guards
   those frames, and recoloring them caused "blocked from an action" errors.
+
+OPTIONS PANEL
+  With "Jaff's Better Forever UI" installed, /jaffs has a DarkIronUI tab: each
+  part's dark look on/off, a darkness slider for the recolored parts (minimap,
+  quest tracker, tooltips, XP bar, bag bar, menu bar, cast bars) and the elite
+  dragon nudges. (The separate-parts download doesn't have the tab yet.)

@@ -1,4 +1,4 @@
-CastBarPlus 0.8
+CastBarPlus 0.9
 ===============
 Reshapes your cast bar: it's taller, the spell name sits inside the bar
 (centered, like a name over a health bar), and the cast timer sits inside the
@@ -37,3 +37,7 @@ COMMANDS
 
 NOTES
   - Built for WoW: Forever, client 1.60.1 (live build 70790).
+
+OPTIONS PANEL
+  With "Jaff's Better Forever UI" installed, its settings (and an on/off
+  switch) are in /jaffs instead of the .lua (they are saved).

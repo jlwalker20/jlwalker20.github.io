@@ -254,3 +254,8 @@ ns.RaidCmd = function(msg)
     if DB.off then Restore(); Say("raid layout off: Blizzard's layout (/reload if it doesn't snap back)")
     else Apply(); Say("raid layout on: grows from the bottom-right") end
 end
+
+-- for the options panel
+ns.cfg = ns.cfg or {}; ns.cfg.raid = CONFIG
+ns.RaidRefresh = function() Queue() end
+ns.RaidOn = function() return not (DB and DB.off) end

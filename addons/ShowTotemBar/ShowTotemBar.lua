@@ -105,3 +105,10 @@ frame:SetScript("OnEvent", function(_, event)
         end
     end)
 end)
+
+-- ---------------------------------------------------------------- options for Jaff's Better Forever UI
+local def = { addon = "ShowTotemBar", options = {
+    { type = "note", text = "Nothing to set: it just keeps the totem bar visible. Use the switch above to turn it off." },
+} }
+if JaffsUI and JaffsUI.Register then JaffsUI:Register(def)
+else JaffsUI_Queue = JaffsUI_Queue or {}; table.insert(JaffsUI_Queue, def) end

@@ -1,4 +1,4 @@
-QuestMarks 0.6
+QuestMarks 0.7
 ==============
 Puts a small yellow "*" just after a nameplate's name when that unit is part
 of one of your active quests: a mob you have to kill, or a mob that drops an
@@ -29,3 +29,7 @@ COMMANDS
 
 NOTES
   - Built for WoW: Forever, client 1.60.1 (live build 70790).
+
+OPTIONS PANEL
+  With "Jaff's Better Forever UI" installed, these settings can be changed in
+  /jaffs instead of editing the .lua (they are saved).
