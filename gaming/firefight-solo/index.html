@@ -1,0 +1,1610 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#1a1d1f">
+<link rel="manifest" href="../manifest.webmanifest">
+<link rel="icon" href="../icons/icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="../icons/icon-192.png">
+<title>Firefight Solo</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Oxanium:wght@500;700&family=Barlow:ital,wght@0,400;0,500;0,700;1,400&family=JetBrains+Mono:wght@500;700&display=swap">
+<style>
+/* Layout: a field slate. Sticky round bar on top, activation queue and unit roster in the middle, tab bar fixed at the bottom */
+:root{
+  --bg:#e9eae7; --surface:#f7f7f5; --sunk:#dcdeda; --fg:#1b1e1f; --muted:#5d6462; --line:#c7cbc6;
+  --accent:#b86b00; --accent-ink:#ffffff; --a:#2f5f8f; --b:#9a3b2c; --danger:#b3261e; --good:#2b7a47;
+  --display:"Oxanium","Eurostile","Bank Gothic",system-ui,sans-serif;
+  --body:"Barlow","Segoe UI",system-ui,sans-serif;
+  --mono:"JetBrains Mono",ui-monospace,Menlo,monospace;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#111314; --surface:#1a1d1f; --sunk:#0b0d0e; --fg:#e6e8e6; --muted:#9aa29f; --line:#2c3134;
+  --accent:#f2a93b; --accent-ink:#1a1206; --a:#7fb0e0; --b:#e58a78; --danger:#f2766c; --good:#6fd29a; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#111314; --surface:#1a1d1f; --sunk:#0b0d0e; --fg:#e6e8e6; --muted:#9aa29f; --line:#2c3134;
+  --accent:#f2a93b; --accent-ink:#1a1206; --a:#7fb0e0; --b:#e58a78; --danger:#f2766c; --good:#6fd29a; color-scheme:dark}
+*{box-sizing:border-box}
+/* layout: phone by default; html.tab = tablet landscape */
+[hidden]{display:none!important}
+/* AI panel */
+.aipanel{border:2px solid var(--b);border-radius:8px;overflow:hidden;background:var(--surface)}
+.aih{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:10px 14px;background:var(--b);color:var(--surface)}
+.aih .eyebrow{color:var(--surface);opacity:.85}.aih h3{font-size:1.15rem}.aih .chip{border-color:var(--surface);color:var(--surface)}
+.aibody{padding:14px;display:flex;flex-direction:column;gap:12px}
+.aunit{display:flex;flex-direction:column;gap:10px}
+.aq{border:1px solid var(--line);border-radius:6px;padding:12px;background:var(--bg);display:flex;flex-direction:column;gap:10px}
+.aq>p:first-child{font-weight:600}
+.asked{margin:0;padding-left:1.2em;font-size:.88rem;color:var(--muted);display:flex;flex-direction:column;gap:2px}
+.asked b{color:var(--fg)}
+.ares{border:2px solid var(--b);border-radius:6px;padding:12px;display:flex;flex-direction:column;gap:8px}
+.ares h3{font-size:1.4rem;color:var(--b)}
+.aplan{border-left:3px solid var(--accent);padding:8px 12px;background:var(--sunk);border-radius:0 6px 6px 0;display:flex;flex-direction:column;gap:4px}
+.awhy{font-size:.85rem;color:var(--muted);font-style:italic}
+.planbox{display:flex;flex-direction:column;gap:10px;border-bottom:1px dashed var(--line);padding-bottom:12px}
+.photo{display:grid;grid-template-columns:96px 1fr;gap:12px;align-items:center}
+.photo img,.nophoto{width:96px;height:72px;object-fit:cover;border-radius:6px;border:1px solid var(--line)}
+.nophoto{display:grid;place-items:center;font-size:.75rem;color:var(--muted);background:var(--sunk)}
+.secseg{display:inline-grid;grid-template-columns:repeat(3,32px);border:1px solid var(--line);border-radius:4px;overflow:hidden}
+.secseg button{border:0;background:var(--bg);height:32px;font-weight:700;font-family:var(--mono);padding:0}
+.secseg button[aria-pressed="true"]{background:var(--b);color:var(--surface)}
+.secl{font-size:.72rem;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);font-weight:700}
+.sq6{display:grid;grid-template-columns:repeat(3,48px);gap:4px}
+.sq6 span{height:40px;display:grid;place-items:center;border:1px dashed var(--line);border-radius:4px;font-family:var(--mono);font-weight:700;color:var(--muted)}
+.sq6 span.on{background:var(--b);color:var(--surface);border-style:solid;border-color:var(--b)}
+/* Horde */
+.hpanel{border-top:4px solid var(--accent)}
+.hbank{text-align:right}.hbank b{font-size:1.8rem;display:block}
+.hsteps li.done{color:var(--muted)}
+.hmark{width:64px;height:64px;border:2px solid var(--a);border-radius:50%;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;position:relative;margin-bottom:14px}
+.hmark b{font-family:var(--mono);font-size:1.1rem}
+.hmark .hd{display:flex;gap:3px}.hmark .hd i{width:8px;height:8px;border-radius:50%;border:1px solid var(--danger)}.hmark .hd i.on{background:var(--danger)}
+.hmark.pri{border-color:var(--accent);box-shadow:0 0 0 3px color-mix(in srgb,var(--accent) 30%,transparent)}
+.hmark .star{position:absolute;bottom:-18px;font-size:.6rem;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--accent)}
+.hmark.gone{opacity:.35;border-style:dashed}
+.mor{border:1px solid var(--line);border-radius:6px;padding:12px;display:flex;flex-direction:column;gap:8px;background:var(--bg)}
+
+.pcols,.pcol{display:contents}
+html.tab body{padding-left:calc(96px + max(20px,env(safe-area-inset-left,0px)));padding-right:max(24px,env(safe-area-inset-right,0px));padding-bottom:32px}
+html.tab main{max-width:1440px}
+html.tab nav.tabs{top:0;bottom:0;right:auto;width:96px;grid-template-columns:1fr;grid-auto-rows:min-content;align-content:start;gap:4px;border-top:0;border-right:1px solid var(--line);
+  padding:calc(16px + env(safe-area-inset-top,0px)) 8px calc(16px + env(safe-area-inset-bottom,0px)) calc(8px + env(safe-area-inset-left,0px))}
+html.tab nav.tabs a{font-size:.68rem;padding:10px 0;gap:4px}
+html.tab nav.tabs a svg{width:26px;height:26px}
+html.tab .pcols{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:24px;align-items:start}
+html.tab .pcol{display:flex;flex-direction:column;gap:22px;min-width:0}
+html.tab .log{max-height:340px}
+html.tab #v-combat{max-width:980px}
+html.tab #rules{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px 16px;align-items:start}
+html.tab #rules .group{display:contents}
+html.tab #rules .group>.row,html.tab #rules .group>p{grid-column:1/-1}
+html.tab #v-reminders{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px;align-items:start}
+html.tab #v-reminders>.stack:first-child{grid-column:1/-1}
+html.tab .deck{grid-auto-columns:320px}
+html.tab .sheet{align-items:center}
+html.tab .sheet>.panel{border-radius:12px;max-width:680px;max-height:86vh;padding-bottom:18px}
+.layoutbar{display:flex;flex-wrap:wrap;align-items:center;gap:10px 16px;padding:10px 12px;border:1px solid var(--line);border-radius:8px;background:var(--surface)}
+.lseg{display:grid;grid-template-columns:repeat(3,1fr);flex:1 1 240px;max-width:400px;border:1px solid var(--line);border-radius:6px;overflow:hidden}
+.lseg button{border:0;background:var(--surface);color:var(--fg);padding:8px 6px;min-height:40px;font-weight:700;font:inherit;font-weight:700;cursor:pointer}
+.lseg button[aria-pressed="true"]{background:var(--fg);color:var(--bg)}
+.lchk{display:flex;gap:8px;align-items:center;font-size:.92rem}
+.lchk input{width:20px;height:20px;accent-color:var(--accent)}
+.lnote{font-size:.86rem;color:var(--muted)}
+
+[hidden]{display:none!important}
+.stack>.field,.sheet>.panel>.field{flex:none}
+body{background:var(--bg);color:var(--fg);font:16.5px/1.45 var(--body);
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));
+  padding-block:0 calc(84px + env(safe-area-inset-bottom,0px))}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:10;background:var(--bg)}
+main{max-width:720px;margin:0 auto}
+h1,h2,h3{font-family:var(--display);font-weight:700;text-wrap:balance;margin:0;letter-spacing:.01em}
+h1{font-size:1.85rem;line-height:1.05;text-transform:uppercase;letter-spacing:.04em}
+h2{font-size:1.25rem}
+h3{font-size:1.02rem}
+p{margin:0}
+.muted{color:var(--muted)}
+.eyebrow{font-size:.72rem;text-transform:uppercase;letter-spacing:.14em;color:var(--muted);font-weight:700}
+button,select,input{font:inherit;color:inherit}
+button{cursor:pointer}
+button:disabled{opacity:.45;cursor:default}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.num{font-family:var(--mono);font-variant-numeric:tabular-nums}
+.stack{display:flex;flex-direction:column;gap:14px}
+.row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+.between{justify-content:space-between}
+section.view{display:flex;flex-direction:column;gap:22px;padding-top:14px}
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:6px;padding:16px}
+.btn{border:1px solid var(--line);background:var(--surface);border-radius:4px;padding:9px 14px;min-height:42px}
+.btn.primary{background:var(--accent);color:var(--accent-ink);border-color:var(--accent);font-weight:700}
+.btn.ghost{background:transparent}
+.btn.sm{min-height:34px;padding:5px 10px;font-size:.9rem}
+.chip{display:inline-flex;align-items:center;gap:5px;border:1px solid var(--line);border-radius:3px;padding:1px 7px;font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--muted)}
+.chip.warn{border-color:var(--accent);color:var(--accent)}
+.chip.bad{border-color:var(--danger);color:var(--danger)}
+.chip.dead{background:var(--danger);border-color:var(--danger);color:var(--surface)}
+.chip.ok{border-color:var(--good);color:var(--good)}
+.ta{color:var(--a)} .tb{color:var(--b)}
+
+.masthead{display:flex;justify-content:space-between;align-items:flex-end;gap:4px 12px;padding-top:18px;flex-wrap:wrap}
+.masthead>div{min-width:0}
+.masthead h1 span{color:var(--accent)}
+.masthead p{font-size:.9rem;text-align:right}
+
+/* round bar */
+.roundbar{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;background:var(--bg);padding-block:10px;border-bottom:2px solid var(--fg)}
+.rounds{display:grid;grid-template-columns:repeat(4,1fr);gap:4px;margin-top:8px}
+.rounds div{height:8px;background:var(--sunk);clip-path:polygon(0 0,calc(100% - 6px) 0,100% 100%,0 100%)}
+.rounds div.past{background:var(--muted)}
+.rounds div.now{background:var(--accent)}
+.turnflag{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:12px 14px;border-radius:6px;border:2px solid var(--line);background:var(--surface)}
+.turnflag.pa{border-color:var(--a)} .turnflag.pb{border-color:var(--b)}
+.turnflag b{font-family:var(--display);font-size:1.2rem}
+
+/* score */
+.board{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.army{background:var(--surface);border:1px solid var(--line);border-top:4px solid var(--a);border-radius:6px;padding:12px;display:flex;flex-direction:column;gap:8px;min-width:0}
+.army.b{border-top-color:var(--b)}
+.army h3{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.big{font-family:var(--mono);font-size:2.2rem;font-weight:700;line-height:1}
+.bar{display:flex;gap:3px}
+.bar i{flex:1;height:6px;border-radius:1px;background:var(--sunk)}
+.bar i.done{background:var(--muted)}
+.obj{display:flex;flex-wrap:wrap;gap:8px}
+.marker{width:52px;height:52px;border-radius:50%;border:2px dashed var(--line);background:var(--surface);display:grid;place-items:center;font-family:var(--mono);font-weight:700;padding:0}
+.marker.oa{border:3px solid var(--a);color:var(--a);background:color-mix(in srgb,var(--a) 12%,var(--surface))}
+.marker.ob{border:3px solid var(--b);color:var(--b);background:color-mix(in srgb,var(--b) 12%,var(--surface))}
+
+/* units */
+.seg{display:grid;grid-template-columns:1fr 1fr;border:1px solid var(--line);border-radius:4px;overflow:hidden}
+.seg button{border:0;background:var(--surface);padding:8px 6px;min-height:40px;font-weight:700;font-size:.92rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.seg button[aria-pressed="true"]{background:var(--fg);color:var(--bg)}
+.seg.three{grid-template-columns:repeat(3,1fr)}
+.roster{display:flex;flex-direction:column;gap:8px}
+.unit{background:var(--surface);border:1px solid var(--line);border-left:4px solid var(--a);border-radius:6px;padding:12px;display:flex;flex-direction:column;gap:10px}
+.unit.b{border-left-color:var(--b)}
+.unit.spent{opacity:.6}
+.unit.gone{opacity:.45}
+.uhead{display:flex;justify-content:space-between;gap:8px;align-items:flex-start}
+.uhead h3{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.qd{font-family:var(--mono);font-size:.82rem;color:var(--muted)}
+.qd b{color:var(--fg)}
+.hp{display:grid;grid-template-columns:auto 1fr auto;gap:10px;align-items:center}
+.hpbar{height:10px;background:var(--sunk);border-radius:2px;overflow:hidden;position:relative}
+.hpbar i{position:absolute;inset:0 auto 0 0;background:var(--good)}
+.hpbar.half i{background:var(--accent)}
+.hpbar.zero i{background:var(--danger)}
+.hpbar::after{content:"";position:absolute;left:50%;top:0;bottom:0;width:1px;background:var(--fg);opacity:.35}
+.stepper{display:flex;gap:4px;align-items:center}
+.stepper button{width:32px;height:32px;border-radius:4px;border:1px solid var(--line);background:var(--bg);font-weight:700;padding:0}
+.stepper .num{min-width:3.4em;text-align:center;font-weight:700;font-size:.9rem}
+.toggles{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+.tg{border:1px solid var(--line);background:var(--bg);border-radius:4px;padding:4px 9px;min-height:32px;font-size:.84rem}
+.tg[aria-pressed="true"]{background:var(--fg);color:var(--bg);border-color:var(--fg)}
+.act{margin-left:auto}
+.kws{display:flex;flex-wrap:wrap;gap:4px}
+.kw{border:1px solid var(--line);background:var(--bg);border-radius:3px;padding:2px 7px;font-size:.76rem;font-weight:700;min-height:26px;color:var(--fg)}
+.kw:hover{border-color:var(--accent)}
+.group{display:flex;flex-direction:column;gap:8px}
+.group+.group{margin-top:10px}
+details.rule.dim{opacity:.55}
+details.rule summary>span:first-child{flex:1;min-width:0}
+details.rule .cnt{font-family:var(--mono);font-size:.78rem;font-weight:700;display:flex;gap:6px}
+.used{font-size:.92rem}
+details.ref{font-size:.9rem;border-top:1px dashed var(--line);padding-top:6px}
+details.ref summary{cursor:pointer;color:var(--accent);font-weight:700;font-size:.82rem;text-transform:uppercase;letter-spacing:.06em}
+details.ref p{margin-top:4px}
+
+/* cards */
+.callout{border-left:3px solid var(--accent);padding:8px 12px;background:var(--sunk);border-radius:0 4px 4px 0;font-size:.94rem}
+.winner{border:2px solid var(--accent);text-align:center}
+.log{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;max-height:220px;overflow:auto;font-size:.88rem}
+.log li{display:flex;gap:10px;padding:5px 0;border-bottom:1px solid var(--line)}
+.log .r{font-family:var(--mono);color:var(--muted);flex:none;width:2.4em}
+
+/* setup */
+.modes{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:8px}
+.mode{border:1px solid var(--line);background:var(--surface);border-radius:6px;padding:10px 12px;text-align:left;display:flex;flex-direction:column;gap:2px}
+.mode b{font-family:var(--display);font-size:1.05rem}
+.mode small{color:var(--muted);font-size:.82rem}
+.mode[aria-pressed="true"]{border-color:var(--accent);box-shadow:0 0 0 1px var(--accent) inset}
+.spec{display:grid;grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:1px;background:var(--line);border:1px solid var(--line);border-radius:6px;overflow:hidden}
+.spec div{background:var(--surface);padding:10px 12px;display:flex;flex-direction:column}
+.spec b{font-family:var(--mono);font-size:1.05rem}
+.spec span{font-size:.72rem;color:var(--muted);text-transform:uppercase;letter-spacing:.08em}
+.field{display:flex;flex-direction:column;gap:4px;min-width:0;flex:1 1 110px}
+.field label{font-size:.74rem;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;font-weight:700}
+.field input,.field select{border:1px solid var(--line);background:var(--bg);border-radius:4px;padding:8px 10px;min-height:42px;width:100%}
+.ulist{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:6px}
+.ulist li{display:flex;justify-content:space-between;align-items:center;gap:8px;border:1px solid var(--line);border-radius:4px;padding:6px 10px;background:var(--bg)}
+.ulist li span{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.checklist{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:8px}
+.checklist li{display:flex;gap:12px;align-items:flex-start;background:var(--surface);border:1px solid var(--line);border-radius:6px;padding:12px}
+.checklist input{width:22px;height:22px;flex:none;margin-top:2px;accent-color:var(--accent)}
+.checklist .n{font-family:var(--mono);color:var(--accent);font-weight:700}
+.checklist li.done{opacity:.6}
+.checklist li.done strong{text-decoration:line-through}
+.checklist strong{display:block}
+.checklist p{font-size:.92rem;color:var(--muted)}
+.check{display:flex;gap:8px;align-items:center;font-size:.93rem;min-height:30px}
+.check input{width:20px;height:20px;accent-color:var(--accent);flex:none}
+
+/* combat */
+.grid2{display:grid;grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:10px}
+.checks{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:2px 12px}
+.need{display:flex;justify-content:space-between;align-items:baseline;gap:10px;border-top:1px solid var(--line);padding-top:10px}
+.need b{font-family:var(--mono);font-size:1.6rem}
+.tray{display:flex;flex-wrap:wrap;gap:6px;padding:10px;background:var(--sunk);border-radius:6px;min-height:52px}
+.d6{width:38px;height:38px;border-radius:6px;border:2px solid var(--line);background:var(--surface);display:grid;place-items:center;font-family:var(--mono);font-weight:700;font-size:1.05rem;color:var(--muted)}
+.d6.ok{border-color:var(--accent);color:var(--fg);background:color-mix(in srgb,var(--accent) 16%,var(--surface))}
+.d6.save{border-color:var(--good);color:var(--good)}
+.d6.fail{border-color:var(--danger);color:var(--danger)}
+.d6.pop{animation:pop .3s ease-out}
+@keyframes pop{from{transform:scale(.4) rotate(-60deg);opacity:.2}to{transform:none;opacity:1}}
+.facts{display:grid;grid-template-columns:repeat(3,1fr);gap:1px;background:var(--line);border:1px solid var(--line);border-radius:6px;overflow:hidden}
+.facts div{background:var(--surface);padding:8px 10px;display:flex;flex-direction:column}
+.facts b{font-family:var(--mono);font-size:1.35rem}
+.facts span{font-size:.7rem;text-transform:uppercase;letter-spacing:.08em;color:var(--muted)}
+
+/* rules */
+.search{border:1px solid var(--line);background:var(--surface);border-radius:6px;padding:10px 14px;min-height:46px;width:100%}
+details.rule{background:var(--surface);border:1px solid var(--line);border-radius:6px}
+details.rule summary{padding:12px 14px;cursor:pointer;font-family:var(--display);font-weight:700;list-style:none;display:flex;justify-content:space-between;gap:10px}
+details.rule summary::-webkit-details-marker{display:none}
+details.rule summary::after{content:"+";font-family:var(--mono);color:var(--accent)}
+details.rule[open] summary::after{content:"–"}
+details.rule .body{padding:0 14px 14px;display:flex;flex-direction:column;gap:8px;font-size:.96rem}
+.body ul{margin:0;padding-left:1.2em;display:flex;flex-direction:column;gap:4px}
+.tbl{overflow-x:auto}
+table{border-collapse:collapse;width:100%;font-size:.93rem}
+th,td{text-align:left;padding:6px 8px;border-bottom:1px solid var(--line);vertical-align:top}
+th{font-size:.72rem;text-transform:uppercase;letter-spacing:.08em;color:var(--muted)}
+mark{background:color-mix(in srgb,var(--accent) 35%,transparent);color:inherit;border-radius:2px}
+
+nav.tabs{position:fixed;left:0;right:0;bottom:0;z-index:6;background:var(--surface);border-top:1px solid var(--line);
+  display:grid;grid-template-columns:repeat(5,1fr);
+  padding:6px max(8px,env(safe-area-inset-right,0px)) calc(6px + env(safe-area-inset-bottom,0px)) max(8px,env(safe-area-inset-left,0px))}
+nav.tabs a{display:flex;flex-direction:column;align-items:center;gap:2px;text-decoration:none;color:var(--muted);font-size:.66rem;font-weight:700;letter-spacing:.04em;text-transform:uppercase;padding:6px 0;border-radius:4px;min-width:0;overflow:hidden}
+.gapnote{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;border:2px solid var(--accent);border-radius:6px;padding:10px 12px;background:color-mix(in srgb,var(--accent) 10%,var(--surface))}
+.flow{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:8px}
+.flow div{border:1px solid var(--line);border-radius:6px;padding:10px 12px;background:var(--bg);display:flex;flex-direction:column;gap:2px}
+.flow b{font-family:var(--display)}
+.flow span{font-size:.9rem;color:var(--muted)}
+.forget{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:8px}
+.forget div{background:var(--surface);border:1px solid var(--line);border-radius:6px;padding:10px 12px;display:flex;flex-direction:column;gap:3px}
+.forget b{font-family:var(--display)}
+.forget span{font-size:.92rem;color:var(--muted)}
+.mu{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+@media (max-width:560px){.mu{grid-template-columns:1fr}}
+.mu>div{display:flex;flex-direction:column;gap:6px;min-width:0}
+.kwrow{display:grid;grid-template-columns:6.8em 1fr;gap:8px;text-align:left;border:1px solid var(--line);background:var(--surface);border-radius:6px;padding:8px 10px;min-height:0}
+.kwrow b{font-family:var(--display)}
+.kwrow span{font-size:.88rem;color:var(--muted)}
+textarea.notes{width:100%;min-height:120px;border:1px solid var(--line);background:var(--surface);border-radius:6px;padding:10px 12px;font:inherit;line-height:1.45;resize:vertical}
+.steps{margin:0;padding-left:1.3em;display:flex;flex-direction:column;gap:5px}
+details.rem{background:var(--surface);border:1px solid var(--line);border-radius:6px}
+details.rem>summary{list-style:none;cursor:pointer;display:flex;justify-content:space-between;align-items:center;gap:10px;padding:12px 16px;min-height:48px}
+details.rem>summary::-webkit-details-marker{display:none}
+details.rem .chev{width:10px;height:10px;border-right:2px solid var(--accent);border-bottom:2px solid var(--accent);transform:rotate(45deg);margin-top:-4px;transition:transform .15s}
+details.rem:not([open]) .chev{transform:rotate(-45deg);margin-top:0}
+details.rem:not([open]){background:var(--sunk)}
+details.rem:not([open]) h3{color:var(--muted)}
+.rembody{padding:0 16px 16px;display:flex;flex-direction:column;gap:12px}
+.steps li::marker{color:var(--accent);font-family:var(--mono)}
+nav.tabs a svg{width:22px;height:22px}
+nav.tabs a[aria-current="page"]{color:var(--accent);background:var(--sunk)}
+.sheet{position:fixed;inset:0;z-index:20;background:color-mix(in srgb,#000 50%,transparent);display:flex;align-items:flex-end;justify-content:center}
+.sheet>.panel{width:100%;max-width:520px;max-height:90vh;overflow:auto;border-radius:10px 10px 0 0;padding-bottom:calc(18px + env(safe-area-inset-bottom,0px));display:flex;flex-direction:column;gap:12px}
+.actions{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.actions button{display:flex;flex-direction:column;align-items:flex-start;gap:2px;text-align:left;padding:10px 12px;min-height:64px}
+.actions b{font-family:var(--display);font-size:1.05rem}
+.actions small{color:var(--muted);font-size:.84rem}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+@media (max-width:380px){.big{font-size:1.8rem}.actions{grid-template-columns:1fr}}
+</style>
+
+<style>.hublink{display:inline-flex;align-items:center;gap:4px;margin-top:max(12px,env(safe-area-inset-top,0px));font-size:.74rem;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);text-decoration:none;min-height:32px}.hublink:hover{color:var(--fg)}</style>
+</head>
+<body>
+<main>
+  <a class="hublink" href="../">&lsaquo; All games</a>
+  <header class="masthead">
+    <div>
+      <div class="eyebrow">Grimdark Future</div>
+      <h1>Firefight<span>/</span>Solo</h1>
+    </div>
+    <p class="muted" id="modeLine"></p>
+  </header>
+  <div id="gapBox"></div>
+
+  <!-- PLAY -->
+  <section class="view" id="v-play" hidden>
+    <div class="roundbar">
+      <div class="row between">
+        <div class="row" style="gap:8px"><span class="eyebrow">Round</span><span class="num" style="font-size:1.4rem;font-weight:700" id="roundNum">1</span><span class="muted" id="roundOf">of 4</span></div>
+        <div class="row" style="gap:6px">
+          <button class="btn sm ghost" id="undoBtn" type="button">Undo</button>
+          <button class="btn sm primary" id="endBtn" type="button">End round</button>
+        </div>
+      </div>
+      <div class="rounds" id="roundStrip"></div>
+    </div>
+    <div class="pcols">
+    <div class="pcol pl">
+    <div style="order:1" id="winBox"></div>
+    <div style="order:2" id="turnFlag"></div>
+    <div style="order:3" id="hordeBox"></div>
+    <div style="order:4" class="board" id="board"></div>
+    <div style="order:5" class="panel stack" id="objPanel"></div>
+    <div style="order:8" class="stack">
+      <div class="row between"><h2>Battle log</h2><button class="btn sm ghost" id="newGameBtn" type="button">New game</button></div>
+      <ul class="log" id="log"></ul>
+    </div>
+    </div>
+    <div class="pcol pr">
+    <div style="order:6" id="aiBox"></div>
+    <div style="order:7" class="stack">
+      <h2>Units</h2>
+      <div class="seg" id="rosterTabs"></div>
+      <div class="roster" id="roster"></div>
+    </div>
+    </div>
+    </div>
+  </section>
+
+  <!-- SETUP -->
+  <section class="view" id="v-setup" hidden>
+    <div id="layoutBox" style="order:0"></div>
+    <div class="pcols">
+    <div class="pcol pl">
+    <div style="order:1" class="stack">
+      <h2>Game type</h2>
+      <div class="modes" id="types"></div>
+      <div class="modes" id="modes"></div>
+      <div class="spec" id="spec"></div>
+    </div>
+    <div style="order:4" class="stack">
+      <div class="row between"><h2>Setting up</h2><span class="chip num" id="setupCount"></span></div>
+      <ol class="checklist" id="checklist"></ol>
+      <div class="panel stack" id="helpers"></div>
+    </div>
+    <button style="order:5" class="btn primary" id="startBtn" type="button">Start round 1</button>
+    </div>
+    <div class="pcol pr">
+    <div style="order:2" class="stack" id="playersBox"></div>
+    <div style="order:3" class="stack" id="aiSetup"></div>
+    </div>
+    </div>
+  </section>
+
+  <!-- COMBAT -->
+  <section class="view" id="v-combat" hidden>
+    <div class="stack">
+      <h2>Attack resolver</h2>
+      <div class="seg" id="cMode"></div>
+    </div>
+    <div class="panel stack">
+      <div class="grid2">
+        <div class="field"><label for="cAtt">Attacking unit</label><select id="cAtt"></select></div>
+        <div class="field"><label for="cTgt">Target unit</label><select id="cTgt"></select></div>
+      </div>
+      <div id="atkInfo" class="stack" style="gap:8px"></div>
+      <div class="grid2">
+        <div class="field"><label for="iAtk">Attacks</label><input id="iAtk" data-c="atk" type="number" inputmode="numeric" min="1"></div>
+        <div class="field"><label for="iQ">Quality</label><input id="iQ" data-c="q" type="number" inputmode="numeric" min="2" max="6"></div>
+        <div class="field"><label for="iAP">AP</label><input id="iAP" data-c="ap" type="number" inputmode="numeric" min="0"></div>
+        <div class="field"><label for="iBlast">Blast</label><input id="iBlast" data-c="blast" type="number" inputmode="numeric" min="0"></div>
+        <div class="field"><label for="iDeadly">Deadly</label><input id="iDeadly" data-c="deadly" type="number" inputmode="numeric" min="0"></div>
+        <div class="field"><label for="iD">Target Defense</label><input id="iD" data-c="d" type="number" inputmode="numeric" min="2" max="6"></div>
+        <div class="field"><label for="iModels">Target models</label><input id="iModels" data-c="models" type="number" inputmode="numeric" min="1"></div>
+        <div class="field"><label for="iMod">Other to-hit mod</label><input id="iMod" data-c="mod" type="number" inputmode="numeric"></div>
+      </div>
+      <div class="checks" id="cChecks"></div>
+      <div class="need"><span class="muted" id="needWhy"></span><span><span class="muted">hit on</span> <b id="needN">4+</b></span></div>
+      <button class="btn primary" id="rollHits" type="button">Roll to hit</button>
+      <div id="stage"></div>
+    </div>
+    <div class="panel stack">
+      <div class="row between"><h3>Quick dice</h3><span class="muted" style="font-size:.86rem">For morale, spells, Impact and dangerous terrain</span></div>
+      <div class="row">
+        <div class="field" style="flex:0 1 90px"><label for="qN">Dice</label><input id="qN" type="number" inputmode="numeric" value="1" min="1"></div>
+        <div class="field" style="flex:0 1 110px"><label for="qT">Success on</label><input id="qT" type="number" inputmode="numeric" value="4" min="2" max="6"></div>
+        <button class="btn" id="qRoll" type="button" style="align-self:flex-end">Roll</button>
+      </div>
+      <div class="tray" id="qTray"><span class="muted" style="align-self:center">Spells cast on 4+, Impact hits on 2+, dangerous terrain wounds on a 1.</span></div>
+    </div>
+  </section>
+
+  <!-- REMINDERS -->
+  <section class="view" id="v-reminders" hidden></section>
+
+  <!-- RULES -->
+  <section class="view" id="v-rules" hidden>
+    <div class="stack">
+      <h2>Rules reference</h2>
+      <input class="search" id="ruleSearch" type="search" placeholder="Search: fatigue, shaken, blast…" aria-label="Search rules">
+      <label class="check" id="hideWrap" hidden><input type="checkbox" id="hideUnused"> Hide rules not in this matchup</label>
+      <p class="muted" id="matchNote" style="font-size:.88rem"></p>
+      <p class="muted" id="ruleHint" hidden>No rules match that search.</p>
+    </div>
+    <div class="stack" id="rules"></div>
+    <p class="muted" style="font-size:.86rem">Summarised from One Page Rules' Grimdark Future: Firefight v3.6.0 Core Rules, Solo &amp; Co-Op Rules and Horde Mode. Unit and weapon rules override the core rules.</p>
+  </section>
+</main>
+
+<nav class="tabs" aria-label="Sections">
+  <a href="#setup" data-v="setup"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="3" width="18" height="18" rx="1"/><path d="M3 9h18M3 15h18M9 3v18M15 3v18"/></svg>Setup</a>
+  <a href="#play" data-v="play"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="3"/><path d="M12 1v5M12 18v5M1 12h5M18 12h5"/></svg>Play</a>
+  <a href="#combat" data-v="combat"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="3" width="18" height="18" rx="3"/><circle cx="8" cy="8" r="1.3" fill="currentColor"/><circle cx="16" cy="8" r="1.3" fill="currentColor"/><circle cx="8" cy="16" r="1.3" fill="currentColor"/><circle cx="16" cy="16" r="1.3" fill="currentColor"/></svg>Attack</a>
+  <a href="#reminders" data-v="reminders"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M9 18h6M10 21h4"/><path d="M12 3a6 6 0 00-3.5 10.9c.6.5 1 1.2 1 2.1h5c0-.9.4-1.6 1-2.1A6 6 0 0012 3z"/></svg>Reminders</a>
+  <a href="#rules" data-v="rules"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 4h7a3 3 0 013 3v13a2 2 0 00-2-2H4zM20 4h-5a3 3 0 00-3 3"/><path d="M20 4v14h-6"/></svg>Rules</a>
+</nav>
+
+<div id="sheet"></div>
+
+<script>
+const MODES={start:{name:"Starter",sub:"400 points a side",pts:400},full:{name:"Full game",sub:"800 points a side",pts:800}};
+const TYPES={solo:{name:"Solo",sub:"You against the AI"},coop:{name:"Co-op",sub:"2 to 4 players against the AI"},horde:{name:"Horde Mode",sub:"Hold out for 12 rounds"}};
+const ACTIONS=[["hold","Hold",'0" · may shoot'],["advance","Advance",'6" · may shoot after'],["rush","Rush",'12" · no shooting'],["charge","Charge",'12" into melee']];
+const KEY="firefight-solo-v1";
+let uid=1;
+const unit=(name,o={})=>({id:uid++,name,q:o.q??4,d:o.d??4,models:o.models??1,tough:o.tough??1,hero:!!o.hero,cast:o.cast??0,tokens:0,
+  wounds:0,shaken:false,fatigued:false,act:false,lastAction:"",ambush:!!o.ambush,pts:o.pts??0,weapons:o.weapons??"",rules:o.rules??"",
+  owner:o.owner??0,sec:o.sec??2,xp:0,traits:[],eliteUsed:false,arrived:false});
+
+/* Reads Army Forge text exports */
+function parseList(text){
+  const lines=String(text).replace(/\r/g,"").split("\n");
+  let army="",limit=null;const units=[];let cur=null;
+  const af=/^(.+?)\s*\[(\d+)\]\s*Q(\d)\+\s*D(\d)\+\s*\|\s*(\d+)\s*pts?\b\s*(?:\|\s*(.*))?$/i;
+  const own=/^(?:\[\d+\]\s*)?(.+?)\s*\|\s*(\d+)\s*pts?\b\s*(?:\|\s*(.*))?$/i;
+  const mk=(name,pts,rest,models)=>{
+    const g=(re,d)=>{const m=rest.match(re);return m?+m[1]:d};
+    const toks=rest.split(/[|,]/).map(s=>s.trim()).filter(Boolean);
+    const isFlag=t=>/^(Q\d\+(\s*D\d\+)?|D\d\+|\d+\s*models?|Tough\(\d+\)|Hero|Caster\(\d+\)|Ambush)$/i.test(t);
+    return {name:name.trim(),pts,models:models??g(/(\d+)\s*models?/i,1),q:g(/Q(\d)\+/i,4),d:g(/D(\d)\+/i,4),
+      tough:g(/Tough\((\d+)\)/i,1),hero:/\bHero\b/i.test(rest),cast:g(/Caster\((\d+)\)/i,0),ambush:/\bAmbush\b/i.test(rest),
+      rules:toks.filter(t=>!isFlag(t)).join(", "),weapons:""};
+  };
+  const mult=u=>{const m=u.name.match(/^(\d+)\s*x\s+(.+)$/i);if(m){u.count=+m[1];u.name=m[2].trim()}};
+  for(const raw of lines){
+    const l=raw.trim();let m;
+    if(!l){cur=null;continue}
+    if((m=l.match(/^army:\s*(.+)$/i))){army=m[1].trim();continue}
+    if((m=l.match(/^points:\s*\d+\s*\/\s*(\d+)/i))){limit=+m[1];continue}
+    if(/^(units:|faction:|firefight army list)/i.test(l))continue;
+    if((m=l.match(/^\+\+\s*(.+?)\s*\+\+$/))){const t=m[1];const p=t.match(/(\d+)\s*pts/i);if(p)limit=+p[1];army=army||t.replace(/\[.*?\]|\(.*?\)/g,"").trim();continue}
+    if((m=l.match(af))){cur=mk(m[1],+m[5],`Q${m[3]}+ D${m[4]}+ | `+(m[6]||""),+m[2]);units.push(cur);mult(cur);continue}
+    if((m=l.match(own))&&/\|/.test(l)){cur=mk(m[1],+m[2],m[3]||"");units.push(cur);mult(cur);continue}
+    if(cur){
+      if((m=l.match(/^weapons?:\s*(.*)$/i)))cur.weapons=m[1];
+      else if((m=l.match(/^rules?:\s*(.*)$/i)))cur.rules=[cur.rules,m[1]].filter(Boolean).join(", ");
+      else cur.weapons=[cur.weapons,l].filter(Boolean).join("; ");
+    }
+  }
+  return {army,limit,units:units.flatMap(u=>{const n=Math.min(10,u.count||1);delete u.count;return Array.from({length:n},()=>({...u}))})};
+}
+
+function blankState(type="solo"){
+  return {type,mode:type==="horde"?"full":"start",started:false,round:1,first:0,turn:0,finished:null,winner:null,view:0,checks:{},
+    objectives:[-1,-1,-1,-1],players:[{name:"You"}],
+    armies:[{name:type==="horde"?"Defenders":"Your army",units:[]},{name:type==="horde"?"The Horde":"AI army",units:[]}],
+    ai:{method:"tree",tier:"default",bonusD3:false,bonusTie:false,bonusLose:false,left:0,cur:null,plan:null,deploy:null,zone:null,sq:null},
+    h:{obj:[0,1,2,3,4].map(()=>({dmg:0,gone:false})),pri:null,lastPri:null,bank:0,earned:0,done:0,over:false,why:"",steps:{},pending:[],spent:[]},
+    log:[]};
+}
+function sampleState(){
+  const s=blankState("solo");s.example=true;s.started=true;s.round=1;s.first=0;s.turn=1;
+  s.armies[0].name="Battle Brothers (example)";s.armies[1].name="Alien Hives (example)";
+  s.armies[0].units=[unit("Captain",{q:3,d:3,tough:3,hero:true,pts:85,rules:"Fearless",weapons:'Heavy Pistol (12", A1, AP(1)); Energy Sword (A3, AP(1), Rending)'}),
+    unit("Assault Brothers",{q:3,d:4,models:3,pts:90,rules:"Fearless",weapons:'Pistol (12", A1); CCW (A2)'}),
+    unit("Sniper",{q:3,d:4,pts:45,rules:"Fearless, Scout",weapons:'Sniper Rifle (30", A1, AP(1), Reliable)'}),
+    unit("Heavy Gunner",{q:3,d:4,tough:3,pts:70,rules:"Fearless, Relentless",weapons:'Heavy Rifle (24", A3, AP(1))'})];
+  s.armies[1].units=[unit("Hive Lord",{q:3,d:3,tough:6,hero:true,pts:120,sec:2,rules:"Fear(1), Regeneration",weapons:'Bio-Talons (A4, AP(1))'}),
+    unit("Hormagaunts",{q:5,d:5,models:3,pts:45,sec:1,rules:"Fast, Furious",weapons:"Claws (A1)"}),
+    unit("Ravener",{q:4,d:4,tough:3,pts:65,sec:3,rules:"Strider",weapons:"Razor Claws (A3, Rending)"}),
+    unit("Psychic Beast",{q:4,d:4,tough:3,cast:1,pts:60,sec:2,weapons:'Psy-Blast (18", A2, Blast(3))'})];
+  s.armies[0].units[0].act=true;s.armies[0].units[0].lastAction="Advance";
+  s.objectives=[-1,0,-1];
+  s.log=[{r:1,t:"Example game loaded. Start your own from Setup."},{r:1,t:"Captain: Advance."}];
+  return s;
+}
+let S,history=[];
+try{S=JSON.parse(localStorage.getItem(KEY))}catch(e){}
+if(!S||!S.armies||!S.ai)S=sampleState();
+uid=1+Math.max(0,...S.armies.flatMap(a=>a.units.map(u=>u.id)));
+function save(){try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}}
+function snap(){history.push(JSON.stringify(S));if(history.length>60)history.shift()}
+function log(t){S.log.unshift({r:S.round,t});if(!S.example)S.lastPlayed=Date.now()}
+const gapDays=()=>S.lastPlayed?Math.floor((Date.now()-S.lastPlayed)/864e5):null;
+const gapText=d=>d<1?"today":d===1?"yesterday":d<14?`${d} days ago`:d<60?`${Math.round(d/7)} weeks ago`:`${Math.round(d/30)} months ago`;
+const $=s=>document.querySelector(s);
+const esc=s=>String(s??"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const d6=()=>1+Math.floor(Math.random()*6);
+const d3=()=>1+Math.floor(Math.random()*3);
+const tag=i=>i===0?"a":"b";
+const HORDE=()=>S.type==="horde";
+const maxRounds=()=>HORDE()?12:4;
+const sideName=i=>S.armies[i].name;
+
+/* ---------- unit maths ---------- */
+const hpMax=u=>u.models*u.tough;
+const dead=u=>u.wounds>=hpMax(u);
+const modelsLeft=u=>Math.max(0,Math.ceil((hpMax(u)-u.wounds)/u.tough));
+function halfOrLess(u){if(dead(u))return false;return u.models>1?modelsLeft(u)<=u.models/2:(u.tough-u.wounds)<=u.tough/2}
+function find(id){for(const [ai,a] of S.armies.entries()){const u=a.units.find(x=>x.id===id);if(u)return {u,a,ai}}return null}
+/* AI Ambush units always arrive at the start of round 2; players' Ambush units from round 2 */
+const inReserve=(u,ai)=>u.ambush&&S.round<2;
+const ready=(a,ai)=>a.units.filter(u=>!dead(u)&&!u.act&&!inReserve(u));
+const alive=a=>a.units.filter(u=>!dead(u));
+function score(i){return S.objectives.filter(o=>o===i).length}
+const ownerName=u=>S.players[u.owner]?S.players[u.owner].name:"";
+
+/* ---------- PLAY ---------- */
+function renderPlay(){
+  $("#roundNum").textContent=S.round;$("#roundOf").textContent=`of ${maxRounds()}`;
+  $("#roundStrip").style.gridTemplateColumns=`repeat(${maxRounds()},1fr)`;
+  $("#roundStrip").innerHTML=Array.from({length:maxRounds()},(_,i)=>`<div class="${i+1<S.round?"past":i+1===S.round?"now":""}"></div>`).join("");
+  $("#undoBtn").disabled=!history.length;
+  const over=S.winner!=null||(HORDE()&&S.h.over);
+  $("#endBtn").disabled=over||!S.started;
+  $("#endBtn").textContent=S.round>=maxRounds()?"End game":"End round";
+  const rA=ready(S.armies[0]).length,rB=ready(S.armies[1]).length;
+  let flag="";
+  if(!S.started)flag=`<div class="turnflag"><div><div class="eyebrow">Not started</div><b>Set up the game, then start round 1</b></div><a class="btn primary" href="#setup">Setup</a></div>`;
+  else if(over)flag="";
+  else if(!rA&&!rB) flag=`<div class="turnflag"><div><div class="eyebrow">All units activated</div><b>Resolve the end of round ${S.round}</b></div><button class="btn primary" type="button" data-endround="1">End round</button></div>`;
+  else{const t=whoseTurn();
+    flag=`<div class="turnflag p${tag(t)}"><div><div class="eyebrow">Next to activate</div><b class="t${tag(t)}">${t?esc(sideName(1))+" (AI)":esc(sideName(0))}</b></div><span class="muted num">${ready(S.armies[t]).length} unit${ready(S.armies[t]).length===1?"":"s"} ready${t&&S.ai.left>1?` · ${S.ai.left} activations this turn`:""}</span></div>`}
+  $("#turnFlag").innerHTML=flag;
+  $("#board").innerHTML=S.armies.map((a,i)=>{
+    const al=alive(a),total=a.units.length,act=al.filter(u=>u.act).length;
+    return `<div class="army ${tag(i)}">
+      <h3 title="${esc(a.name)}">${esc(a.name)}${i?' <span class="chip">AI</span>':""}</h3>
+      ${HORDE()?(i?`<div class="row between" style="align-items:baseline"><span class="eyebrow">Destroyed</span><span class="big t${tag(i)}">${total-al.length}</span></div>`
+        :`<div class="row between" style="align-items:baseline"><span class="eyebrow">Points banked</span><span class="big t${tag(i)}">${S.h.bank}</span></div>`)
+       :`<div class="row between" style="align-items:baseline"><span class="eyebrow">Objectives</span><span class="big t${tag(i)}">${score(i)}</span></div>`}
+      <div class="eyebrow">Activated ${act} / ${al.length}${S.first===i?" · went first":""}</div>
+      <div class="bar">${al.map(u=>`<i class="${u.act?"done":""}"></i>`).join("")||"<i></i>"}</div>
+      <div class="muted" style="font-size:.84rem">${al.length} of ${total} units left</div>
+    </div>`}).join("");
+  renderObjPanel();
+  const w=S.winner;
+  $("#winBox").innerHTML=HORDE()&&S.h.over?`<div class="panel winner stack"><div class="eyebrow">Horde Mode over</div><h2>High score ${S.h.earned*S.h.done}</h2><p class="muted">${esc(S.h.why)} ${S.h.earned} points earned × ${S.h.done} round${S.h.done===1?"":"s"} survived.</p></div>`
+    :w==null?"":w===-1?`<div class="panel winner stack"><div class="eyebrow">Game over</div><h2>A draw</h2><p class="muted">Both sides hold ${score(0)} objectives.</p></div>`:
+    `<div class="panel winner stack"><div class="eyebrow">${w===0?"Victory":"Defeat"}</div><h2>${esc(sideName(w))} wins</h2><p class="muted">${score(w)} objectives to ${score(1-w)} after round 4.</p></div>`;
+  renderHorde();renderAI();renderRoster();
+  $("#log").innerHTML=S.log.map(l=>`<li><span class="r">R${l.r}</span><span>${esc(l.t)}</span></li>`).join("")||'<li class="muted">Nothing yet.</li>';
+}
+function whoseTurn(){let t=S.turn;if(!ready(S.armies[t]).length)t=1-t;return t}
+function renderObjPanel(){
+  if(HORDE()){
+    const o=S.h.obj;
+    $("#objPanel").innerHTML=`<div class="row between"><h2>Objectives</h2><span class="muted" style="font-size:.86rem">3 damage tokens destroys one</span></div>
+      <div class="obj">${o.map((x,i)=>`<div class="hmark ${x.gone?"gone":""} ${S.h.pri===i?"pri":""}"><b>${i+1}</b><span class="hd">${[0,1,2].map(k=>`<i class="${k<x.dmg?"on":""}"></i>`).join("")}</span>${S.h.pri===i?'<span class="star">Priority</span>':""}</div>`).join("")}</div>
+      <p class="muted" style="font-size:.88rem">Enemies seize an objective at the end of a round when one of them is within 3" and no defender is. Each seizure adds a damage token. Rewards come at the end of rounds 3, 6, 9 and 12.</p>`;
+  } else {
+    $("#objPanel").innerHTML=`<div class="row between"><h2>Objective markers</h2><span class="muted" style="font-size:.86rem">Tap to change who holds it</span></div>
+      <div class="obj">${S.objectives.map((o,i)=>`<button type="button" class="marker ${o===0?"oa":o===1?"ob":""}" data-obj="${i}" aria-label="Objective ${i+1}: ${o<0?"neutral":sideName(o)}">${i+1}</button>`).join("")}</div>
+      <p class="muted" style="font-size:.88rem">Seized at the end of each round by a unit within 3" with no enemy within 3". Stays held after the unit leaves. Shaken units can't seize or contest.</p>`;
+  }
+}
+function renderRoster(){
+  $("#rosterTabs").innerHTML=S.armies.map((a,i)=>`<button type="button" data-rt="${i}" aria-pressed="${S.view===i}">${esc(a.name)}${i?" (AI)":""}</button>`).join("");
+  const a=S.armies[S.view],t=tag(S.view),isAI=S.view===1;
+  $("#roster").innerHTML=a.units.map(u=>{
+    const max=hpMax(u),left=max-u.wounds,pct=Math.max(0,left/max*100),half=halfOrLess(u);
+    const chips=[];
+    if(dead(u))chips.push('<span class="chip dead">Destroyed</span>');
+    else{if(u.shaken)chips.push('<span class="chip bad">Shaken · stays idle</span>');
+      if(half)chips.push('<span class="chip warn">Half strength</span>');
+      if(u.fatigued)chips.push('<span class="chip">Fatigued · melee hits on 6</span>');
+      if(inReserve(u))chips.push('<span class="chip">In ambush until round 2</span>');
+      if(u.hero)chips.push('<span class="chip">Hero</span>');
+      if(u.cast)chips.push(`<span class="chip ok">Caster(${u.cast}) · ${u.tokens} token${u.tokens===1?"":"s"}</span>`);
+      if(S.type==="coop"&&!isAI)chips.push(`<span class="chip">${esc(ownerName(u))}</span>`);
+      if(HORDE()&&!isAI){chips.push(`<span class="chip ok">${u.xp} XP</span>`);(u.traits||[]).forEach(tr=>chips.push(`<span class="chip">${esc(tr)}${tr==="Elite"&&u.eliteUsed?" (used)":""}</span>`))}}
+    return `<div class="unit ${t} ${dead(u)?"gone":u.act?"spent":""}">
+      <div class="uhead"><div style="min-width:0"><h3>${esc(u.name)}</h3>
+        <div class="qd">Quality <b>${u.q}+</b> · Defense <b>${u.d}+</b>${u.models>1?` · ${u.models} models`:""}${u.tough>1?` · Tough(${u.tough})`:""}${u.pts?` · ${u.pts}pts`:""}</div></div>
+        <button class="btn sm ghost" data-edit="${u.id}" type="button">Edit</button></div>
+      ${chips.length?`<div class="toggles">${chips.join("")}</div>`:""}
+      ${kwOf(u).length&&!dead(u)?`<div class="kws">${kwOf(u).map(k=>`<button type="button" class="kw" data-kw="${k}">${k}</button>`).join("")}</div>`:""}
+      ${u.weapons||u.rules?`<details class="ref"><summary>Weapons &amp; rules</summary>${u.weapons?`<p>${esc(u.weapons)}</p>`:""}${u.rules?`<p class="muted">${esc(u.rules)}</p>`:""}</details>`:""}
+      <div class="hp"><span class="eyebrow">${u.models>1?`${modelsLeft(u)}/${u.models} left`:"Wounds"}</span>
+        <div class="hpbar ${left<=0?"zero":half?"half":""}"><i style="width:${pct}%"></i></div>
+        <div class="stepper"><button type="button" data-w="${u.id},-1" aria-label="Heal one wound">−</button><span class="num">${u.wounds}/${max}</span><button type="button" data-w="${u.id},1" aria-label="Add one wound">+</button></div></div>
+      ${dead(u)?"":`<div class="toggles">
+        ${isAI?`<span class="secl">Section</span><span class="secseg">${[1,2,3].map(n=>`<button type="button" data-sec="${u.id},${n}" aria-pressed="${u.sec===n}" aria-label="Section ${n}">${n}</button>`).join("")}</span>`:""}
+        <button type="button" class="tg" data-tg="${u.id},shaken" aria-pressed="${u.shaken}">Shaken</button>
+        <button type="button" class="tg" data-tg="${u.id},fatigued" aria-pressed="${u.fatigued}">Fatigued</button>
+        ${u.cast?`<button type="button" class="tg" data-tok="${u.id}">Spend token</button>`:""}
+        ${HORDE()&&!isAI?`<button type="button" class="tg" data-xp="${u.id}">+XP</button>`:""}
+        ${u.act?`<span class="chip act">${esc(u.lastAction||"Activated")}</span><button type="button" class="tg" data-unact="${u.id}">Undo</button>`:
+          isAI?`<button type="button" class="tg act" data-activate="${u.id}" ${inReserve(u)?"disabled":""}>Activate by hand</button>`:
+          `<button type="button" class="btn sm primary act" data-activate="${u.id}" ${inReserve(u)?"disabled":""}>Activate</button>`}
+      </div>`}
+    </div>`}).join("")||'<p class="muted">No units yet. Import an Army Forge list in Setup.</p>';
+}
+function openActivate(id){
+  const {u,ai}=find(id);
+  sheet(`<div class="eyebrow">${esc(S.armies[ai].name)}</div><h2>Activate ${esc(u.name)}</h2>
+    ${u.shaken?`<p class="callout">This unit is Shaken. It stays idle for the whole activation, then recovers.</p>
+      <button class="btn primary" id="idleBtn" type="button">Stay idle and recover</button>`:
+    `<p class="muted">Pick one action. Fast adds 2"/4", Slow removes 2"/4". Difficult terrain caps the move at 6".</p>
+    <div class="actions">${ACTIONS.map(([k,l,s])=>`<button class="btn" type="button" data-pick="${k}"><b>${l}</b><small>${s}</small></button>`).join("")}</div>
+    <p class="muted" style="font-size:.88rem">Charge: end in base contact; the target moves up to 3" to meet it. Models within 3" strike. The target may strike back. The unit that took more wounds loses and tests morale. Any unit that attacked in the melee is Fatigued.</p>`}
+    <button class="btn ghost" id="cancelAct" type="button">Cancel</button>`);
+  $("#cancelAct").onclick=closeSheet;
+  if(u.shaken)$("#idleBtn").onclick=()=>finishAct(u,ai,"Idle (recovered)",()=>{u.shaken=false});
+  document.querySelectorAll("[data-pick]").forEach(b=>b.onclick=()=>{
+    const k=b.dataset.pick,label=ACTIONS.find(x=>x[0]===k)[1];
+    finishAct(u,ai,label,()=>{if(k==="charge")u.fatigued=true});
+    if(k==="hold"||k==="advance"||k==="charge"){C.att=String(u.id);C.tgt="";C.mode=k==="charge"?"melee":"shoot";C.fat=false;prefill(true)}
+  });
+}
+function finishAct(u,ai,label,fx){
+  snap();fx();u.act=true;u.lastAction=label;
+  log(`${u.name}: ${label}.`);
+  const me=S.armies[ai],op=S.armies[1-ai];
+  if(ai===1){S.ai.cur=null;if(S.ai.left>0)S.ai.left--}
+  if(!ready(me).length&&S.finished==null&&ready(op).length)S.finished=ai;
+  if(!ready(me).length&&!ready(op).length&&S.finished==null)S.finished=1-ai;
+  if(ai===1&&S.ai.left>0&&ready(me).length)S.turn=1;
+  else{S.turn=ready(op).length?1-ai:ai;if(ai===1)S.ai.left=0}
+  save();closeSheet();render();
+}
+function newRoundReset(){
+  S.armies.forEach(a=>a.units.forEach(u=>{u.act=false;u.lastAction="";u.fatigued=false;if(u.cast)u.tokens=Math.min(6,u.tokens+u.cast)}));
+  S.ai.cur=null;S.ai.left=0;
+}
+function openEndRound(){
+  if(HORDE())return openHordeEnd();
+  sheet(`<div class="eyebrow">Round ${S.round}</div><h2>End of round</h2>
+    <p class="muted" style="font-size:.9rem">Morale is tested during the round now, at the end of each activation, so there's nothing to roll here.</p>
+    <div class="stack" style="gap:8px"><span class="eyebrow">Objectives</span>
+    <p class="muted" style="font-size:.9rem">A unit within 3" with no enemy within 3" seizes a marker; units from both sides within 3" make it neutral. Shaken units don't count.</p>
+    <div class="obj">${S.objectives.map((o,i)=>`<button type="button" class="marker ${o===0?"oa":o===1?"ob":""}" data-obj="${i}">${i+1}</button>`).join("")}</div></div>
+    ${S.round===1&&S.armies[1].units.some(u=>u.ambush&&!dead(u))?`<p class="callout">At the start of round 2 the AI's Ambush units arrive: place each over 9" from your units, as close as possible to the nearest objective the AI doesn't control.</p>`:""}
+    <div class="row"><button class="btn primary" id="erOk" type="button">${S.round>=4?"Final score":"Start round "+(S.round+1)}</button><button class="btn ghost" id="erNo" type="button">Back</button></div>`);
+  $("#erNo").onclick=closeSheet;
+  $("#erOk").onclick=endRound;
+}
+function endRound(){
+  snap();
+  if(S.round>=4){const a=score(0),b=score(1);S.winner=a>b?0:b>a?1:-1;log(S.winner<0?`Draw on ${a} objectives each.`:`${sideName(S.winner)} wins ${Math.max(a,b)}–${Math.min(a,b)} on objectives.`);save();closeSheet();render();return}
+  S.round++;
+  S.first=S.finished??S.first;S.turn=S.first;S.finished=null;
+  newRoundReset();
+  log(`Round ${S.round} begins. ${sideName(S.first)} activates first.`);
+  save();closeSheet();render();window.scrollTo({top:0,behavior:"smooth"});
+}
+
+/* ---------- AI (One Page Rules Solo & Co-Op rules v3.6.0) ---------- */
+const TREE={
+  q1:{t:"Is it within 3\" of an objective the AI doesn't control?",yes:"q2",no:"q3"},
+  q2:{t:"Is any enemy in range to shoot or charge without moving more than 3\" away from that objective?",yes:"FIGHT_OBJ",no:"HOLD"},
+  q3:{t:"Is there an objective the AI doesn't control with no non-Shaken AI unit within 3\" of it?",yes:"q4",no:"q5"},
+  q4:{t:"If it moves toward that objective, will any enemy be in range to shoot or charge?",yes:"ADV_OBJ",no:"RUSH_OBJ"},
+  q5:{t:"Is any enemy in range to shoot or charge?",yes:"FIGHT",no:"RUSH_NEAR"}
+};
+const RESULT={
+  FIGHT_OBJ:{choice:true,shoot:"Advance and shoot the closest enemy, staying within 3\" of the objective.",charge:"Charge the closest enemy."},
+  HOLD:{action:"Hold",text:"Hold position on the objective."},
+  ADV_OBJ:{choice:true,shoot:"Advance toward the objective and shoot the closest enemy.",charge:"Charge the closest enemy, toward the objective.",strict:true},
+  RUSH_OBJ:{action:"Rush",text:"Rush toward the objective."},
+  FIGHT:{choice:true,shoot:"Advance and shoot the closest enemy.",charge:"Charge the closest enemy."},
+  RUSH_NEAR:{action:"Rush",text:"Rush toward the closest objective."}
+};
+function aiTraits(u){const k=kwOf(u),t=(u.weapons||"")+" "+(u.rules||"");
+  return {indirect:k.includes("Indirect"),relentless:k.includes("Relentless"),blast:k.includes("Blast"),deadly:k.includes("Deadly"),
+    immobile:k.includes("Immobile"),caster:u.cast>0,ranged:/\d+\s*("|”|in\b)/.test(t)}}
+function pickAIUnit(){
+  const ai=S.armies[1],rd=ready(ai);if(!rd.length)return null;
+  if(S.ai.bonusD3&&S.ai.left===0){S.ai.left=d3();log(`AI challenge bonus: it activates ${S.ai.left} unit${S.ai.left>1?"s":""} this turn.`)}
+  const fresh=rd.filter(u=>!u.shaken),pool=fresh.length?fresh:rd;
+  const rolled=d3();let sec=rolled,inSec=pool.filter(u=>u.sec===sec),hops=0;
+  while(!inSec.length&&hops<2){sec=sec%3+1;inSec=pool.filter(u=>u.sec===sec);hops++}
+  if(!inSec.length)inSec=pool;
+  const u=inSec[Math.floor(Math.random()*inSec.length)];
+  const plan=S.ai.plan&&S.ai.plan.round===S.round&&S.ai.plan.units[u.id];
+  S.ai.cur={id:u.id,rolled,sec,ans:{},res:null,how:null,roll:null,spell:null,plan:plan||null,newSec:u.sec};
+  prefillFromPlan(S.ai.cur);
+  log(`AI rolls section ${rolled}${sec!==rolled?`, moves on to section ${sec}`:""}: ${u.name} activates.`);
+  return u;
+}
+/* Walk the decision tree with the answers given so far; returns {next question} or {result} */
+function walk(cur){
+  let node="q1";
+  while(TREE[node]){const a=cur.ans[node];if(a==null)return {q:node};node=a?TREE[node].yes:TREE[node].no}
+  return {r:node};
+}
+function aiResult(u,cur){
+  const tr=aiTraits(u);
+  if(u.shaken)return {action:"Idle",text:"It's Shaken, so it stays idle this activation and then recovers."};
+  if(tr.immobile)return {action:"Hold",text:"Immobile: Hold and shoot the closest valid target."};
+  if((tr.indirect||tr.relentless)&&cur.ans.ov===true)return {action:"Hold",text:`${tr.indirect?"Indirect":"Relentless"} weapons in range of an enemy: Hold and shoot the closest valid target.`};
+  const w=walk(cur);if(!w.r)return null;
+  const R=RESULT[w.r];
+  if(!R.choice)return {action:R.action,text:R.text};
+  if(!cur.how)return {choice:true,node:w.r};
+  return cur.how==="charge"?{action:"Charge",text:R.charge}:{action:"Advance",text:R.shoot};
+}
+function targetNotes(u,res){
+  const tr=aiTraits(u),n=[];
+  if(!res)return n;
+  if(res.action==="Advance"||res.action==="Hold"){
+    n.push("Shoot the closest valid target, preferring units that haven't activated yet. If the closest is in cover and another valid target is in the open, shoot the one in the open.");
+    if(tr.blast)n.push("Blast weapons target multi-model units first, then single models.");
+    if(tr.deadly)n.push("Deadly weapons target single-model units first, then multi-model units.");
+  }
+  if(res.action==="Charge")n.push("Charge the closest valid target, preferring units that haven't activated yet.");
+  if(["Advance","Rush","Charge"].includes(res.action))n.push("End the move in or behind cover if possible, going around Difficult and Dangerous terrain unless an objective or charge target is inside it, or the unit ignores it (Strider, Flying).");
+  if(res.action!=="Idle"&&kwOf(u).some(k=>!["Tough","Hero","Fearless","AP"].includes(k)))n.push("Use its special rules as soon as it activates, on the closest unit where that makes sense.");
+  n.push("AI units always strike back when charged.");
+  return n;
+}
+let SAMPLE=null,IMG=false,aiCtl=null,PHOTO=null,PHOTO_URL="",aiBusy=false,aiMsg="";
+(async()=>{
+  for(let i=0;i<30&&!(window.claude&&window.claude.use);i++)await new Promise(r=>setTimeout(r,100));
+  try{SAMPLE=window.claude&&window.claude.use?await window.claude.use("sample"):null}catch(e){SAMPLE=null}
+  if(SAMPLE){try{const l=await SAMPLE.limits();IMG=!!(l&&l.images)}catch(e){IMG=false}}
+  if(["play","setup"].includes(view()))render();
+})();
+const useClaude=()=>S.ai.method==="claude"&&!!SAMPLE;
+function renderAI(){
+  const box=$("#aiBox");if(!box)return;
+  const head=`<header class="aih"><div style="min-width:0"><span class="eyebrow">AI opponent</span><h3>${esc(sideName(1))}</h3></div><span class="chip">${useClaude()?"Reads the board":"Decision tree"}</span></header>`;
+  if(!S.started||S.winner!=null||(HORDE()&&S.h.over)){box.innerHTML=`<div class="aipanel">${head}<div class="aibody"><p class="muted">${S.started?"The game is over.":"Start the game in Setup. The AI's turn will appear here."}</p></div></div>`;return}
+  const t=whoseTurn(),noneLeft=!ready(S.armies[0]).length&&!ready(S.armies[1]).length;
+  let body="";
+  if(useClaude())body+=planBlock();
+  const cur=S.ai.cur,u=cur&&find(cur.id)?find(cur.id).u:null;
+  if(noneLeft)body+=`<p class="muted">Every unit has activated. End the round when you're ready.</p>`;
+  else if(t!==1&&!u)body+=`<p>Your move. When it's the AI's turn, pick its unit here.</p>`;
+  else if(!u)body+=`<p>The AI's turn. It rolls a D3 for a table section, then a random ready unit there activates. Shaken units go only after every other AI unit has activated.</p>
+    <button class="btn primary" type="button" id="aiPick">Roll for the AI's unit</button>`;
+  else body+=unitBlock(u,cur);
+  box.innerHTML=`<div class="aipanel">${head}<div class="aibody">${body}${aiMsg?`<p class="callout">${esc(aiMsg)}</p>`:""}</div></div>`;
+  wireAI(u,cur);
+}
+function unitBlock(u,cur){
+  const tr=aiTraits(u);let h=`<div class="aunit"><div class="row between"><div><span class="eyebrow">Section ${cur.rolled} rolled${cur.sec!==cur.rolled?` → section ${cur.sec}`:""}</span><h3>${esc(u.name)}</h3></div>
+    <span class="qd">Q${u.q}+ D${u.d}+${u.models>1?` · ${modelsLeft(u)}/${u.models}`:""}${u.tough>1?` · ${u.tough*u.models-u.wounds} wounds left`:""}</span></div>`;
+  if(cur.plan)h+=`<div class="aplan"><span class="eyebrow">From the board photo</span><p><b>${esc(cur.plan.action||"")}</b>${cur.plan.target?` · target ${esc(cur.plan.target)}`:""}</p>${cur.plan.move?`<p>${esc(cur.plan.move)}</p>`:""}${cur.plan.why?`<p class="awhy">${esc(cur.plan.why)}</p>`:""}</div>`;
+  const qs=[];
+  if(!u.shaken&&!tr.immobile&&(tr.indirect||tr.relentless)&&cur.ans.ov==null)
+    qs.push(["ov",`Are its ${tr.indirect?"Indirect":"Relentless"} weapons in range of an enemy?`]);
+  let res=null;
+  if(!qs.length){res=aiResult(u,cur);if(!res){const w=walk(cur);qs.push([w.q,TREE[w.q].t])}}
+  const asked=Object.entries(cur.ans).map(([k,v])=>`<li>${esc(k==="ov"?`Special weapons in range`:TREE[k].t)} <b>${v?"Yes":"No"}</b></li>`).join("");
+  if(asked)h+=`<ol class="asked">${asked}</ol>`;
+  if(qs.length){const [k,t]=qs[0];
+    h+=`<div class="aq"><p>${esc(t)}</p><div class="row" style="gap:8px"><button class="btn primary" type="button" data-ans="${k},1">Yes</button><button class="btn" type="button" data-ans="${k},0">No</button>${Object.keys(cur.ans).length?'<button class="btn sm ghost" type="button" id="aiBack">Back</button>':""}</div></div>`;
+  } else if(res&&res.choice){
+    h+=`<div class="aq"><p>Advance and shoot, or charge? It picks whichever <b>deals more damage</b>.</p><div class="row" style="gap:8px">
+      <button class="btn" type="button" data-how="shoot">Shooting</button><button class="btn" type="button" data-how="charge">Charging</button><button class="btn sm ghost" type="button" data-how="roll">About the same: roll</button></div>
+      ${tr.ranged?"":'<p class="muted" style="font-size:.86rem">This unit has no ranged weapon listed, so charging is usually the answer.</p>'}</div>`;
+  } else if(res){
+    const notes=targetNotes(u,res);
+    h+=`<div class="ares"><span class="eyebrow">${cur.roll?`Rolled ${cur.roll}: `:""}AI action</span><h3>${esc(res.action)}</h3><p>${esc(res.text)}</p>
+      ${notes.length?`<ul class="steps" style="list-style:disc;font-size:.92rem">${notes.map(x=>`<li>${esc(x)}</li>`).join("")}</ul>`:""}
+      ${tr.caster&&res.action!=="Idle"?`<p class="callout" style="font-size:.92rem">${cur.spell?`Spell roll D3+${u.cast} = <b>${cur.spell}</b>: after moving, cast spell ${cur.spell} from its list. If it has no valid target or not enough tokens (${u.tokens}), go down the list until one works, or cast nothing.`:`Casts after moving. <button class="btn sm" type="button" id="aiSpell">Roll its spell</button>`}</p>`:""}
+      ${res.action!=="Idle"&&res.action!=="Hold"?`<div class="row" style="gap:8px;align-items:center"><span class="secl">Section after moving</span><span class="secseg">${[1,2,3].map(n=>`<button type="button" data-nsec="${n}" aria-pressed="${cur.newSec===n}">${n}</button>`).join("")}</span></div>`:""}
+      <div class="row" style="gap:8px">${["Advance","Hold","Charge"].includes(res.action)?`<button class="btn" type="button" id="aiFire">Roll ${res.action==="Charge"?"melee":"shooting"}</button>`:""}<button class="btn primary" type="button" id="aiDone">Done: ${esc(res.action)}</button><button class="btn sm ghost" type="button" id="aiRestart">Start over</button></div></div>`;
+  }
+  return h+"</div>";
+}
+function wireAI(u,cur){
+  const pk=$("#aiPick");if(pk)pk.onclick=()=>{snap();pickAIUnit();save();renderPlay()};
+  document.querySelectorAll("[data-ans]").forEach(b=>b.onclick=()=>{const [k,v]=b.dataset.ans.split(",");cur.ans[k]=v==="1";save();renderAI()});
+  const bk=$("#aiBack");if(bk)bk.onclick=()=>{const ks=Object.keys(cur.ans);delete cur.ans[ks[ks.length-1]];cur.how=null;cur.roll=null;save();renderAI()};
+  document.querySelectorAll("[data-how]").forEach(b=>b.onclick=()=>{let h=b.dataset.how;if(h==="roll"){const r=d6();cur.roll=r;h=r<=3?"shoot":"charge"}cur.how=h;save();renderAI()});
+  const sp=$("#aiSpell");if(sp)sp.onclick=()=>{cur.spell=d3()+u.cast;save();renderAI()};
+  document.querySelectorAll("[data-nsec]").forEach(b=>b.onclick=()=>{cur.newSec=+b.dataset.nsec;save();renderAI()});
+  const rs=$("#aiRestart");if(rs)rs.onclick=()=>{cur.ans={};cur.how=null;cur.roll=null;save();renderAI()};
+  const fi=$("#aiFire");if(fi)fi.onclick=()=>{const res=aiResult(u,cur);C.att=String(u.id);C.tgt="";C.mode=res.action==="Charge"?"melee":"shoot";C.fat=false;prefill(true);R=null;location.hash="combat"};
+  const dn=$("#aiDone");if(dn)dn.onclick=()=>{const res=aiResult(u,cur);const ns=cur.newSec;
+    finishAct(u,1,res.action==="Idle"?"Idle (recovered)":res.action,()=>{if(res.action==="Idle")u.shaken=false;if(res.action==="Charge")u.fatigued=true;u.sec=ns||u.sec})};
+  wirePlan();
+}
+
+/* ---------- AI: reading the board with Claude ---------- */
+const SOLO_BRIEF=`OPR GRIMDARK FUTURE: FIREFIGHT v3.6 — AI RULES (Solo & Co-Op)
+- Activation: the table is split into 3 sections along the AI's deployment edge, numbered 1-3. The app rolls which section activates; you only need to report which section each AI unit is in.
+- Decision tree for each AI unit:
+ 1. Is this unit within 3" of an objective that is not controlled by the AI? Yes: go to 2. No: go to 3.
+ 2. Is any enemy in range to shoot/charge without moving this unit over 3" away from the objective? Yes: Advance and shoot closest, or charge closest. No: Hold position.
+ 3. Is there any objective not controlled by the AI that has no non-Shaken AI units within 3" of it? Yes: go to 4. No: go to 5.
+ 4. If it moves towards that objective, will any enemy be in range to shoot/charge? Yes: Advance towards the objective and shoot closest, or Charge closest towards the objective if that deals more damage than shooting. No: Rush toward the objective.
+ 5. Is any enemy in range to shoot/charge? Yes: Advance and shoot closest, or charge closest. No: Rush toward the closest objective.
+- Overrides: units with Indirect or Relentless weapons in range of enemies always Hold and shoot. Shaken units stay idle.
+- Shooting: closest valid target, preferring units that haven't activated; if the closest is in cover and another valid target is in the open, pick the one in the open. Blast weapons prefer multi-model units; Deadly weapons prefer single-model units.
+- Melee: charge the closest valid target, preferring units that haven't activated.
+- Terrain: end moves in or behind cover if possible, going around Difficult and Dangerous terrain.
+- Movement: Advance 6", Rush 12", Charge 12" (Fast +2"/+4", Slow -2"/-4"). Charge range is 12" (or more with Fast). Measure weapon range from the weapon profiles.`;
+function planBlock(){
+  const p=S.ai.plan,fresh=p&&p.round===S.round;
+  return `<div class="planbox">
+    <div class="photo">${PHOTO_URL?`<img src="${PHOTO_URL}" alt="Your latest board photo">`:'<div class="nophoto">No photo</div>'}
+      <div class="stack" style="gap:6px;min-width:0">
+        ${IMG?`<div class="row" style="gap:6px"><label class="btn sm" for="aiCam">Take photo</label><label class="btn sm ghost" for="aiPickPh">Choose photo</label></div>
+        <input id="aiCam" type="file" accept="image/*" capture="environment" hidden><input id="aiPickPh" type="file" accept="image/*" hidden>`:'<span class="muted" style="font-size:.86rem">Photos can\'t be sent from this view; add notes instead.</span>'}
+        <span class="muted" style="font-size:.84rem">${fresh?`Board read in round ${p.round}. Re-read it after big changes.`:"From above, whole table, the AI's deployment edge at the top."}</span>
+      </div></div>
+    <div class="field"><label for="aiNotes">Notes for the AI (optional)</label><input id="aiNotes" value="${esc(S.ai.notes||"")}" placeholder="e.g. the ruins in the middle are Cover; the river is Difficult"></div>
+    <div class="row" style="gap:8px">${aiBusy?`<button class="btn" type="button" id="aiStop">Stop</button><span class="muted">Reading the board. This can take up to a minute.</span>`
+      :`<button class="btn" type="button" id="aiRead">${fresh?"Re-read the board":"Read the board for this round"}</button>`}</div></div>`;
+}
+function stateFor(){
+  const brief=(u,ai)=>({id:u.id,name:u.name,models_left:modelsLeft(u),of_models:u.models,tough:u.tough,wounds_taken:u.wounds,quality:u.q,defense:u.d,
+    shaken:u.shaken,activated:u.act,in_reserve:inReserve(u),section:ai?u.sec:undefined,weapons:u.weapons,special_rules:u.rules});
+  return {round:S.round,of:maxRounds(),mode:TYPES[S.type].name,
+    objectives:HORDE()?S.h.obj.map((o,i)=>({number:i+1,destroyed:o.gone,damage:o.dmg,priority:S.h.pri===i})):S.objectives.map((o,i)=>({number:i+1,held_by:o<0?"nobody":o===1?"AI":"players"})),
+    ai_units:S.armies[1].units.filter(u=>!dead(u)).map(u=>brief(u,1)),player_units:S.armies[0].units.filter(u=>!dead(u)).map(u=>brief(u,0))};
+}
+async function readBoard(){
+  if(aiBusy||!SAMPLE)return;
+  aiBusy=true;aiMsg="";aiCtl=new AbortController();renderAI();
+  const notes=S.ai.notes||"";
+  const prompt=[`You run the AI army in a solo or co-op game of One Page Rules' Grimdark Future: Firefight. Apply the official AI rules below exactly. For EVERY AI unit that is still on the table and not in reserve, work out from the photo which section it is in, answer the decision-tree questions, and give its action. Decide only from what the photo, the state and the notes show.`,
+    SOLO_BRIEF,
+    PHOTO&&IMG?`PHOTO: a top-down photo of the table is attached. The AI's deployment edge is at the TOP of the photo; sections 1, 2 and 3 run left to right across it. Identify units by their models; the names are in the state.`:"NO PHOTO: rely on the state and notes; say in notes that you couldn't see the board.",
+    `STATE (JSON):\n${JSON.stringify(stateFor())}`,
+    notes?`PLAYER NOTES: ${notes}`:"",
+    `Reply with only JSON: {"units":[{"id":12,"section":1,"q1":true,"q2":false,"q3":null,"q4":null,"q5":null,"action":"Hold | Advance | Rush | Charge | Idle","target":"player unit name or empty","move":"one or two sentences: where to move it","why":"short"}],"notes":""}. Use null for questions the tree didn't reach.`
+  ].filter(Boolean).join("\n\n");
+  try{
+    const opts={signal:aiCtl.signal,cache:false,modelTier:S.ai.tier==="complex"?"complex":"default"};
+    if(PHOTO&&IMG)opts.images=[PHOTO];
+    const r=await SAMPLE.json(prompt,opts);
+    const units={};(Array.isArray(r&&r.units)?r.units:[]).forEach(x=>{const f=find(+x.id);if(f&&f.ai===1){units[f.u.id]=x;if([1,2,3].includes(+x.section))f.u.sec=+x.section}});
+    S.ai.plan={round:S.round,units,notes:String(r&&r.notes||"")};
+    aiMsg=Object.keys(units).length?(S.ai.plan.notes?`From the board: ${S.ai.plan.notes}`:""):"The AI couldn't make out its units. Try a clearer photo, or answer the questions yourself.";
+    if(S.ai.cur&&units[S.ai.cur.id]){S.ai.cur.plan=units[S.ai.cur.id];prefillFromPlan(S.ai.cur)}
+    log("The AI read the board.");
+  }catch(e){
+    const c=e&&e.code;
+    aiMsg=c==="cancelled"?"":({not_granted:"Claude isn't allowed for this app; answer the questions yourself.",rate_limited:"Too many requests just now. Try again in a minute.",image_rejected:"That photo couldn't be used. Try another.",invalid_json:"The reply came back garbled. Try again."}[c]||"Couldn't read the board. Try again, or answer the questions yourself.");
+    if(c==="images_unavailable")IMG=false;
+  }finally{aiBusy=false;aiCtl=null;save();renderPlay()}
+}
+function prefillFromPlan(cur){
+  const p=cur.plan;if(!p)return;
+  ["q1","q2","q3","q4","q5"].forEach(k=>{if(typeof p[k]==="boolean")cur.ans[k]=p[k]});
+  if(p.action==="Charge")cur.how="charge";else if(p.action==="Advance")cur.how="shoot";
+}
+function wirePlan(){
+  ["#aiCam","#aiPickPh"].forEach(id=>{const el=$(id);if(el)el.onchange=e=>{const f=e.target.files[0];if(!f)return;if(PHOTO_URL)URL.revokeObjectURL(PHOTO_URL);PHOTO=f;PHOTO_URL=URL.createObjectURL(f);renderAI()}});
+  const st=$("#aiStop");if(st)st.onclick=()=>aiCtl&&aiCtl.abort();
+  const nt=$("#aiNotes");if(nt)nt.oninput=e=>{S.ai.notes=e.target.value;save()};
+  const rd=$("#aiRead");if(rd)rd.onclick=readBoard;
+}
+
+/* ---------- HORDE MODE ---------- */
+const TRAITS=[["Agile",'Moves +1" on Advance and +2" on Rush and Charge.'],["Headstrong","+1 to rolls when taking Morale Tests."],["Specialist","+1 to hit rolls in melee or when shooting (pick one)."],
+  ["Resilient","+1 to Defense rolls when blocking hits."],["Elite","May re-roll one roll of any kind once per game."],["Fast Learner","Pick any other trait from the list."]];
+const hordeRewardRound=r=>r%3===0;
+const standing=()=>S.h.obj.map((o,i)=>({...o,i})).filter(o=>!o.gone);
+function renderHorde(){
+  const box=$("#hordeBox");if(!box)return;
+  if(!HORDE()||!S.started){box.innerHTML="";return}
+  const h=S.h,r=S.round,st=h.steps[r]||{};
+  const items=[];
+  if([1,4,7,10].includes(r))items.push(st.pri?`<li class="done">Priority objective set: ${h.pri!=null?`<b>Objective ${h.pri+1}</b>`:"none (only one objective left)"}</li>`
+    :`<li>Set the priority objective. <button class="btn sm primary" type="button" id="hPri">Roll for it</button></li>`);
+  if([4,7,10].includes(r))items.push(st.wave?`<li class="done">The wave is deployed.</li>`:`<li>Deploy the next wave. <button class="btn sm primary" type="button" id="hWave">Deploy wave</button></li>`);
+  items.push(`<li>Play the round as normal.${hordeRewardRound(r)?" Rewards are paid at the end of this round.":""}</li>`);
+  const pend=(h.pending||[]).map(id=>find(id)).filter(Boolean);
+  box.innerHTML=`<div class="panel hpanel stack">
+    <div class="row between"><div><span class="eyebrow">Horde Mode · round ${r} of 12</span><h2>Score ${h.earned} × ${h.done} = ${h.earned*h.done}</h2></div><div class="hbank"><span class="eyebrow">Bank</span><b class="num">${h.bank}</b></div></div>
+    <ol class="steps hsteps">${items.join("")}</ol>
+    ${pend.length?`<div class="stack" style="gap:6px"><span class="eyebrow">Level up</span>${pend.map(({u})=>`<div class="row between"><span>${esc(u.name)} reached ${u.xp} XP</span><button class="btn sm primary" type="button" data-lvl="${u.id}">Roll a trait</button></div>`).join("")}</div>`:""}
+    <div class="row" style="gap:8px"><button class="btn sm ghost" type="button" id="hShop" ${h.bank>0||true?"":"disabled"}>Spend points</button><button class="btn sm ghost" type="button" id="hEnd">Defenders are all down</button></div>
+  </div>`;
+  const p=$("#hPri");if(p)p.onclick=setPriority;
+  const w=$("#hWave");if(w)w.onclick=deployWave;
+  document.querySelectorAll("[data-lvl]").forEach(b=>b.onclick=()=>levelUp(+b.dataset.lvl));
+  $("#hShop").onclick=openShop;
+  $("#hEnd").onclick=()=>{snap();endHorde("Every defending unit is Shaken or destroyed.",S.round-1);};
+}
+function setPriority(){
+  snap();const h=S.h,left=standing();
+  const finish=i=>{h.lastPri=h.pri;h.pri=i;(h.steps[S.round]=h.steps[S.round]||{}).pri=true;log(i==null?"Only one objective left: no priority objective.":`Objective ${i+1} is the priority objective.`);save();closeSheet();render()};
+  if(left.length<=1)return finish(null);
+  const valid=left.filter(o=>o.i!==h.pri);
+  for(let k=0;k<50;k++){const r=d6();
+    if(r===6){sheet(`<h2>You rolled a 6</h2><p class="muted">Pick the priority objective.</p><div class="row">${valid.map(o=>`<button class="btn" type="button" data-pp="${o.i}">Objective ${o.i+1}</button>`).join("")}</div>`);
+      document.querySelectorAll("[data-pp]").forEach(b=>b.onclick=()=>finish(+b.dataset.pp));return}
+    if(valid.some(o=>o.i===r-1))return finish(r-1);
+  }
+  finish(valid[0].i);
+}
+function cornerRoll(){const r=d6();return r<=4?{r,c:r}:{r,c:null}}
+function deployWave(){
+  snap();const ai=S.armies[1];
+  const shaken=ai.units.filter(u=>!dead(u)&&u.shaken);
+  shaken.forEach(u=>{u.wounds=hpMax(u)});
+  const back=ai.units.filter(u=>dead(u));
+  const rolls=back.map(u=>{const c=cornerRoll();Object.assign(u,{wounds:0,shaken:false,fatigued:false,act:false,lastAction:"",tokens:u.cast||0});u.sec=c.c===1||c.c===2?(c.c===1?1:3):2;return {u,c}});
+  (S.h.steps[S.round]=S.h.steps[S.round]||{}).wave=true;
+  log(`Wave ${S.round===4?2:S.round===7?3:4}: ${shaken.length} Shaken enemies removed, ${back.length} enemy units return.`);
+  save();
+  sheet(`<h2>Deploy the wave</h2>
+    ${shaken.length?`<p>Removed as destroyed (they were Shaken): ${shaken.map(u=>esc(u.name)).join(", ")}.</p>`:""}
+    <p class="muted">Place each unit within 6" of its table corner. On a 5 or 6 you choose the corner.</p>
+    <ul class="ulist">${rolls.map(({u,c})=>`<li><span>${esc(u.name)}</span><b>${c.c?`Corner ${c.c}`:`You pick (rolled ${c.r})`}</b></li>`).join("")||"<li>No enemy units to return.</li>"}</ul>
+    <p class="muted" style="font-size:.88rem">Set each returning unit's section on its card if it isn't right.</p>
+    <button class="btn primary" type="button" id="wOk">Done</button>`);
+  $("#wOk").onclick=()=>{closeSheet();render()};
+}
+function award(u,n,why){
+  const before=Math.floor(u.xp/5);u.xp=Math.min(30,u.xp+n);const after=Math.floor(u.xp/5);
+  for(let k=before;k<after;k++)S.h.pending.push(u.id);
+  log(`${u.name} earns ${n} XP${why?` (${why})`:""}.`);
+}
+function levelUp(id){
+  const f=find(id);if(!f)return;const u=f.u;snap();
+  const done=t=>{u.traits.push(t);S.h.pending.splice(S.h.pending.indexOf(id),1);log(`${u.name} gains ${t}.`);save();closeSheet();render()};
+  let r,t;for(let k=0;k<60;k++){r=d6();t=TRAITS[r-1][0];if(t==="Specialist"||!u.traits.includes(t))break}
+  if(t==="Specialist"){sheet(`<h2>${esc(u.name)}: Specialist</h2><p>Rolled ${r}. +1 to hit in melee or when shooting. Pick one:</p><div class="row"><button class="btn" type="button" data-sp="Specialist (shooting)">Shooting</button><button class="btn" type="button" data-sp="Specialist (melee)">Melee</button></div>`);
+    document.querySelectorAll("[data-sp]").forEach(b=>b.onclick=()=>done(b.dataset.sp));return}
+  if(t==="Fast Learner"){const opts=TRAITS.filter(([n])=>n!=="Fast Learner"&&(n==="Specialist"||!u.traits.includes(n)));
+    sheet(`<h2>${esc(u.name)}: Fast Learner</h2><p>Rolled 6. Pick any other trait:</p><div class="stack" style="gap:6px">${opts.flatMap(([n,d])=>n==="Specialist"?[["Specialist (shooting)",d],["Specialist (melee)",d]]:[[n,d]]).map(([n,d])=>`<button class="btn" type="button" data-sp="${n}" style="text-align:left"><b>${n}</b> <span class="muted">${d}</span></button>`).join("")}</div>`);
+    document.querySelectorAll("[data-sp]").forEach(b=>b.onclick=()=>done(b.dataset.sp));return}
+  done(t);
+}
+function endHorde(why,finished){S.h.over=true;S.h.why=why;S.h.done=Math.max(0,finished);log(`Horde Mode over. ${why} High score ${S.h.earned*S.h.done}.`);save();render()}
+function openHordeEnd(){
+  const h=S.h,r=S.round,reward=hordeRewardRound(r),left=standing();
+  const seized={},held={};
+  const draw=()=>{
+    const gain=reward?left.filter(o=>held[o.i]).reduce((t,o)=>t+30+(h.pri===o.i?15:0),0):0;
+    sheet(`<div class="eyebrow">Round ${r} of 12</div><h2>End of round</h2>
+      <div class="stack" style="gap:8px"><span class="eyebrow">1 · Enemy seizures</span>
+      <p class="muted" style="font-size:.9rem">Tap each objective with an enemy unit within 3" and no defenders within 3". It takes a damage token; the third destroys it.</p>
+      <div class="row" style="gap:6px">${left.map(o=>`<button type="button" class="tg" data-sz="${o.i}" aria-pressed="${!!seized[o.i]}">Objective ${o.i+1} · ${o.dmg} dmg</button>`).join("")}</div></div>
+      ${reward?`<div class="stack" style="gap:8px"><span class="eyebrow">2 · Rewards</span>
+      <p class="muted" style="font-size:.9rem">Tap each objective with a defender within 3" and no enemies within 3": 30 points each, plus 15 for the priority objective.</p>
+      <div class="row" style="gap:6px">${left.map(o=>`<button type="button" class="tg" data-hd="${o.i}" aria-pressed="${!!held[o.i]}">Objective ${o.i+1}${h.pri===o.i?" ★":""}</button>`).join("")}</div>
+      <p><b class="num">+${gain}</b> points</p></div>`:`<p class="muted">No rewards this round. They come at the end of rounds 3, 6, 9 and 12.</p>`}
+      <div class="row"><button class="btn primary" type="button" id="heOk">${r>=12?"Finish the game":"Finish round "+r}</button><button class="btn ghost" type="button" id="heNo">Back</button></div>`);
+    document.querySelectorAll("[data-sz]").forEach(b=>b.onclick=()=>{seized[b.dataset.sz]=!seized[b.dataset.sz];draw()});
+    document.querySelectorAll("[data-hd]").forEach(b=>b.onclick=()=>{held[b.dataset.hd]=!held[b.dataset.hd];draw()});
+    $("#heNo").onclick=closeSheet;
+    $("#heOk").onclick=()=>{snap();
+      Object.keys(seized).filter(k=>seized[k]).forEach(k=>{const o=h.obj[k];o.dmg++;if(o.dmg>=3){o.gone=true;log(`Objective ${+k+1} is destroyed.`)}else log(`Enemies seize objective ${+k+1} (${o.dmg} damage).`)});
+      if(gain){h.bank+=gain;h.earned+=gain;log(`Defenders earn ${gain} points.`)}
+      h.done=r;
+      if(h.obj.every(o=>o.gone))return endHorde("Every objective has been destroyed.",r);
+      const def=S.armies[0].units;if(def.length&&def.every(u=>dead(u)||u.shaken))return endHorde("Every defending unit is Shaken or destroyed.",r);
+      if(r>=12)return endHorde("The defenders held out through round 12.",12);
+      closeSheet();
+      if(reward&&h.bank>0)openShop(true);else nextHordeRound();
+    };
+  };
+  draw();
+}
+function nextHordeRound(){
+  snap();S.round++;S.first=S.finished??S.first;S.turn=S.first;S.finished=null;newRoundReset();
+  log(`Round ${S.round} begins. ${sideName(S.first)} activates first.`);save();closeSheet();render();window.scrollTo({top:0,behavior:"smooth"});
+}
+function openShop(thenNext){
+  const h=S.h,def=S.armies[0].units,elig=def.filter(u=>halfOrLess(u)||(dead(u)&&false));
+  sheet(`<div class="eyebrow">Bank: <span class="num">${h.bank}</span> points</div><h2>Spend points</h2>
+    <p class="muted" style="font-size:.9rem">Upgrades: units within 6" of a seized objective. Reinforcing: units at half strength or less within 9" of a seized objective. Recruits: deploy within 6" of a seized objective.</p>
+    <div class="stack" style="gap:6px"><span class="eyebrow">Buy an upgrade</span>
+      <div class="row"><div class="field" style="flex:2 1 160px"><label for="shU">Unit</label><select id="shU">${def.filter(u=>!dead(u)).map(u=>`<option value="${u.id}">${esc(u.name)}</option>`).join("")}</select></div>
+      <div class="field" style="flex:2 1 160px"><label for="shD">Upgrade</label><input id="shD" placeholder="from Army Forge"></div>
+      <div class="field" style="flex:1 1 80px"><label for="shP">Cost</label><input id="shP" type="number" inputmode="numeric"></div>
+      <button class="btn" type="button" id="shBuy" style="align-self:flex-end">Buy</button></div>
+      <p class="muted" style="font-size:.84rem">An upgrade worth less than 0 points gives you those points instead.</p></div>
+    <div class="stack" style="gap:6px"><span class="eyebrow">Reinforce</span>
+      ${elig.length?elig.map(u=>{const cost=Math.ceil((u.pts||0)/2);return `<div class="row between"><span>${esc(u.name)} <span class="muted">${u.models>1?`${modelsLeft(u)}/${u.models} models`:`${hpMax(u)-u.wounds}/${hpMax(u)} wounds`}</span></span><button class="btn sm" type="button" data-rf="${u.id}" ${cost>h.bank?"disabled":""}>Restore half · ${cost} pts</button></div>`}).join(""):'<p class="muted">No unit is down to half strength.</p>'}</div>
+    <div class="stack" style="gap:6px"><span class="eyebrow">Recruit</span>
+      <div class="field"><label for="shR">Army Forge units to add</label><textarea id="shR" rows="3" style="border:1px solid var(--line);background:var(--bg);border-radius:4px;padding:8px;font:13px/1.4 var(--mono)" placeholder="Unit [1] Q4+ D4+ | 40pts | rules"></textarea></div>
+      <div class="row"><span class="muted" id="shRp"></span><button class="btn sm" type="button" id="shRec">Recruit</button></div></div>
+    ${h.spent&&h.spent.length?`<details><summary class="muted">This game's purchases</summary><ul class="steps" style="list-style:disc;font-size:.9rem">${h.spent.map(x=>`<li>${esc(x)}</li>`).join("")}</ul></details>`:""}
+    <div class="row"><button class="btn primary" type="button" id="shDone">${thenNext?`Start round ${S.round+1}`:"Done"}</button></div>`);
+  const spend=(n,desc)=>{h.bank-=n;(h.spent=h.spent||[]).push(`R${S.round}: ${desc} (${n>=0?"−":"+"}${Math.abs(n)})`);log(`${desc}: ${n>=0?`${n} points spent`:`${-n} points gained`}.`);save();openShop(thenNext)};
+  $("#shBuy").onclick=()=>{const u=find(+$("#shU").value),c=Math.round(+$("#shP").value||0),d=$("#shD").value.trim();if(!u||!d){return}if(c>h.bank)return;snap();u.u.rules=[u.u.rules,d].filter(Boolean).join(", ");spend(c,`${u.u.name} buys ${d}`)};
+  document.querySelectorAll("[data-rf]").forEach(b=>b.onclick=()=>{const u=find(+b.dataset.rf).u,cost=Math.ceil((u.pts||0)/2);if(cost>h.bank)return;snap();
+    const back=u.models>1?Math.floor(u.models/2)*u.tough:Math.floor(hpMax(u)/2);u.wounds=Math.max(0,u.wounds-back);spend(cost,`${u.name} reinforced`)});
+  const pr=()=>{const p=parseList($("#shR").value);const c=p.units.reduce((t,x)=>t+x.pts,0);$("#shRp").textContent=p.units.length?`${p.units.length} unit${p.units.length>1?"s":""} · ${c} pts`:"";return {p,c}};
+  $("#shR").oninput=pr;
+  $("#shRec").onclick=()=>{const {p,c}=pr();if(!p.units.length||c>h.bank)return;snap();p.units.forEach(x=>S.armies[0].units.push(unit(x.name,x)));spend(c,`Recruited ${p.units.map(x=>x.name).join(", ")}`)};
+  $("#shDone").onclick=()=>{closeSheet();if(thenNext)nextHordeRound();else render()};
+}
+
+/* ---------- shared clicks ---------- */
+document.addEventListener("click",e=>{
+  const t=e.target.closest("button");if(!t)return;const d=t.dataset;
+  if(d.obj!=null){snap();const i=+d.obj;S.objectives[i]=S.objectives[i]===-1?0:S.objectives[i]===0?1:-1;save();
+    t.className="marker "+(S.objectives[i]===0?"oa":S.objectives[i]===1?"ob":"");if(!t.closest(".sheet"))render();else renderPlay()}
+  else if(d.rt!=null){S.view=+d.rt;save();renderRoster()}
+  else if(d.w){const[id,v]=d.w.split(",").map(Number);const f=find(id);snap();const was=dead(f.u);f.u.wounds=Math.max(0,Math.min(hpMax(f.u),f.u.wounds+v));
+    if(!was&&dead(f.u))log(`${f.u.name} destroyed.`);save();render()}
+  else if(d.tg){const[id,k]=d.tg.split(",");const f=find(+id);snap();f.u[k]=!f.u[k];if(k==="shaken"&&f.u.shaken)log(`${f.u.name} is Shaken.`);save();renderPlay()}
+  else if(d.sec){const[id,n]=d.sec.split(",").map(Number);const f=find(id);f.u.sec=n;save();renderRoster()}
+  else if(d.tok){const f=find(+d.tok);if(f.u.tokens>0){snap();f.u.tokens--;save();renderRoster()}}
+  else if(d.xp){const f=find(+d.xp);sheet(`<h2>XP for ${esc(f.u.name)}</h2><p class="muted">+3 for destroying a unit, +5 for destroying a Hero. The Attack tab awards these automatically.</p><div class="row"><button class="btn" type="button" data-gx="3">+3 XP</button><button class="btn" type="button" data-gx="5">+5 XP</button><button class="btn ghost" type="button" id="xpNo">Cancel</button></div>`);
+    document.querySelectorAll("[data-gx]").forEach(b=>b.onclick=()=>{snap();award(f.u,+b.dataset.gx);save();closeSheet();render()});$("#xpNo").onclick=closeSheet}
+  else if(d.activate){openActivate(+d.activate)}
+  else if(d.unact){const f=find(+d.unact);snap();f.u.act=false;f.u.lastAction="";S.turn=f.ai;if(S.finished===f.ai)S.finished=null;save();render()}
+  else if(d.edit){openUnit(+d.edit)}
+  else if(d.endround){openEndRound()}
+  else if(d.kw){openKw(d.kw)}
+});
+function sheet(html){$("#sheet").innerHTML=`<div class="sheet" id="sh"><div class="panel">${html}</div></div>`;
+  $("#sh").addEventListener("click",e=>{if(e.target.id==="sh")closeSheet()})}
+function closeSheet(){$("#sheet").innerHTML=""}
+function openUnit(id,isNew){
+  const f=find(id),u=f.u;
+  sheet(`<h2>${isNew?"New unit":esc(u.name)}</h2>
+    <div class="field"><label for="uN">Unit name</label><input id="uN" value="${esc(u.name)}"></div>
+    <div class="grid2">
+      <div class="field"><label for="uQ">Quality</label><input id="uQ" type="number" inputmode="numeric" min="2" max="6" value="${u.q}"></div>
+      <div class="field"><label for="uD">Defense</label><input id="uD" type="number" inputmode="numeric" min="2" max="6" value="${u.d}"></div>
+      <div class="field"><label for="uM">Models</label><input id="uM" type="number" inputmode="numeric" min="1" value="${u.models}"></div>
+      <div class="field"><label for="uT">Tough (1 if none)</label><input id="uT" type="number" inputmode="numeric" min="1" value="${u.tough}"></div>
+      <div class="field"><label for="uC">Caster (0 if none)</label><input id="uC" type="number" inputmode="numeric" min="0" max="6" value="${u.cast}"></div>
+      <div class="field"><label for="uP">Points</label><input id="uP" type="number" inputmode="numeric" min="0" value="${u.pts||0}"></div>
+    </div>
+    <label class="check"><input type="checkbox" id="uH" ${u.hero?"checked":""}> Hero</label>
+    <label class="check"><input type="checkbox" id="uA" ${u.ambush?"checked":""}> Held in Ambush (arrives from round 2)</label>
+    <div class="row between"><div class="row"><button class="btn primary" id="uOk" type="button">Save</button><button class="btn ghost" id="uNo" type="button">Cancel</button></div>
+      <button class="btn ghost" id="uDel" type="button" style="color:var(--danger)">Remove</button></div>`);
+  const n=(v,lo,hi)=>Math.min(hi,Math.max(lo,Math.round(+v)||lo));
+  $("#uNo").onclick=()=>{if(isNew){f.a.units=f.a.units.filter(x=>x.id!==id);save();render()}closeSheet()};
+  $("#uDel").onclick=()=>{snap();f.a.units=f.a.units.filter(x=>x.id!==id);save();closeSheet();render()};
+  $("#uOk").onclick=()=>{snap();u.name=$("#uN").value.trim()||"Unit";u.q=n($("#uQ").value,2,6);u.d=n($("#uD").value,2,6);
+    u.models=n($("#uM").value,1,20);u.tough=n($("#uT").value,1,24);u.cast=n($("#uC").value,0,6);u.pts=n($("#uP").value,0,2000);u.hero=$("#uH").checked;u.ambush=$("#uA").checked;
+    u.wounds=Math.min(u.wounds,hpMax(u));S.example=false;save();closeSheet();render()};
+}
+$("#endBtn").onclick=openEndRound;
+$("#undoBtn").onclick=()=>{if(!history.length)return;S=JSON.parse(history.pop());save();render()};
+$("#newGameBtn").onclick=()=>{
+  sheet(`<h2>Start a new game?</h2><p class="muted">Wounds, objectives, scores and the log are cleared. Your armies stay.</p>
+    <div class="row"><button class="btn primary" id="nOk" type="button">Clear and go to setup</button><button class="btn ghost" id="nNo" type="button">Keep playing</button></div>`);
+  $("#nNo").onclick=closeSheet;
+  $("#nOk").onclick=()=>{snap();
+    if(S.example)S=blankState(S.type);
+    else{resetUnits();const k=S;S=Object.assign(blankState(k.type),{mode:k.mode,players:k.players,armies:k.armies,ai:{...blankState().ai,method:k.ai.method,tier:k.ai.tier,bonusD3:k.ai.bonusD3,bonusTie:k.ai.bonusTie,bonusLose:k.ai.bonusLose},notes:k.notes,lastPlayed:k.lastPlayed})}
+    save();closeSheet();location.hash="setup";render()};
+};
+function resetUnits(){S.armies.forEach(a=>a.units.forEach(u=>Object.assign(u,{wounds:0,shaken:false,fatigued:false,act:false,lastAction:"",tokens:u.cast||0,xp:0,traits:[],eliteUsed:false})))}
+
+/* ---------- SETUP ---------- */
+function setupSteps(){
+  const m=MODES[S.mode],n=S.objectives.length;
+  if(HORDE())return [
+    ["Build the armies","Defenders: one or more player armies totalling 800 points. The Horde: one 800-point army, played by the AI."],
+    ["Lay out the table",`A 4' × 4' table with 20+ pieces of terrain. A smaller table works if the armies start at least 18" apart.`],
+    ["Place 5 objectives","Number them 1 to 5: one at the centre of the table and one at the centre of each table quarter."],
+    ["Mark the AI's sections","Split the table into 3 equal sections along one edge and number them 1 to 3. The AI uses them to choose which unit activates."],
+    ["Deploy the defenders",'Every defending unit within 6" of the centre of the table.'],
+    ["Deploy the horde","Number the corners 1 to 4. Roll for each enemy unit below and place it within 6\" of that corner; on a 5 or 6 you choose the corner."]];
+  return [
+    ["Build the armies",`Equal points: ${m.pts} a side. OPR recommends making several balanced lists and dealing them out at random so the AI's army is fair.`],
+    ["Lay out the table",`A 4' × 4' table with 20+ pieces of terrain. A smaller table works if the armies start at least 24" apart.`],
+    ["Roll off","The winner places the first objective and activates first in round 1."],
+    ["Place objectives",`Place ${n} markers (D3+2), alternating, outside the deployment zones and over 9" apart. For the AI's markers, split the area into 6 equal squares and roll below.`],
+    ["Deploy your army first",`Players deploy their entire army in a random deployment zone, within 12" of that long table edge.`],
+    ["Mark the AI's sections","Split the table into 3 equal sections along the AI's table edge and number them 1 to 3."],
+    ["Deploy the AI",'Roll the AI deployment below: units are split into 3 groups, each group gets a section, and units go in one at a time, as close as possible to the nearest objective and outside Difficult and Dangerous terrain (unless Strider or Flying). Ambush units wait for round 2; Scouts go last.']];
+}
+function renderSetup(){renderLayoutBox();
+  $("#types").innerHTML=Object.entries(TYPES).map(([k,t])=>`<button class="mode" type="button" data-type="${k}" aria-pressed="${k===S.type}"><b>${t.name}</b><small>${t.sub}</small></button>`).join("");
+  $("#modes").hidden=HORDE();
+  $("#modes").innerHTML=Object.entries(MODES).map(([k,m])=>`<button class="mode" type="button" data-mode="${k}" aria-pressed="${k===S.mode}"><b>${m.name}</b><small>${m.sub}</small></button>`).join("");
+  const m=MODES[S.mode];
+  $("#spec").innerHTML=(HORDE()?[["800","Defenders"],["800","Horde"],["12","Rounds"],["5","Objectives"],["4' × 4'","Table"]]
+    :[[m.pts,"Points a side"],["4' × 4'","Table"],[S.objectives.length,"Objectives"],["4","Rounds"],['6"',"Coherency"]]).map(([v,l])=>`<div><b>${v}</b><span>${l}</span></div>`).join("");
+  renderPlayersSetup();renderAISetup();
+  const steps=setupSteps();
+  $("#checklist").innerHTML=steps.map(([t,d],i)=>{const on=!!S.checks[S.type+i];return `<li class="${on?"done":""}"><input type="checkbox" id="ck${i}" data-ck="${i}" ${on?"checked":""}><label for="ck${i}"><strong><span class="n">${i+1}</span> ${t}</strong><p>${d}</p></label></li>`}).join("");
+  $("#setupCount").textContent=`${steps.filter((_,i)=>S.checks[S.type+i]).length} / ${steps.length}`;
+  renderHelpers();
+  $("#startBtn").textContent=S.started&&!S.example?"Restart at round 1":"Start round 1";
+}
+function armyList(units,ai){
+  return units.length?`<ul class="ulist">${units.map(u=>`<li><span>${esc(u.name)} <span class="qd">Q${u.q}+ D${u.d}+${u.models>1?` ×${u.models}`:""}${u.tough>1?` T${u.tough}`:""}${u.pts?` · ${u.pts}pts`:""}${ai?` · S${u.sec}`:""}</span></span><button class="btn sm ghost" data-edit="${u.id}" type="button">Edit</button></li>`).join("")}</ul>`:"";
+}
+function renderPlayersSetup(){
+  const a=S.armies[0],lim=HORDE()?800:MODES[S.mode].pts,coop=S.type==="coop"||(HORDE()&&S.players.length>1);
+  const pls=S.type==="solo"?[S.players[0]]:S.players;
+  $("#playersBox").innerHTML=`<div class="row between"><h2>${HORDE()?"Defenders":S.type==="coop"?"Players":"Your army"}</h2>${S.type!=="solo"&&S.players.length<4?'<button class="btn sm" type="button" id="addPlayer">Add player</button>':""}</div>
+    <div class="field"><label for="an0">Side name</label><input id="an0" data-an="0" value="${esc(a.name)}"></div>
+    ${pls.map((p,i)=>{const us=a.units.filter(u=>(u.owner||0)===i);
+      return `<div class="panel stack" style="border-top:4px solid var(--a)">
+        ${S.type!=="solo"?`<div class="row" style="gap:8px"><div class="field" style="flex:1 1 160px"><label for="pn${i}">Player ${i+1}</label><input id="pn${i}" data-pn="${i}" value="${esc(p.name)}"></div>${i>0?`<button class="btn sm ghost" type="button" data-rmp="${i}" style="align-self:flex-end">Remove</button>`:""}</div>`:""}
+        ${armyList(us,false)||'<p class="muted">No units yet.</p>'}
+        ${us.length?`<div class="row" style="gap:6px">${checkArmy(us,S.type==="solo"?lim:Math.round(lim/Math.max(1,pls.length)),S.type!=="solo")}</div>`:""}
+        <div class="row" style="gap:6px"><button class="btn primary" data-import="0,${i}" type="button">${us.length?"Re-import from Army Forge":"Import from Army Forge"}</button><button class="btn sm ghost" data-addunit="0,${i}" type="button">Add a unit by hand</button></div>
+      </div>`}).join("")}
+    ${S.type!=="solo"&&a.units.length?`<p class="muted" style="font-size:.88rem">All players together: ${a.units.reduce((t,u)=>t+(u.pts||0),0)} of ${lim} points.</p>`:""}`;
+  const ap=$("#addPlayer");if(ap)ap.onclick=()=>{S.players.push({name:`Player ${S.players.length+1}`});save();renderSetup()};
+  document.querySelectorAll("[data-rmp]").forEach(b=>b.onclick=()=>{const i=+b.dataset.rmp;snap();S.armies[0].units=S.armies[0].units.filter(u=>u.owner!==i).map(u=>({...u,owner:u.owner>i?u.owner-1:u.owner}));S.players.splice(i,1);save();renderSetup()});
+}
+function renderAISetup(){
+  const a=S.armies[1],lim=HORDE()?800:MODES[S.mode].pts;
+  $("#aiSetup").innerHTML=`<div class="row between"><h2>${HORDE()?"The Horde":"AI army"}</h2></div>
+    <div class="panel stack" style="border-top:4px solid var(--b)">
+      <div class="field"><label for="an1">Army name</label><input id="an1" data-an="1" value="${esc(a.name)}"></div>
+      ${armyList(a.units,true)||'<p class="muted">No units yet. Import the AI\'s list from Army Forge.</p>'}
+      ${a.units.length?`<div class="row" style="gap:6px">${checkArmy(a.units,lim)}</div>`:""}
+      <div class="row" style="gap:6px"><button class="btn primary" data-import="1,0" type="button">${a.units.length?"Re-import from Army Forge":"Import from Army Forge"}</button><button class="btn sm ghost" data-addunit="1,0" type="button">Add a unit by hand</button></div>
+      ${!HORDE()&&a.units.length&&S.armies[0].units.length?`<button class="btn sm" type="button" id="dealLists" style="align-self:flex-start">Deal the lists at random</button><p class="muted" style="font-size:.86rem">Shuffles the imported lists so the AI gets one at random, as OPR recommends.</p>`:""}
+    </div>
+    <div class="panel stack">
+      <span class="eyebrow">How the AI decides</span>
+      <div class="seg"><button type="button" data-meth="tree" aria-pressed="${S.ai.method!=="claude"}">Decision tree</button><button type="button" data-meth="claude" aria-pressed="${S.ai.method==="claude"}">Claude reads the board</button></div>
+      <p class="muted" style="font-size:.9rem">${S.ai.method==="claude"?(SAMPLE?(IMG?"Once a round, photograph the table and Claude answers the decision tree for every AI unit. You can still change any answer. Each read uses some of your Claude usage.":"Claude can answer from notes, but photos can't be sent from this view."):"Claude isn't reachable from this view, so you'll answer the questions yourself."):"You answer up to five yes/no questions for each AI unit, straight from OPR's AI decision tree. Works anywhere, no photos needed."}</p>
+      ${S.ai.method==="claude"?`<div class="seg"><button type="button" data-tier="default" aria-pressed="${S.ai.tier!=="complex"}">Standard</button><button type="button" data-tier="complex" aria-pressed="${S.ai.tier==="complex"}">Thorough · slower</button></div>`:""}
+      <span class="eyebrow">Challenge bonuses (optional)</span>
+      <label class="check"><input type="checkbox" data-bonus="bonusD3" ${S.ai.bonusD3?"checked":""}> On its turn, the AI activates D3 units instead of 1</label>
+      ${HORDE()?"":`<label class="check"><input type="checkbox" data-bonus="bonusTie" ${S.ai.bonusTie?"checked":""}> When tied on objectives, AI units get +1 to hit</label>
+      <label class="check"><input type="checkbox" data-bonus="bonusLose" ${S.ai.bonusLose?"checked":""}> When losing on objectives, AI units get +1 to hit and +1 to Defense</label>`}
+    </div>`;
+  document.querySelectorAll("[data-meth]").forEach(b=>b.onclick=()=>{S.ai.method=b.dataset.meth;save();renderAISetup()});
+  document.querySelectorAll("[data-tier]").forEach(b=>b.onclick=()=>{S.ai.tier=b.dataset.tier;save();renderAISetup()});
+  document.querySelectorAll("[data-bonus]").forEach(c=>c.onchange=()=>{S.ai[c.dataset.bonus]=c.checked;save()});
+  const dl=$("#dealLists");if(dl)dl.onclick=dealLists;
+}
+function dealLists(){
+  snap();
+  const groups=[...S.players.map((p,i)=>({name:i===0?S.armies[0].name:p.name,units:S.armies[0].units.filter(u=>(u.owner||0)===i)})),{name:S.armies[1].name,units:S.armies[1].units}].filter(g=>g.units.length);
+  for(let i=groups.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[groups[i],groups[j]]=[groups[j],groups[i]]}
+  const aiG=groups.pop();
+  S.armies[1].units=aiG.units.map(u=>({...u,owner:0,sec:2}));
+  S.armies[0].units=groups.flatMap((g,i)=>g.units.map(u=>({...u,owner:Math.min(i,S.players.length-1)})));
+  log(`Lists dealt at random. The AI gets the list with ${aiG.units.map(u=>u.name).slice(0,3).join(", ")}${aiG.units.length>3?"…":""}.`);
+  save();renderSetup();
+}
+function renderHelpers(){
+  const ai=S.ai;let h="";
+  if(HORDE()){
+    h=`<div class="stack" style="gap:8px"><span class="eyebrow">Horde deployment</span>
+      <button class="btn" type="button" id="hDeploy">Roll corners for every enemy unit</button>
+      ${ai.deploy?`<ul class="ulist">${ai.deploy.map(x=>{const f=find(x.id);return f?`<li><span>${esc(f.u.name)}</span><b>${x.c?`Corner ${x.c}`:`You pick (rolled ${x.r})`}</b></li>`:""}).join("")}</ul>`:""}</div>`;
+  } else {
+    h=`<div class="stack" style="gap:8px"><span class="eyebrow">Roll-off and deployment zone</span>
+        <div class="row" style="gap:8px"><button class="btn sm" type="button" id="rRoll">Roll off</button><button class="btn sm" type="button" id="rZone">Roll your deployment zone</button><button class="btn sm" type="button" id="rollObj">Roll D3+2 objectives</button></div>
+        ${ai.roll?`<p>${esc(ai.roll)}</p>`:""}${ai.zone?`<p>${esc(ai.zone)}</p>`:""}</div>
+      <div class="stack" style="gap:8px"><span class="eyebrow">AI objective placement</span>
+        <p class="muted" style="font-size:.88rem">Split the area where objectives can go into 6 equal squares, numbered like this. Roll for each AI marker and place it at the centre of that square; if that's not legal, roll another square and move toward it just enough.</p>
+        <div class="sq6">${[1,2,3,4,5,6].map(n=>`<span class="${ai.sq===n?"on":""}">${n}</span>`).join("")}</div>
+        <button class="btn sm" type="button" id="rSq" style="align-self:flex-start">Roll a square for the AI</button></div>
+      <div class="stack" style="gap:8px"><span class="eyebrow">AI deployment</span>
+        <button class="btn" type="button" id="aiDeploy" style="align-self:flex-start">Roll the AI deployment</button>
+        ${ai.deploy?`<ol class="steps" style="font-size:.94rem">${ai.deploy.map(x=>{const f=find(x.id);return f?`<li><b>${esc(f.u.name)}</b> → ${x.res?"Ambush: arrives at the start of round 2":x.scout?`Scout: after everything else, section ${x.sec}, within 9" of the AI zone and over 9" from your non-Scout units`:`section ${x.sec}`}</li>`:""}).join("")}</ol>
+          <p class="muted" style="font-size:.86rem">Place them in this order, each as close as possible to the nearest objective, outside Difficult and Dangerous terrain unless it has Strider or Flying.</p>`:""}</div>`;
+  }
+  $("#helpers").innerHTML=h;
+  const rr=$("#rRoll");if(rr)rr.onclick=()=>{let a,b;do{a=d6();b=d6()}while(a===b);ai.roll=`You rolled ${a}, the AI rolled ${b}: ${a>b?"you win the roll-off":"the AI wins the roll-off"}.`;ai.rollWin=a>b?0:1;save();renderHelpers()};
+  const rz=$("#rZone");if(rz)rz.onclick=()=>{ai.zone=`Your deployment zone: ${d6()<=3?"the long edge nearest you":"the far long edge"}. The AI gets the opposite edge.`;save();renderHelpers()};
+  const ro=$("#rollObj");if(ro)ro.onclick=()=>{snap();const n=d3()+2;S.objectives=Array(n).fill(-1);log(`Rolled ${n} objective markers.`);save();renderSetup()};
+  const rs=$("#rSq");if(rs)rs.onclick=()=>{ai.sq=d6();save();renderHelpers()};
+  const ad=$("#aiDeploy");if(ad)ad.onclick=rollAIDeploy;
+  const hd=$("#hDeploy");if(hd)hd.onclick=()=>{snap();ai.deploy=S.armies[1].units.map(u=>{const c=cornerRoll();return {id:u.id,...c}});log("Rolled corners for the horde.");save();renderHelpers()};
+}
+function rollAIDeploy(){
+  snap();const units=[...S.armies[1].units];
+  const res=units.filter(u=>u.ambush),scouts=units.filter(u=>!u.ambush&&kwOf(u).includes("Scout")),main=units.filter(u=>!u.ambush&&!kwOf(u).includes("Scout"));
+  const shuffle=a=>{for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a};
+  const groups=[[],[],[]];shuffle([...main,...scouts]).forEach((u,i)=>groups[i%3].push(u));
+  let secs;do{secs=[d3(),d3(),d3()]}while(secs[0]===secs[1]&&secs[1]===secs[2]);
+  const order=[];
+  groups.forEach((g,gi)=>g.forEach(u=>{u.sec=secs[gi];order.push({id:u.id,sec:secs[gi],scout:scouts.includes(u)})}));
+  const placed=shuffle(order.filter(x=>!x.scout)).concat(shuffle(order.filter(x=>x.scout)));
+  S.ai.deploy=[...placed,...res.map(u=>({id:u.id,res:true}))];
+  log("Rolled the AI deployment.");save();renderSetup();
+}
+document.addEventListener("click",e=>{const b=e.target.closest("[data-addunit]");if(b){const[side,o]=b.dataset.addunit.split(",").map(Number);addUnit(side,o)}
+  const im=e.target.closest("[data-import]");if(im){const[side,o]=im.dataset.import.split(",").map(Number);openImport(side,o)}});
+function addUnit(side,owner=0){const u=unit(`Unit ${S.armies[side].units.length+1}`,{owner});S.armies[side].units.push(u);save();render();openUnit(u.id,true)}
+function checkArmy(units,limit,partial){
+  if(!units.length)return "";
+  const pts=units.reduce((s,u)=>s+(+u.pts||0),0),n=units.length,c=[];
+  if(pts)c.push(pts>limit?`<span class="chip bad">${pts} pts · ${pts-limit} over ${limit}</span>`:`<span class="chip ok">${pts} / ${limit} pts</span>`);
+  else c.push('<span class="chip">Points not listed</span>');
+  if(!partial){const heroes=units.filter(u=>u.hero).length,maxH=Math.max(1,Math.floor(limit/400));if(heroes>maxH)c.push(`<span class="chip warn">${heroes} Heroes · max ${maxH}</span>`);
+    const maxU=Math.floor(limit/80);if(n>maxU)c.push(`<span class="chip warn">${n} units · max ${maxU}</span>`);else c.push(`<span class="chip ok">${n} units</span>`);
+    const big=pts?units.filter(u=>u.pts>limit*0.35).length:0;if(big)c.push(`<span class="chip warn">${big} over 35%</span>`);}
+  return c.join("");
+}
+function openImport(side,owner=0){
+  const a=S.armies[side];const who=side?a.name:S.type==="solo"?a.name:(S.players[owner]||{}).name;
+  sheet(`<div class="eyebrow">${esc(who)}</div><h2>Import from Army Forge</h2>
+    <ol class="steps" style="font-size:.95rem"><li>Open the list in Army Forge and copy it as text.</li><li>Paste it below, or choose a saved .txt file.</li><li>Check the preview, then import.</li></ol>
+    <div class="field"><label for="impText">Army Forge list</label><textarea id="impText" placeholder="++ Battle Brothers [GFF 400pts] ++&#10;&#10;Captain [1] Q3+ D3+ | 85pts | Hero, Tough(3), Fearless&#10;Heavy Pistol (12&quot;, A1, AP(1)), CCW (A3)" style="min-height:150px;border:1px solid var(--line);background:var(--bg);border-radius:4px;padding:8px 10px;font:13px/1.4 var(--mono);width:100%"></textarea></div>
+    <div class="field"><label for="impFile">Or choose a .txt file</label><input id="impFile" type="file" accept=".txt,text/plain"></div>
+    <div id="impPrev" class="stack" style="gap:8px;font-size:.92rem"></div>
+    <div class="row"><button class="btn primary" id="impOk" type="button" disabled>Import</button><button class="btn ghost" id="impNo" type="button">Cancel</button></div>`);
+  let parsed=null;
+  const preview=()=>{parsed=parseList($("#impText").value);const n=parsed.units.length;
+    $("#impPrev").innerHTML=n?`<div><b>${esc(parsed.army||"Unnamed army")}</b>${parsed.limit?` <span class="muted">· ${parsed.limit} pt list</span>`:""}</div>
+      <ul class="ulist">${parsed.units.map(u=>`<li><span>${esc(u.name)} <span class="qd">Q${u.q}+ D${u.d}+${u.models>1?` ×${u.models}`:""}${u.tough>1?` T${u.tough}`:""}${u.hero?" Hero":""}</span></span><span class="num">${u.pts}</span></li>`).join("")}</ul>`
+      :$("#impText").value.trim()?'<p class="muted">No units found. Each unit line should look like <span class="num">Name [models] Q3+ D4+ | 70pts | rules</span>.</p>':"";
+    $("#impOk").disabled=!n;$("#impOk").textContent=n?`Import ${n} unit${n===1?"":"s"}`:"Import"};
+  $("#impFile").onchange=e=>{const f=e.target.files[0];if(!f)return;const r=new FileReader();r.onload=()=>{$("#impText").value=r.result;preview()};r.readAsText(f)};
+  $("#impText").oninput=preview;$("#impNo").onclick=closeSheet;
+  $("#impOk").onclick=()=>{if(!parsed||!parsed.units.length)return;snap();
+    if(S.example){const t=S.type,c=S.checks;S=blankState(t);S.checks=c}
+    const A=S.armies[side];
+    A.units=A.units.filter(u=>side===1||(u.owner||0)!==owner).concat(parsed.units.map(x=>unit(x.name,{...x,owner})));
+    if(parsed.army){if(side===1||S.type==="solo")A.name=parsed.army;else if(S.players[owner])S.players[owner].name=S.players[owner].name.startsWith("Player")?parsed.army:S.players[owner].name}
+    if(!HORDE()&&parsed.limit){const m=Object.entries(MODES).find(([k,v])=>v.pts===parsed.limit);if(m)S.mode=m[0]}
+    S.ai.deploy=null;
+    log(`Imported ${parsed.units.length} units for ${side?A.name:who}.`);
+    save();closeSheet();render()};
+}
+document.addEventListener("change",e=>{if(e.target.dataset.ck!=null){S.checks[S.type+e.target.dataset.ck]=e.target.checked;save();renderSetup()}});
+document.addEventListener("input",e=>{const d=e.target.dataset;
+  if(d.an!=null){S.armies[+d.an].name=e.target.value||"Army";S.example=false;save()}
+  if(d.pn!=null){S.players[+d.pn].name=e.target.value||`Player ${+d.pn+1}`;save()}});
+$("#types").addEventListener("click",e=>{const b=e.target.closest("[data-type]");if(!b||b.dataset.type===S.type)return;snap();
+  const t=b.dataset.type;if(S.example){S=blankState(t)}else{S.type=t;if(t==="horde")S.mode="full";if(t==="solo")S.players=S.players.slice(0,1);
+    if(t==="horde"){S.armies[0].name=S.armies[0].name==="Your army"?"Defenders":S.armies[0].name;S.armies[1].name=S.armies[1].name==="AI army"?"The Horde":S.armies[1].name}}
+  save();render()});
+$("#modes").addEventListener("click",e=>{const b=e.target.closest("[data-mode]");if(!b)return;S.mode=b.dataset.mode;save();render()});
+$("#startBtn").onclick=()=>{
+  if(S.example){const t=S.type;S=blankState(t)}
+  const go=f=>{snap();resetUnits();
+    const keep={ai:S.ai,h:S.h};
+    Object.assign(S,{started:true,round:1,first:f,turn:f,finished:null,winner:null,log:[],remClosed:{}});
+    S.ai=Object.assign(keep.ai,{cur:null,plan:null,left:0});S.h=blankState("horde").h;
+    S.objectives=S.objectives.map(()=>-1);
+    log(`${TYPES[S.type].name} begins. ${sideName(f)} activates first.`);
+    save();closeSheet();location.hash="play";render()};
+  sheet(`<h2>Who activates first?</h2><p class="muted">${S.ai.rollWin!=null&&!HORDE()?"The roll-off is done: ":"Roll off, then pick the winner. "}They activate first in round 1.</p>
+    <div class="stack">${S.armies.map((a,i)=>`<button class="btn ${S.ai.rollWin===i?"primary":""}" data-first="${i}" type="button">${esc(a.name)}${i?" (AI)":""}</button>`).join("")}</div>`);
+  document.querySelectorAll("[data-first]").forEach(b=>b.onclick=()=>go(+b.dataset.first));
+};
+
+/* ---------- ATTACK ---------- */
+let C={mode:"shoot",att:"",tgt:"",atk:4,q:4,ap:0,blast:0,deadly:0,d:4,models:1,mod:0,cover:false,stealth:false,indirect:false,fat:false,thrust:false,
+  rending:false,bane:false,reliable:false,unstop:false,six:false,regen:false,fear:0};
+let R=null;
+function aiBonus(){if(HORDE()||!S.started)return {hit:false,def:false};const a=score(1),b=score(0),tie=a===b,lose=a<b;return {hit:(S.ai.bonusTie&&tie)||(S.ai.bonusLose&&lose),def:S.ai.bonusLose&&lose}}
+function prefill(fromAct){
+  const a=C.att?find(+C.att):null,t=C.tgt?find(+C.tgt):null;
+  C.mod=0;
+  if(a){C.q=a.u.q;C.fat=C.mode==="melee"&&(a.u.fatigued||a.u.shaken)&&!fromAct;
+    if(a.ai===1&&aiBonus().hit)C.mod+=1;
+    if(a.ai===0&&HORDE())C.mod+=(a.u.traits||[]).filter(x=>x===`Specialist (${C.mode==="melee"?"melee":"shooting"})`).length}
+  if(t){C.d=t.u.d;C.models=Math.max(1,modelsLeft(t.u));const k=kwOf(t.u);C.regen=k.includes("Regeneration");C.stealth=C.mode==="shoot"&&k.includes("Stealth");
+    if((t.ai===1&&aiBonus().def)||(t.ai===0&&HORDE()&&(t.u.traits||[]).includes("Resilient")))C.d=Math.max(2,t.u.d-1)}
+}
+const ATK_KW=["AP","Bane","Blast","Deadly","Indirect","Reliable","Rending","Surge","Takedown","Thrust","Unstoppable","Furious","Relentless","Impact","Limited"];
+function renderAtkInfo(){
+  const a=C.att?find(+C.att):null,t=C.tgt?find(+C.tgt):null;let h="";
+  if(a){const k=kwOf(a.u).filter(x=>ATK_KW.includes(x));
+    h+=`<div class="callout"><b>${esc(a.u.name)}</b>${a.u.weapons?`: ${esc(a.u.weapons)}`:""}${k.length?`<div class="kws" style="margin-top:6px">${k.map(x=>`<button type="button" class="kw" data-kw="${x}">${x}</button>`).join("")}</div><span class="muted" style="font-size:.86rem">Tick the ones on the weapon you're using.</span>`:""}</div>`}
+  if(t){const k=kwOf(t.u).filter(x=>["Regeneration","Stealth"].includes(x));if(k.length)h+=`<p class="muted" style="font-size:.88rem">${esc(t.u.name)} has ${k.join(" and ")}; already ticked below.</p>`}
+  const notes=[];
+  if(a&&a.ai===1&&aiBonus().hit)notes.push("AI challenge bonus: +1 to hit (already in the to-hit modifier).");
+  if(t&&t.ai===1&&aiBonus().def)notes.push("AI challenge bonus: +1 to Defense (already in Target Defense).");
+  if(a&&HORDE()&&(a.u.traits||[]).some(x=>x.startsWith("Specialist")))notes.push(`${a.u.name}'s Specialist trait is included in the to-hit modifier.`);
+  if(t&&HORDE()&&(t.u.traits||[]).includes("Resilient"))notes.push(`${t.u.name} is Resilient: +1 Defense, already included.`);
+  if(notes.length)h+=`<p class="muted" style="font-size:.88rem">${notes.map(esc).join(" ")}</p>`;
+  $("#atkInfo").innerHTML=h;
+}
+function renderCombat(){
+  $("#cMode").innerHTML=[["shoot","Shooting"],["melee","Melee"]].map(([k,l])=>`<button type="button" data-cm="${k}" aria-pressed="${C.mode===k}">${l}</button>`).join("");
+  const opts=sel=>`<option value="">Custom values</option>`+S.armies.map(a=>`<optgroup label="${esc(a.name)}">${alive(a).map(u=>`<option value="${u.id}" ${String(u.id)===String(sel)?"selected":""}>${esc(u.name)}</option>`).join("")}</optgroup>`).join("");
+  $("#cAtt").innerHTML=opts(C.att);$("#cTgt").innerHTML=opts(C.tgt);
+  ["atk","q","ap","blast","deadly","d","models","mod"].forEach(k=>{const el=document.querySelector(`[data-c="${k}"]`);if(el)el.value=C[k]});
+  const ck=(k,l)=>`<label class="check"><input type="checkbox" data-c="${k}" ${C[k]?"checked":""}> ${l}</label>`;
+  $("#cChecks").innerHTML=(C.mode==="shoot"?
+      ck("cover","Target in cover (+1 Defense)")+ck("stealth","Stealth, shooting from over 9\" (−1)")+ck("six","Extra hit on 6s (Surge, Relentless over 9\")")+ck("blastNear","Other enemy units within 3\" of the target (Blast hits are shared)"):
+      ck("fat","Attacker Fatigued (hits only on 6)")+ck("thrust","Thrust while charging (+1, AP+1)")+ck("six","Extra hit on 6s (Surge, Furious when charging)"))+
+    ck("reliable","Reliable (Quality 2+)")+ck("rending","Rending (6s get AP+4)")+ck("bane","Bane (re-roll Defense 6s)")+ck("shred","Shred (each 1 to block: +1 wound)")+ck("unstop","Unstoppable")+ck("regen","Target has Regeneration");
+  renderAtkInfo();updateNeed();renderStage();
+}
+function needs(){
+  let q=C.reliable?2:(+C.q||4),mod=(+C.mod||0);
+  if(C.mode==="shoot"){if(C.stealth)mod--}else if(C.thrust)mod++;
+  if(C.unstop&&mod<0)mod=0;
+  const ap=(+C.ap||0)+(C.mode==="melee"&&C.thrust?1:0);
+  return {q,mod,ap,only6:C.mode==="melee"&&C.fat};
+}
+function updateNeed(){
+  const n=needs();
+  const t=n.only6?6:Math.min(6,Math.max(2,n.q-n.mod));
+  $("#needN").textContent=t+"+";
+  $("#needWhy").textContent=n.only6?"Fatigued: only unmodified 6s hit":`Quality ${n.q}+${n.mod?` with ${n.mod>0?"+":""}${n.mod}`:""}${n.ap?` · AP(${n.ap})`:""}`;
+  $("#rollHits").textContent=`Roll ${+C.atk||0} to hit`;
+}
+$("#cMode").addEventListener("click",e=>{const b=e.target.closest("[data-cm]");if(!b)return;C.mode=b.dataset.cm;prefill();R=null;renderCombat()});
+$("#cAtt").addEventListener("change",e=>{C.att=e.target.value;prefill();R=null;renderCombat()});
+$("#cTgt").addEventListener("change",e=>{C.tgt=e.target.value;prefill();R=null;renderCombat()});
+document.addEventListener("input",e=>{const k=e.target.dataset.c;if(!k)return;C[k]=e.target.type==="checkbox"?e.target.checked:e.target.value;R=null;updateNeed();renderStage()});
+$("#rollHits").onclick=()=>{
+  const n=needs(),N=Math.max(0,Math.min(60,+C.atk||0));
+  const dice=Array.from({length:N},()=>{const r=d6();const ok=n.only6?r===6:(r===6||(r!==1&&r+n.mod>=n.q));return {r,ok}});
+  let hits=[];dice.forEach(d=>{if(!d.ok)return;const ap=n.ap+(C.rending&&d.r===6&&!n.only6?4:0);hits.push({ap});if(C.six&&d.r===6&&!n.only6)hits.push({ap:n.ap})});
+  const raw=hits.length;
+  if(+C.blast>1){const cap=Math.max(1,+C.models||1);const total=C.blastNear?raw*(+C.blast):Math.min(raw*(+C.blast),Math.max(raw,cap));hits=Array.from({length:total},()=>({ap:n.ap}))}
+  R={dice,raw,hits,saves:null,regen:null,applied:false};renderStage();
+};
+function renderStage(){
+  const st=$("#stage");
+  if(!R){st.innerHTML="";return}
+  const dt=R.dice.map(d=>`<span class="d6 pop ${d.ok?"ok":""}">${d.r}</span>`).join("")||'<span class="muted">No dice.</span>';
+  let h=`<div class="tray">${dt}</div><div class="row between"><span><b class="num" style="font-size:1.3rem">${R.hits.length}</b> hit${R.hits.length===1?"":"s"}</span><span class="muted" style="font-size:.88rem">${+C.blast>1&&R.raw?(C.blastNear?`${R.raw} × Blast(${C.blast}): split them evenly between the target and every enemy unit within 3" (each takes at most its model count)`:`${R.raw} × Blast(${C.blast}), capped at ${C.models} model${+C.models===1?"":"s"}`):C.six?"6s counted twice":""}</span></div>`;
+  if(R.hits.length&&!R.saves)h+=`<button class="btn primary" id="rollDef" type="button">Roll ${R.hits.length} Defense</button>`;
+  if(R.saves){
+    const cover=C.mode==="shoot"&&C.cover&&!(+C.blast>1)?1:0;
+    h+=`<div class="tray">${R.saves.map(s=>`<span class="d6 pop ${s.save?"save":"fail"}" title="needs ${s.need}+">${s.r}</span>`).join("")}</div>`;
+    const fails=R.saves.filter(s=>!s.save).length,dm=Math.max(1,+C.deadly||1);
+    let wounds=fails*dm+(C.shred?R.saves.filter(s=>s.r===1).length:0);
+    const canRegen=C.regen&&!C.bane&&!C.rending&&!C.unstop;
+    if(canRegen&&wounds&&!R.regen)R.regen=Array.from({length:wounds},()=>d6());
+    const ignored=R.regen?R.regen.filter(r=>r>=5).length:0;
+    const final=wounds-ignored;
+    h+=`<p class="muted" style="font-size:.88rem">Defense ${C.d}+${cover?", +1 for cover":""}${R.hits.some(x=>x.ap)?", reduced by AP":""}. A 6 always saves, a 1 always fails.${C.bane?" Bane re-rolled 6s.":""}${+C.blast>1&&C.cover?" Blast ignores cover.":""}</p>`;
+    if(R.regen)h+=`<div class="eyebrow">Regeneration (5+ ignores)</div><div class="tray">${R.regen.map(r=>`<span class="d6 ${r>=5?"save":"fail"}">${r}</span>`).join("")}</div>`;
+    else if(C.regen&&wounds)h+=`<p class="muted" style="font-size:.88rem">Regeneration is ignored by Bane, Rending and Unstoppable.</p>`;
+    h+=`<div class="facts"><div><b>${R.hits.length}</b><span>Hits</span></div><div><b>${fails}</b><span>Failed saves</span></div><div><b>${final}</b><span>Wounds</span></div></div>`;
+    if(dm>1)h+=`<p class="muted" style="font-size:.88rem">Deadly(${dm}): each wound goes on one model ×${dm}; extra wounds don't carry over to other models.</p>`;
+    const t=C.tgt?find(+C.tgt):null;
+    if(t&&!R.applied&&final)h+=`<button class="btn primary" id="applyBtn" type="button">Apply ${final} wound${final===1?"":"s"} to ${esc(t.u.name)}</button>`;
+    if(R.applied)h+=`<span class="chip ok">Applied to the roster</span>`;
+    if(C.shred&&R.saves.some(s=>s.r===1))h+=`<p class="muted" style="font-size:.88rem">Shred added ${R.saves.filter(s=>s.r===1).length} wound${R.saves.filter(s=>s.r===1).length>1?"s":""} for 1s rolled to block.</p>`;
+    if(R.applied||(C.mode==="melee"&&!final))h+=moraleBlock();
+    R.final=final;
+  }
+  st.innerHTML=h;
+  const rd=$("#rollDef");if(rd)rd.onclick=()=>{
+    const cover=C.mode==="shoot"&&C.cover&&!(+C.blast>1)?1:0,def=+C.d||4;
+    R.saves=R.hits.map(x=>{let r=d6();if(C.bane&&r===6)r=d6();const need=Math.min(7,def+x.ap-cover);return {r,need,save:r===6||(r!==1&&r>=need)}});
+    renderStage()};
+  const ab=$("#applyBtn");if(ab)ab.onclick=()=>{const t=find(+C.tgt);snap();const was=dead(t.u);t.u.wounds=Math.min(hpMax(t.u),t.u.wounds+R.final);
+    const a=C.att?find(+C.att):null;
+    log(`${a?a.u.name:"Attack"} → ${t.u.name}: ${R.final} wound${R.final===1?"":"s"}${!was&&dead(t.u)?", destroyed":""}.`);
+    if(C.mode==="melee"&&a)a.u.fatigued=true;
+    if(HORDE()&&a&&a.ai===0&&t.ai===1&&!was&&dead(t.u))award(a.u,t.u.hero?5:3,`destroyed ${t.u.name}`);
+    R.applied=true;save();renderStage()};
+  wireMorale();
+}
+$("#qRoll").onclick=()=>{const n=Math.max(1,Math.min(40,+$("#qN").value||1)),t=Math.min(6,Math.max(2,+$("#qT").value||4));
+  const r=Array.from({length:n},d6);const ok=r.filter(x=>x===6||(x!==1&&x>=t)).length;
+  $("#qTray").innerHTML=r.map(x=>`<span class="d6 pop ${x===6||(x!==1&&x>=t)?"ok":""}">${x}</span>`).join("")+`<span class="muted" style="align-self:center;margin-left:6px">${ok} success${ok===1?"":"es"}</span>`};
+
+
+/* Morale (v3.6): tested at the end of an activation, or by the loser of a melee */
+function heroFor(u,ai){const hs=S.armies[ai].units.filter(x=>x.hero&&!dead(x)&&!x.shaken&&x.id!==u.id&&x.q<u.q).sort((a,b)=>a.q-b.q);return hs[0]||null}
+function moraleBlock(){
+  const t=C.tgt?find(+C.tgt):null,a=C.att?find(+C.att):null;if(!t)return "";
+  const hq=x=>{const h=heroFor(x.u,x.ai);return h?`<label class="check"><input type="checkbox" class="morHero" data-hid="${x.u.id}"> ${esc(h.name)} is within 6" of ${esc(x.u.name)}: use its Quality ${h.q}+</label>`:""};
+  if(C.mode==="shoot"){
+    if(dead(t.u))return `<p class="muted">${esc(t.u.name)} is destroyed.</p>`;
+    if(!halfOrLess(t.u))return `<p class="muted" style="font-size:.88rem">${esc(t.u.name)} is above half strength: no Morale Test.</p>`;
+    return `<div class="mor"><b>Morale Test for ${esc(t.u.name)}</b><p class="muted" style="font-size:.88rem">Wounds have left it at half strength or less, so it tests at the end of this activation.</p>${hq(t)}<button class="btn primary" type="button" data-mor="${t.u.id},shoot">Roll Morale Test</button><div id="morOut"></div></div>`;
+  }
+  const units=[a,t].filter(Boolean).filter(x=>!dead(x.u));
+  return `<div class="mor"><b>Melee result</b><p class="muted" style="font-size:.88rem">${t.ai===1?"The AI always strikes back: roll it next with the units swapped. ":""}When both sides have struck, the unit that took more wounds this activation loses and tests (Fear adds to the wounds its enemy counts as taking). A unit destroyed in melee always loses; a tie means no test.</p>
+    ${a&&!dead(t.u)?`<button class="btn sm" type="button" id="strikeBack" style="align-self:flex-start">Roll ${esc(t.u.name)}'s strike back</button>`:""}
+    <div class="row" style="gap:6px">${units.map(x=>`<button class="btn sm" type="button" data-mor="${x.u.id},melee">${esc(x.u.name)} lost: roll</button>`).join("")}</div>
+    ${units.map(hq).join("")}<div id="morOut"></div></div>`;
+}
+function wireMorale(){
+  const sb=$("#strikeBack");if(sb)sb.onclick=()=>{const a=C.att,t=C.tgt;C.att=t;C.tgt=a;C.mode="melee";prefill();const at=find(+C.att);C.fat=!!(at&&(at.u.fatigued||at.u.shaken));R=null;renderCombat();window.scrollTo(0,0)};
+  document.querySelectorAll("[data-mor]").forEach(b=>b.onclick=()=>{const [id,mode]=b.dataset.mor.split(",");const f=find(+id);if(!f)return;
+    const hc=document.querySelector(`.morHero[data-hid="${id}"]`);const h=hc&&hc.checked?heroFor(f.u,f.ai):null;
+    snap();const out=moraleTest(f.u,mode,h);save();$("#morOut").innerHTML=`<p class="callout">${esc(out)}</p>`;document.querySelectorAll("[data-mor]").forEach(x=>x.disabled=true)});
+}
+function moraleTest(u,mode,hero){
+  const q=hero?hero.q:u.q,bonus=HORDE()&&(u.traits||[]).includes("Headstrong")?1:0;
+  let txt,pass;
+  if(u.shaken){pass=false;txt=`${u.name} is Shaken, so it fails automatically.`}
+  else{const r=d6();pass=r===6||(r!==1&&r+bonus>=q);txt=`Rolled ${r}${bonus?" +1 Headstrong":""} needing ${q}+${hero?` (${hero.name}'s Quality)`:""}: ${pass?"passed":"failed"}.`;
+    if(!pass&&kwOf(u).includes("Fearless")){const r2=d6();pass=r2>=4;txt+=` Fearless roll ${r2}: ${pass?"it passes after all":"still failed"}.`}}
+  if(pass){log(`${u.name} passes its Morale Test.`);return txt}
+  if(mode==="melee"&&halfOrLess(u)){u.wounds=hpMax(u);log(`${u.name} fails its Morale Test and Routs.`);return txt+" At half strength or less, it Routs and is removed as destroyed."}
+  u.shaken=true;log(`${u.name} fails its Morale Test and is Shaken.`);return txt+" It is Shaken.";
+}
+
+/* ---------- RULES (Grimdark Future: Firefight v3.6.0) ---------- */
+/* Special rules, detected from each unit's rules and weapons text */
+const KW=[
+ ["AP","Weapon",/\bAP\s*\(/i,"Targets get −X to Defense rolls when blocking hits from this weapon."],
+ ["Assault","Weapon",/\bAssault\b/i,"Counts as both a ranged weapon and a melee weapon."],
+ ["Bane","Weapon",/\b(Bane|Poison)\b/i,"Ignores Regeneration. When attacking, the target must re-roll unmodified Defense results of 6."],
+ ["Blast","Weapon",/\bBlast\s*\(/i,"Ignores Cover. After other special rules, each hit is multiplied by X. Hits are split evenly between the target and every enemy unit within 3\" of it (defender picks how), and each unit takes at most as many hits as it has models."],
+ ["Deadly","Weapon",/\bDeadly\s*\(/i,"Assign each wound to one model and multiply it by X. Deadly hits are resolved first, and the wounds don't carry over if that model dies."],
+ ["Indirect","Weapon",/\bIndirect\b/i,"When using Hold and shooting, may target enemies out of line of sight as if they were in it, and ignores Cover from Sight Blockers."],
+ ["Limited","Weapon",/\bLimited\b/i,"May only be used once per game."],
+ ["Reliable","Weapon",/\bReliable\b/i,"Attacks at Quality 2+."],
+ ["Rending","Weapon",/\bRending\b/i,"Ignores Regeneration. Unmodified 6s to hit get AP(+4)."],
+ ["Shred","Weapon",/\bShred\b/i,"For each unmodified 1 rolled to block its hits, this weapon deals 1 extra wound."],
+ ["Surge","Weapon",/\bSurge\b/i,"Each unmodified 6 to hit deals 1 extra hit (only the original hit counts as a 6 for special rules)."],
+ ["Thrust","Weapon",/\b(Thrust|Lance)\b/i,"When charging, +1 to hit and AP(+1) in melee."],
+ ["Unstoppable","Weapon",/\b(Unstoppable|Lock-On)\b/i,"Ignores Regeneration, and ignores all negative modifiers to this weapon that aren't from this model's own special rules."],
+ ["Ambush","Unit",/\bAmbush\b/i,"May be set aside before deployment. At the start of any round after the first, deploy it anywhere over 9\" from enemy units, alternating starting with the player who activates next. Can't seize or contest objectives the round it arrives."],
+ ["Caster","Unit",/\bCaster\s*\(/i,"Gets X spell tokens at the start of each round, holding at most 6. Once per activation, before attacking, spend tokens equal to a spell's value to try it (one try per spell): 4+ resolves it. Models within 18\" may spend tokens for +1/−1 per token."],
+ ["Counter","Unit",/\bCounter\b/i,"May strike first with this weapon when charged, unless this unit is Fatigued."],
+ ["Fast","Unit",/\bFast\b/i,"+2\" when using Advance, +4\" when using Rush or Charge."],
+ ["Fear","Unit",/\bFear\b/i,"In melee with this model, enemies count as having taken +X wounds when checking who won."],
+ ["Fearless","Unit",/\bFearless\b/i,"When a unit where most models have this rule fails a Morale Test, roll a die: on 4+ it passes instead."],
+ ["Flying","Unit",/\bFlying\b/i,"May move through units and terrain, ignores Difficult and Dangerous terrain, and passes jumping rolls automatically."],
+ ["Furious","Unit",/\bFurious\b/i,"When charging, each unmodified 6 to hit deals 1 extra hit."],
+ ["Hero","Unit",/\bHero\b/i,"Units within 6\" of a friendly Hero may use the Hero's Quality for Morale Tests, as long as the Hero isn't Shaken."],
+ ["Immobile","Unit",/\bImmobile\b/i,"May only use Hold actions."],
+ ["Impact","Unit",/\bImpact\b/i,"When charging, before either unit attacks, roll X dice unless this unit is Fatigued. Each 2+ is a hit on the target."],
+ ["Regeneration","Unit",/\bRegeneration\b/i,"When a unit where most models have this rule takes wounds, roll a die for each: on 5+ it's ignored."],
+ ["Relentless","Unit",/\bRelentless\b/i,"Shooting at enemies over 9\" away, each unmodified 6 to hit deals 1 extra hit."],
+ ["Scout","Unit",/\bScout\b/i,"May be set aside before deployment. After all other units are deployed, deploy it fully within 9\" of its deployment zone and over 9\" from non-Scout enemies, alternating."],
+ ["Slow","Unit",/\bSlow\b/i,"−2\" when using Advance, −4\" when using Rush or Charge."],
+ ["Spell Amplifier","Unit",/\bSpell Amplifier\b/i,"+1 to casting rolls."],
+ ["Stealth","Unit",/\bStealth\b/i,"When a unit where most models have this rule is shot from over 9\" away, the shooters get −1 to hit."],
+ ["Strider","Unit",/\bStrider\b/i,"Ignores the effects of Difficult terrain, and halves its jumping dice (rounding up)."],
+ ["Tough","Unit",/\bTough\s*\(/i,"A model is killed once it has taken X wounds. Keep putting wounds on the most-wounded model until it dies."]
+];
+const KWD=Object.fromEntries(KW.map(k=>[k[0],k]));
+function kwOf(u){const t=`${u.rules||""} ${u.weapons||""}`;const f={Ambush:u.ambush,Caster:u.cast>0,Hero:u.hero,Tough:u.tough>1};
+  return KW.filter(([n,,re])=>f[n]||re.test(t)).map(k=>k[0])}
+function matchup(){const m={};S.armies.forEach((a,ai)=>a.units.forEach(u=>kwOf(u).forEach(k=>{(m[k]||(m[k]=[[],[]]))[ai].push(u.name)})));return m}
+const uniqCount=names=>{const c={};names.forEach(n=>c[n]=(c[n]||0)+1);return Object.entries(c).map(([n,k])=>k>1?`${n} ×${k}`:n)};
+function openKw(n){
+  const k=KWD[n];if(!k)return;const m=matchup()[n];
+  sheet(`<div class="eyebrow">${k[1]} rule</div><h2>${n}</h2><p>${k[3]}</p>
+    ${m?`<div class="stack" style="gap:4px">${m.map((names,ai)=>names.length?`<p><b class="t${tag(ai)}">${esc(S.armies[ai].name)}</b>: ${esc(uniqCount(names).join(", "))}</p>`:"").join("")}</div>`:""}
+    <button class="btn" id="kwClose" type="button">Close</button>`);
+  $("#kwClose").onclick=closeSheet;
+}
+const CORE=[
+ ["Playing against the AI",`<ul><li><b>Activation:</b> the table is split into 3 sections along the AI's deployment edge. On the AI's turn, roll a D3 for the section (if it has no eligible unit, move on to the next section), then a random unit there activates. Shaken AI units activate only after every other AI unit has.</li><li><b>Decision tree:</b> 1. Within 3" of an objective the AI doesn't control? Yes → 2, No → 3. 2. Enemy in range to shoot or charge without moving over 3" from it? Yes → Advance and shoot closest, or charge closest. No → Hold. 3. An objective the AI doesn't control with no non-Shaken AI unit within 3"? Yes → 4, No → 5. 4. Moving toward it, will an enemy be in range? Yes → Advance toward it and shoot closest, or charge closest toward it if that deals more damage. No → Rush toward it. 5. Enemy in range? Yes → Advance and shoot closest, or charge closest. No → Rush toward the closest objective.</li><li><b>Targets:</b> shoot or charge the closest valid target, preferring units that haven't activated; prefer a target in the open over one in Cover. Blast prefers multi-model units, Deadly single models. AI units always strike back.</li><li><b>Special rules:</b> used as soon as the unit activates. Indirect and Relentless units in range always Hold and shoot. Casters cast after moving, rolling D3+X for a random spell. Ambush units arrive at the start of round 2. Scouts deploy after all others.</li><li><b>Terrain:</b> AI units end moves in or behind Cover if possible and go around Difficult and Dangerous terrain, unless an objective or charge target is inside or they ignore it.</li><li><b>Tie-breaks:</b> when choices seem equally good, roll a die.</li><li><b>Co-op:</b> several players share the player side against one AI army.</li></ul>`],
+ ["Horde Mode",`<ul><li>Defenders: player armies totalling 800 points. The Horde: one 800-point army run by the AI rules.</li><li>5 objectives: one in the centre and one in the centre of each table quarter. Defenders deploy within 6" of the centre; enemies within 6" of random corners (5–6: you choose).</li><li>Each round: set the priority objective (rounds 1, 4, 7, 10), deploy a wave (rounds 4, 7, 10: Shaken enemies are removed, then every destroyed enemy returns at a random corner), play, end of round.</li><li>End of round: an objective with an enemy within 3" and no defenders gets a damage token; 3 destroys it. At the end of rounds 3, 6, 9 and 12, each objective held by defenders scores 30 points, +15 for the priority objective.</li><li>Spend points on upgrades (units within 6" of a seized objective), reinforcing units at half strength (half their points, restores half), or recruiting units.</li><li>XP: +3 for killing a unit, +5 for a Hero. Every 5 XP rolls a trait; max 30 XP.</li><li>The game ends when every defender is Shaken or destroyed, every objective is destroyed, or round 12 ends. High score = points earned × last round completed.</li></ul>`],
+ ["Round structure",`<ul><li>The game lasts 4 rounds.</li><li>Players alternate activating one unit at a time until all have activated.</li><li>The deployment roll-off winner goes first in round 1. After that, whoever finished activating first in the previous round goes first.</li></ul>`],
+ ["Actions",`<div class="tbl"><table><tr><th>Action</th><th>Move</th><th>Notes</th></tr><tr><td>Hold</td><td class="num">0"</td><td>Can shoot.</td></tr><tr><td>Advance</td><td class="num">6"</td><td>Can shoot after moving.</td></tr><tr><td>Rush</td><td class="num">12"</td><td>Can't shoot.</td></tr><tr><td>Charge</td><td class="num">12"</td><td>Moves into melee.</td></tr></table></div><p>Fast: +2" Advance, +4" Rush and Charge. Slow: −2" and −4".</p>`],
+ ["Movement and coherency",`<ul><li>Unit members stay within 1" of at least one other member and within 6" of all of them.</li><li>Units may only be within 1" of other units when charging, and may only charge if at least one model is within charge distance of the target.</li><li>Models can't move through other models, off the table, or into impossible spots.</li><li><b>Jumping:</b> cross 1" gaps and drop 3" freely. To jump gaps or drops up to 6", roll one die per 1": all 2+ to make it, otherwise the model falls.</li><li><b>Falling:</b> one die per 1" fallen; each 1–3 is a wound. Place it within 2" of the bottom; its activation ends.</li><li><b>Pushing:</b> when a unit is Shaken after being attacked, the attacker may roll a die: on 4+ move one of its models up to 2".</li></ul>`],
+ ["Quality tests",`<p>Roll a die; meet or beat Quality to succeed. Whatever the modifiers, a 6 always succeeds and a 1 always fails.</p>`],
+ ["Shooting",`<ul><li>Models in range and line of sight may fire all their ranged weapons, at up to two different targets with different weapon types.</li><li>One Quality test per attack; each success is a hit.</li><li>The defender rolls a die per hit, needing its Defense to block. Each fail is a wound.</li><li>A model is killed once it has taken as many wounds as its Tough value; keep wounding the most-wounded model first.</li></ul>`],
+ ["Melee",`<ul><li>Chargers move into base contact or as close as possible; then the defenders move up to 3" to meet them.</li><li>Models within 3" of enemies strike with all melee weapons, worked out like shooting.</li><li>The defender may strike back (it doesn't count as an activation).</li><li>If one unit is destroyed, the other may move up to 3". Otherwise the charger moves back to 1" apart if possible.</li><li><b>Fatigue:</b> after a melee where it attacked, a unit hits only on unmodified 6s in melee until the end of the round, and those 6s don't count for special rules.</li></ul>`],
+ ["Morale",`<ul><li><b>From wounds:</b> at the end of an activation in which wounds leave a unit at half or less of its starting size (or Tough value for a single model), it takes a Morale Test: a Quality test. Fail: Shaken.</li><li><b>From melee:</b> units in melee don't test from wounds. Compare the wounds each unit took; the one with more loses and tests. A destroyed unit always loses. Fail while at half or less: it Routs (removed as destroyed); otherwise Shaken.</li><li><b>Shaken:</b> must stay idle, may strike back counting as Fatigued, always fails Morale Tests, and can't seize or contest objectives. Spending a full activation idle removes it.</li></ul>`],
+ ["Objectives",`<ul><li>Place D3+2 markers, alternating, outside deployment zones and over 9" apart.</li><li>At the end of each round, a unit within 3" of a marker with no enemies within 3" seizes it. It stays held after the unit leaves; units from both sides within 3" make it neutral.</li><li>After 4 rounds, whoever controls the most markers wins.</li></ul>`],
+ ["Deployment",`<ul><li>Roll off; the winner picks a long table edge, the opponent takes the opposite one.</li><li>Alternate placing one unit each within 12" of your edge, starting with the roll-off winner.</li><li>Ambush and Scout units follow their own rules.</li></ul>`],
+ ["Terrain",`<ul><li><b>Cover:</b> most models fully inside Cover or behind Sight Blockers: +1 to Defense against shooting.</li><li><b>Difficult:</b> a unit moving through it at any point moves no more than 6" in total.</li><li><b>Dangerous:</b> moving into, through or activating in it, roll as many dice as the wounds needed to destroy the unit; each 1 is a wound.</li><li><b>Sight Blocking:</b> can't be seen through. <b>Dense:</b> can see into and out of, not through.</li><li><b>Unstable:</b> counts as Dangerous for models moving over 6" through it. <b>Steep:</b> Difficult going up, open coming down.</li><li><b>Climbable:</b> up to 3" tall may be climbed as part of a move (3" coherency allowed between levels); taller is Impassable.</li></ul>`],
+ ["Armies",`<ul><li>Equal points: 400 to start, 800 for a full match.</li><li>Optional force org: 1 Hero per 400 points; up to 1+X copies of a unit (X = 1 per 400 points); no unit over 35% of the total; at most 1 unit per 80 points; at most 3 total Tough per 40 points.</li><li>4' × 4' table with 20+ terrain pieces; smaller works if armies deploy at least 24" apart.</li></ul>`],
+ ["Casters and spells",`<ul><li>Caster(X) gains X tokens at the start of each round, holding at most 6.</li><li>Once per activation, before attacking, spend tokens equal to a spell's value to try it (one try per spell). Roll a die: 4+ resolves it.</li><li>Models within 18" of the Caster may spend tokens at the same time for +1 or −1 per token.</li></ul>`]
+];
+const CORE_NEEDS={"Casters and spells":"Caster"};
+
+function renderRules(q=""){
+  q=q.trim().toLowerCase();
+  const re=q?new RegExp("("+q.replace(/[.*+?^${}()|[\]\\]/g,"\\$&")+")","gi"):null;
+  const hl=h=>re?h.replace(/>([^<]+)</g,(m,t)=>">"+t.replace(re,"<mark>$1</mark>")+"<"):h;
+  const hit=(t,h)=>!q||(t+" "+h.replace(/<[^>]+>/g," ")).toLowerCase().includes(q);
+  const m=matchup(),known=Object.keys(m).length>0,hide=!!S.hideUnused&&!q;
+  const item=(t,h,{dim,badge=""}={})=>`<details class="rule ${dim?"dim":""}" ${q?"open":""}><summary><span>${t}</span>${badge}</summary><div class="body">${hl("<div>"+h+"</div>")}</div></details>`;
+  const kwBody=n=>{const k=KWD[n],u=m[n];return `<p class="eyebrow">${k[1]} rule</p><p>${k[3]}</p>`+(u?`<p class="used">${u.map((names,ai)=>names.length?`<b class="t${tag(ai)}">${esc(S.armies[ai].name)}</b>: ${esc(uniqCount(names).join(", "))}`:"").filter(Boolean).join("<br>")}</p>`:"")};
+  const badge=n=>{const u=m[n];return u?`<span class="cnt">${u.map((x,ai)=>x.length?`<span class="t${tag(ai)}">${ai?"B":"A"}${x.length}</span>`:"").join(" ")}</span>`:""};
+  const group=(title,items,note="")=>items.length?`<div class="group"><div class="row between"><h3>${title}</h3><span class="muted num" style="font-size:.82rem">${items.length}</span></div>${note}${items.join("")}</div>`:"";
+  const coreUsed=CORE.filter(([t])=>!CORE_NEEDS[t]||!known||m[CORE_NEEDS[t]]),coreUnused=known?CORE.filter(([t])=>CORE_NEEDS[t]&&!m[CORE_NEEDS[t]]):[];
+  const kwUsed=KW.filter(k=>m[k[0]]),kwUnused=KW.filter(k=>!m[k[0]]);
+  let html="",count=0;
+  const C1=coreUsed.filter(([t,h])=>hit(t,h)).map(([t,h])=>item(t,h));
+  if(known){
+    const A=kwUsed.filter(k=>hit(k[0],kwBody(k[0]))).map(k=>item(k[0],kwBody(k[0]),{badge:badge(k[0])}));
+    const U=[...coreUnused.filter(([t,h])=>hit(t,h)).map(([t,h])=>item(t,h,{dim:true})),...kwUnused.filter(k=>hit(k[0],k[3])).map(k=>item(k[0],kwBody(k[0]),{dim:true}))];
+    html=group("In this matchup",A,'<p class="muted" style="font-size:.88rem">Special rules found on your two armies. A and B show how many units carry each one.</p>')+group("Core rules",C1)+(hide?"":group("Not in this matchup",U));
+    count=A.length+C1.length+(hide?0:U.length);
+  } else {
+    const K=KW.filter(k=>hit(k[0],k[3])).map(k=>item(k[0],kwBody(k[0])));
+    html=group("Core rules",C1)+group("Special rules",K);count=C1.length+K.length;
+  }
+  $("#rules").innerHTML=html;
+  $("#ruleHint").hidden=count>0;
+  $("#hideWrap").hidden=!known;
+  $("#hideUnused").checked=!!S.hideUnused;
+  $("#matchNote").textContent=known?`Built from the rules on ${S.armies[0].name} and ${S.armies[1].name}. Units typed in by hand without rules text may be missing keywords.`:"Import both army lists with their rules to see which special rules this matchup uses.";
+}
+$("#ruleSearch").addEventListener("input",e=>renderRules(e.target.value));
+$("#hideUnused").addEventListener("change",e=>{S.hideUnused=e.target.checked;save();renderRules($("#ruleSearch").value)});
+
+/* ---------- REMINDERS ---------- */
+const FORGET=[
+ ["Morale mid-round","A unit left at half strength or less by wounds tests at the end of that activation, not at the end of the round."],
+ ["Melee losers can rout","The unit that took more wounds in a melee tests. Failing at half strength or less means it Routs and is removed."],
+ ["3\" melee reach","Models within 3\" of an enemy in the fight strike, not just those in base contact."],
+ ["Fatigue","Any unit that attacked in a melee, charging or striking back, hits only on unmodified 6s in melee for the rest of the round."],
+ ["Shaken means idle","A Shaken unit spends its next activation idle, then recovers. It strikes back as Fatigued and can't hold objectives."],
+ ["Two targets","A unit may split its shooting between up to two targets, one per weapon type."],
+ ["Blast is shared","Blast ignores Cover, and its hits are split between the target and every enemy unit within 3\" of it."],
+ ["AI turn order","Roll a D3 for the section, then a random unit there. Shaken AI units go last."],
+ ["AI always fights back","AI units always strike back when charged, and always shoot the closest valid target."],
+ ["Objectives","Seized only at the end of a round, by a unit within 3\" with no enemy within 3\". They stay held when you leave."]
+];
+function renderReminders(){
+  const m=matchup(),known=Object.keys(m).length>0,d=gapDays();
+  const used=ai=>KW.filter(k=>m[k[0]]&&m[k[0]][ai].length);
+  const army=ai=>{const a=S.armies[ai],k=used(ai);
+    return `<div><h3 class="t${tag(ai)}">${esc(a.name)}</h3>${k.length?k.map(x=>`<button type="button" class="kwrow" data-kw="${x[0]}"><b>${x[0]}</b><span>${x[3]}</span></button>`).join(""):`<p class="muted" style="font-size:.9rem">${a.units.length?"No special rules found on these units.":"No units yet."}</p>`}</div>`};
+  const closed=S.remClosed||{};
+  const sec=(id,title,body,link="")=>`<details class="rem" data-sec="${id}" ${closed[id]?"":"open"}><summary><h3>${title}</h3><span class="chev" aria-hidden="true"></span></summary><div class="rembody">${link}${body}</div></details>`;
+  const anyClosed=Object.values(closed).some(Boolean);
+  $("#v-reminders").innerHTML=`
+    <div class="stack">
+      <div class="row between"><h2>Getting back into it</h2><button class="btn sm ghost" id="remAll" type="button">${anyClosed?"Expand all":"Collapse all"}</button></div>
+      <p class="muted">${d!=null?`Your last game was ${gapText(d)}. `:""}Read this top to bottom before you set up. Tap a heading to fold away what you've done; everything opens again when you start a new game.</p>
+    </div>
+    ${sec("setup","Setting up",`
+      <ol class="steps">
+        <li>4' × 4' table, 20+ pieces of terrain.</li>
+        <li>Roll off. The winner places the first objective, picks an edge and goes first.</li>
+        <li>D3+2 objectives, alternating, outside deployment zones and more than 9" apart.</li>
+        <li>Deploy your whole army first, within 12" of a random long edge. Then roll the AI deployment on the Setup tab.</li>
+        <li>Hold Ambush units back; Scouts deploy last, within 9" of their zone and over 9" from enemies. In Horde Mode, defenders start within 6" of the centre.</li>
+      </ol>`,'<a class="btn sm" href="#setup" style="align-self:flex-start">Open setup</a>')}
+    ${sec("round","A round",`
+      <div class="flow">
+        <div><b>1 · Activate</b><span>Take turns activating one unit each. On the AI's turn, use the AI panel on the Play tab.</span></div>
+        <div><b>Hold</b><span>Stay put and shoot.</span></div>
+        <div><b>Advance</b><span>Move 6", then shoot.</span></div>
+        <div><b>Rush</b><span>Move 12". No shooting.</span></div>
+        <div><b>Charge</b><span>Move 12" into melee. Models within 3" strike; attackers become Fatigued.</span></div>
+        <div><b>2 · End of round</b><span>Seize objectives. Four rounds in all, twelve in Horde Mode.</span></div>
+      </div>
+      <p class="muted" style="font-size:.9rem">Attacks: roll Quality to hit, the target rolls Defense per hit, each fail is a wound. The Attack tab does the maths.</p>`)}
+    ${sec("forget","Easy to forget",`<div class="forget">${FORGET.map(([t,s])=>`<div><b>${t}</b><span>${s}</span></div>`).join("")}</div>`)}
+    ${sec("matchup","Your matchup",known?`<p class="muted" style="font-size:.9rem">The special rules on each army, so you know what to watch for. Tap one to see who has it.</p><div class="mu">${army(0)}${army(1)}</div>`:
+        `<p class="muted">Import both army lists in Setup to see the special rules this matchup uses.</p>`,known?'<a class="btn sm ghost" href="#rules" style="align-self:flex-start">All rules</a>':"")}
+    ${sec("notes","Our notes",`<p class="muted" style="font-size:.9rem">House rules, rulings you agreed on, things you got wrong last time. Saved on this device.</p>
+      <textarea class="notes" id="notes" aria-label="Our notes" placeholder="e.g. We play dangerous terrain as 1 wound per model. Remember Fatigue after striking back!">${esc(S.notes||"")}</textarea>`)}`;
+  $("#notes").addEventListener("input",e=>{S.notes=e.target.value;save()});
+  document.querySelectorAll("details.rem").forEach(el=>el.addEventListener("toggle",()=>{
+    S.remClosed=S.remClosed||{};S.remClosed[el.dataset.sec]=!el.open;save();
+    $("#remAll").textContent=Object.values(S.remClosed).some(Boolean)?"Expand all":"Collapse all"}));
+  $("#remAll").onclick=()=>{const close=!Object.values(S.remClosed||{}).some(Boolean);
+    S.remClosed={};document.querySelectorAll("details.rem").forEach(el=>{S.remClosed[el.dataset.sec]=close});save();renderReminders()};
+}
+function renderGap(v){
+  const d=gapDays();
+  $("#gapBox").innerHTML=d!=null&&d>=14&&v!=="reminders"?`<div class="gapnote"><span>Your last game was ${gapText(d)}. Need a refresher?</span><a class="btn sm primary" href="#reminders">Open reminders</a></div>`:"";
+}
+
+/* ---------- SCREEN LAYOUT (per device) ---------- */
+const LKEY=KEY+"-layout",MQ=matchMedia("(min-width: 900px) and (orientation: landscape)");
+let LAY={mode:"auto",awake:false},WAKE=null;
+try{Object.assign(LAY,JSON.parse(localStorage.getItem(LKEY))||{})}catch(e){}
+function saveLay(){try{localStorage.setItem(LKEY,JSON.stringify(LAY))}catch(e){}}
+function applyLayout(){const t=LAY.mode==="tablet"||(LAY.mode==="auto"&&MQ.matches);document.documentElement.classList.toggle("tab",t);return t}
+async function keepAwake(){
+  if(!LAY.awake||document.visibilityState!=="visible"||WAKE||!("wakeLock" in navigator))return;
+  try{WAKE=await navigator.wakeLock.request("screen");WAKE.addEventListener("release",()=>{WAKE=null})}catch(e){WAKE=null}
+}
+document.addEventListener("visibilitychange",keepAwake);
+const onMQ=()=>{applyLayout();renderLayoutBox()};
+if(MQ.addEventListener)MQ.addEventListener("change",onMQ);else MQ.addListener(onMQ);
+function renderLayoutBox(){
+  const box=document.getElementById("layoutBox");if(!box)return;const t=document.documentElement.classList.contains("tab");
+  box.innerHTML=`<div class="layoutbar"><span class="eyebrow">Screen layout</span>
+    <div class="lseg" role="group" aria-label="Screen layout">${[["auto","Auto"],["phone","Phone"],["tablet","Tablet"]].map(([k,l])=>`<button type="button" data-lay="${k}" aria-pressed="${LAY.mode===k}">${l}</button>`).join("")}</div>
+    <span class="lnote">${LAY.mode==="auto"?`Auto uses the tablet layout on wide landscape screens. Now: ${t?"tablet":"phone"}.`:t?"Side rail and two columns.":"One column, tabs along the bottom."}</span>
+    <label class="lchk"><input type="checkbox" id="lAwake" ${LAY.awake?"checked":""}> Keep the screen awake${"wakeLock" in navigator?"":" (not supported here)"}</label></div>`;
+  box.querySelectorAll("[data-lay]").forEach(b=>b.onclick=()=>{LAY.mode=b.dataset.lay;saveLay();applyLayout();renderLayoutBox()});
+  document.getElementById("lAwake").onchange=async e=>{LAY.awake=e.target.checked;saveLay();if(LAY.awake)await keepAwake();else if(WAKE){WAKE.release().catch(()=>{});WAKE=null}renderLayoutBox()};
+}
+applyLayout();keepAwake();
+
+/* ---------- ROUTER ---------- */
+function view(){const h=location.hash.slice(1);if(["setup","play","combat","reminders","rules"].includes(h))return h;
+  const d=gapDays();return d!=null&&d>=14?"reminders":S.started?"play":"setup"}
+function render(){
+  const v=view(),m=MODES[S.mode];
+  document.querySelectorAll("section.view").forEach(s=>s.hidden=s.id!=="v-"+v);
+  document.querySelectorAll("nav.tabs a").forEach(a=>{if(a.dataset.v===v)a.setAttribute("aria-current","page");else a.removeAttribute("aria-current")});
+  $("#modeLine").textContent=`${TYPES[S.type].name} · ${HORDE()?800:m.pts} pts`;
+  if(v==="play")renderPlay();if(v==="setup")renderSetup();if(v==="combat")renderCombat();
+  if(v==="reminders")renderReminders();if(v==="rules")renderRules($("#ruleSearch").value);
+  renderGap(v);
+}
+window.addEventListener("hashchange",()=>{render();window.scrollTo(0,0)});
+render();
+</script>
+<script>if("serviceWorker" in navigator&&location.protocol!=="file:")addEventListener("load",()=>navigator.serviceWorker.register("../sw.js",{scope:"../"}).catch(()=>{}));</script>
+</body>
+</html>

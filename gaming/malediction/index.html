@@ -1,0 +1,739 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#1a1d1f">
+<link rel="manifest" href="../manifest.webmanifest">
+<link rel="icon" href="../icons/icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="../icons/icon-192.png">
+<title>Malediction Companion</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Marcellus+SC&family=Alegreya+Sans:ital,wght@0,400;0,500;0,700;1,400&family=IBM+Plex+Mono:wght@500;600&display=swap">
+<style>
+/* Layout: one-column field companion, sticky round bar on top, tab bar fixed to the bottom like a card tray */
+:root{
+  --bg:#eceaf0; --surface:#f8f7fa; --sunk:#e1dee8; --fg:#1f1b29; --muted:#625b73; --line:#cdc8d8;
+  --accent:#5b2f86; --accent-ink:#ffffff; --echo:#1f6f78; --gold:#9a6a14; --danger:#a3263a; --good:#2e7d4f;
+  --display:"Marcellus SC","Trajan Pro",Georgia,serif;
+  --body:"Alegreya Sans","Gill Sans","Segoe UI",system-ui,sans-serif;
+  --mono:"IBM Plex Mono",ui-monospace,Menlo,monospace;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#15121c; --surface:#1f1a29; --sunk:#110e17; --fg:#ebe6f2; --muted:#a79fb8; --line:#352e43;
+  --accent:#b98ae6; --accent-ink:#1a1023; --echo:#5cc3cc; --gold:#e0b45c; --danger:#ef7186; --good:#6fcf97; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#15121c; --surface:#1f1a29; --sunk:#110e17; --fg:#ebe6f2; --muted:#a79fb8; --line:#352e43;
+  --accent:#b98ae6; --accent-ink:#1a1023; --echo:#5cc3cc; --gold:#e0b45c; --danger:#ef7186; --good:#6fcf97; color-scheme:dark}
+*{box-sizing:border-box}
+/* layout: phone by default; html.tab = tablet landscape */
+[hidden]{display:none!important}
+.pcols,.pcol{display:contents}
+html.tab body{padding-left:calc(96px + max(20px,env(safe-area-inset-left,0px)));padding-right:max(24px,env(safe-area-inset-right,0px));padding-bottom:32px}
+html.tab main{max-width:1440px}
+html.tab nav.tabs{top:0;bottom:0;right:auto;width:96px;grid-template-columns:1fr;grid-auto-rows:min-content;align-content:start;gap:4px;border-top:0;border-right:1px solid var(--line);
+  padding:calc(16px + env(safe-area-inset-top,0px)) 8px calc(16px + env(safe-area-inset-bottom,0px)) calc(8px + env(safe-area-inset-left,0px))}
+html.tab nav.tabs a{font-size:.68rem;padding:10px 0;gap:4px}
+html.tab nav.tabs a svg{width:26px;height:26px}
+html.tab .pcols{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:24px;align-items:start}
+html.tab .pcol{display:flex;flex-direction:column;gap:22px;min-width:0}
+html.tab .log{max-height:340px}
+html.tab #v-combat{max-width:980px}
+html.tab #rules{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px 16px;align-items:start}
+html.tab #rules .group{display:contents}
+html.tab #rules .group>.row,html.tab #rules .group>p{grid-column:1/-1}
+html.tab #v-reminders{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px;align-items:start}
+html.tab #v-reminders>.stack:first-child{grid-column:1/-1}
+html.tab .deck{grid-auto-columns:320px}
+html.tab .sheet{align-items:center}
+html.tab .sheet>.panel{border-radius:12px;max-width:680px;max-height:86vh;padding-bottom:18px}
+.layoutbar{display:flex;flex-wrap:wrap;align-items:center;gap:10px 16px;padding:10px 12px;border:1px solid var(--line);border-radius:8px;background:var(--surface)}
+.lseg{display:grid;grid-template-columns:repeat(3,1fr);flex:1 1 240px;max-width:400px;border:1px solid var(--line);border-radius:6px;overflow:hidden}
+.lseg button{border:0;background:var(--surface);color:var(--fg);padding:8px 6px;min-height:40px;font-weight:700;font:inherit;font-weight:700;cursor:pointer}
+.lseg button[aria-pressed="true"]{background:var(--fg);color:var(--bg)}
+.lchk{display:flex;gap:8px;align-items:center;font-size:.92rem}
+.lchk input{width:20px;height:20px;accent-color:var(--accent)}
+.lnote{font-size:.86rem;color:var(--muted)}
+
+[hidden]{display:none!important}
+.between{justify-content:space-between}
+.stack>.field,.sheet>.panel>.field{flex:none}
+.gapnote{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;border:2px solid var(--accent);border-radius:8px;padding:10px 12px;margin-top:12px;background:color-mix(in srgb,var(--accent) 10%,var(--surface))}
+.steps{margin:0;padding-left:1.3em;display:flex;flex-direction:column;gap:6px}
+.steps li::marker{color:var(--accent);font-family:var(--mono)}
+.flow{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:8px}
+.flow div{border:1px solid var(--line);border-radius:8px;padding:10px 12px;background:var(--bg);display:flex;flex-direction:column;gap:2px}
+.flow b{font-family:var(--display);font-weight:400;font-size:1.05rem}
+.flow span{font-size:.9rem;color:var(--muted)}
+.forget{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:8px}
+.forget div{background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:10px 12px;display:flex;flex-direction:column;gap:3px}
+.forget b{font-family:var(--display);font-weight:400;font-size:1.05rem}
+.forget span{font-size:.92rem;color:var(--muted)}
+details.rem{background:var(--surface);border:1px solid var(--line);border-radius:8px}
+details.rem>summary{list-style:none;cursor:pointer;display:flex;justify-content:space-between;align-items:center;gap:10px;padding:12px 16px;min-height:48px}
+details.rem>summary::-webkit-details-marker{display:none}
+details.rem .chev{width:10px;height:10px;flex:none;border-right:2px solid var(--accent);border-bottom:2px solid var(--accent);transform:rotate(45deg);margin-top:-4px;transition:transform .15s}
+details.rem:not([open]) .chev{transform:rotate(-45deg);margin-top:0}
+details.rem:not([open]){background:var(--sunk)}
+details.rem:not([open]) h3{color:var(--muted)}
+.rembody{padding:0 16px 16px;display:flex;flex-direction:column;gap:12px}
+textarea.notes{width:100%;min-height:120px;border:1px solid var(--line);background:var(--bg);border-radius:8px;padding:10px 12px;font:inherit;line-height:1.45;resize:vertical}
+
+body{background:var(--bg);color:var(--fg);font:17px/1.45 var(--body);
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));
+  padding-block:0 calc(84px + env(safe-area-inset-bottom,0px))}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:10;background:var(--bg)}
+main{max-width:720px;margin:0 auto}
+h1,h2,h3{font-family:var(--display);font-weight:400;text-wrap:balance;margin:0;letter-spacing:.02em}
+h1{font-size:1.9rem}
+h2{font-size:1.35rem}
+h3{font-size:1.08rem}
+p{margin:0}
+.muted{color:var(--muted)}
+.eyebrow{font-size:.74rem;text-transform:uppercase;letter-spacing:.14em;color:var(--muted);font-weight:700}
+button,select,input{font:inherit;color:inherit}
+button{cursor:pointer}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.num{font-family:var(--mono);font-variant-numeric:tabular-nums}
+.stack{display:flex;flex-direction:column;gap:14px}
+.row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+section.view{display:flex;flex-direction:column;gap:20px;padding-top:14px}
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:16px}
+.btn{border:1px solid var(--line);background:var(--surface);border-radius:8px;padding:9px 14px;min-height:42px}
+.btn.primary{background:var(--accent);color:var(--accent-ink);border-color:var(--accent);font-weight:700}
+.btn.ghost{background:transparent}
+.btn.sm{min-height:36px;padding:6px 11px;font-size:.92rem}
+.chip{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--line);border-radius:99px;padding:3px 10px;font-size:.85rem;color:var(--muted)}
+
+/* header */
+.masthead{display:flex;justify-content:space-between;align-items:flex-end;gap:12px;padding-top:18px}
+.masthead p{font-size:.95rem}
+
+/* sticky round bar */
+.roundbar{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;background:var(--bg);padding-block:10px;border-bottom:1px solid var(--line)}
+.phases{display:grid;grid-template-columns:repeat(4,1fr);gap:4px;margin-top:8px}
+.phase{text-align:center;font-size:.78rem;text-transform:uppercase;letter-spacing:.08em;padding:6px 2px;border-radius:6px;background:var(--sunk);color:var(--muted);font-weight:700}
+.phase.on{background:var(--accent);color:var(--accent-ink)}
+.phase.done{color:var(--fg)}
+.phase.skip{text-decoration:line-through;opacity:.6}
+
+/* scoreboard */
+.board{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.side{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:12px;display:flex;flex-direction:column;gap:10px;min-width:0}
+.side.init{border-color:var(--gold);box-shadow:0 0 0 1px var(--gold) inset}
+.side-name{display:flex;justify-content:space-between;align-items:center;gap:6px}
+.side-name h3{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.token{font-size:.7rem;text-transform:uppercase;letter-spacing:.1em;color:var(--gold);font-weight:700;white-space:nowrap}
+.mastery{display:flex;flex-direction:column;gap:4px}
+.mastery .big{font-family:var(--mono);font-size:2.3rem;line-height:1;font-weight:600}
+.meter{height:6px;background:var(--sunk);border-radius:3px;overflow:hidden}
+.meter i{display:block;height:100%;background:var(--accent);transition:width .3s}
+.qa{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+.qa .btn{padding:6px 4px;font-size:.86rem;min-height:38px}
+.echo{display:flex;align-items:center;gap:8px;justify-content:space-between;border-top:1px dashed var(--line);padding-top:8px}
+.echo .who{font-size:.86rem;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0}
+.diamond{width:46px;height:46px;flex:none;display:grid;place-items:center;position:relative}
+.diamond::before{content:"";position:absolute;inset:7px;transform:rotate(45deg);border:2px solid var(--echo);border-radius:4px;background:color-mix(in srgb,var(--echo) 12%,transparent)}
+.diamond span{position:relative;font-family:var(--mono);font-weight:600;color:var(--echo)}
+.stepper{display:flex;gap:4px}
+.stepper button{width:34px;height:34px;border-radius:8px;border:1px solid var(--line);background:var(--bg);font-weight:700}
+
+/* phase card */
+.phasecard ol{margin:8px 0 0;padding-left:1.3em;display:flex;flex-direction:column;gap:6px}
+.phasecard li::marker{color:var(--accent);font-family:var(--mono)}
+.callout{border-left:3px solid var(--echo);padding:8px 12px;background:var(--sunk);border-radius:0 8px 8px 0;font-size:.95rem}
+.winner{border:2px solid var(--gold);background:color-mix(in srgb,var(--gold) 12%,var(--surface));text-align:center}
+
+/* log */
+.log{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:2px;max-height:220px;overflow:auto;font-size:.9rem}
+.log li{display:flex;gap:10px;padding:4px 0;border-bottom:1px solid var(--line)}
+.log .r{font-family:var(--mono);color:var(--muted);flex:none;width:2.6em}
+
+/* setup */
+.modes{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:8px}
+.mode{border:1px solid var(--line);background:var(--surface);border-radius:10px;padding:10px 12px;text-align:left;display:flex;flex-direction:column;gap:2px}
+.mode b{font-family:var(--display);font-weight:400;font-size:1.05rem}
+.mode small{color:var(--muted);font-size:.82rem}
+.mode[aria-pressed="true"]{border-color:var(--accent);box-shadow:0 0 0 1px var(--accent) inset}
+.spec{display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:1px;background:var(--line);border:1px solid var(--line);border-radius:10px;overflow:hidden}
+.spec div{background:var(--surface);padding:10px 12px;display:flex;flex-direction:column}
+.spec b{font-family:var(--mono);font-size:1.1rem}
+.spec span{font-size:.78rem;color:var(--muted);text-transform:uppercase;letter-spacing:.08em}
+.field{display:flex;flex-direction:column;gap:4px;min-width:0;flex:1 1 140px}
+.field label{font-size:.8rem;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;font-weight:700}
+.field input,.field select{border:1px solid var(--line);background:var(--bg);border-radius:8px;padding:8px 10px;min-height:42px;width:100%}
+.checklist{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:8px}
+.checklist li{display:flex;gap:12px;align-items:flex-start;background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:12px}
+.checklist input{width:22px;height:22px;flex:none;margin-top:2px;accent-color:var(--accent)}
+.checklist .n{font-family:var(--mono);color:var(--accent);font-weight:600}
+.checklist li.done{opacity:.6}
+.checklist li.done strong{text-decoration:line-through}
+.checklist strong{display:block}
+.checklist p{font-size:.94rem;color:var(--muted)}
+
+/* rules */
+.search{border:1px solid var(--line);background:var(--surface);border-radius:10px;padding:10px 14px;min-height:46px;width:100%}
+details.rule{background:var(--surface);border:1px solid var(--line);border-radius:10px}
+details.rule summary{padding:12px 14px;cursor:pointer;font-family:var(--display);font-size:1.05rem;list-style:none;display:flex;justify-content:space-between;gap:10px}
+details.rule summary::after{content:"+";font-family:var(--mono);color:var(--accent)}
+details.rule[open] summary::after{content:"–"}
+details.rule .body{padding:0 14px 14px;display:flex;flex-direction:column;gap:8px;font-size:.98rem}
+.body ul{margin:0;padding-left:1.2em;display:flex;flex-direction:column;gap:4px}
+.tbl{overflow-x:auto}
+table{border-collapse:collapse;width:100%;font-size:.94rem}
+th,td{text-align:left;padding:6px 8px;border-bottom:1px solid var(--line)}
+th{font-size:.76rem;text-transform:uppercase;letter-spacing:.08em;color:var(--muted)}
+mark{background:color-mix(in srgb,var(--gold) 35%,transparent);color:inherit;border-radius:2px}
+
+/* combat */
+.calc{display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:10px}
+.d20{width:120px;height:120px;margin:0 auto;display:grid;place-items:center;position:relative}
+.d20 svg{position:absolute;inset:0}
+.d20 span{position:relative;font-family:var(--mono);font-size:2.2rem;font-weight:600}
+.d20.roll{animation:spin .45s ease-out}
+@keyframes spin{from{transform:rotate(-200deg) scale(.7)}to{transform:none}}
+.verdict{text-align:center;display:flex;flex-direction:column;gap:2px}
+.verdict b{font-family:var(--display);font-size:1.5rem;font-weight:400}
+.verdict .dmg{font-family:var(--mono);font-size:1.1rem}
+.v-hit b{color:var(--good)} .v-graze b{color:var(--muted)} .v-crit b{color:var(--gold)} .v-cg b{color:var(--danger)}
+
+/* tab bar */
+nav.tabs{position:fixed;left:0;right:0;bottom:0;z-index:6;background:var(--surface);border-top:1px solid var(--line);
+  display:grid;grid-template-columns:repeat(5,1fr);
+  padding:6px max(8px,env(safe-area-inset-right,0px)) calc(6px + env(safe-area-inset-bottom,0px)) max(8px,env(safe-area-inset-left,0px))}
+nav.tabs a{display:flex;flex-direction:column;align-items:center;gap:2px;text-decoration:none;color:var(--muted);font-size:.66rem;font-weight:700;letter-spacing:.04em;min-width:0;overflow:hidden;text-transform:uppercase;padding:6px 0;border-radius:8px}
+nav.tabs a svg{width:22px;height:22px}
+nav.tabs a[aria-current="page"]{color:var(--accent);background:var(--sunk)}
+.sheet{position:fixed;inset:0;z-index:20;background:color-mix(in srgb,#000 45%,transparent);display:flex;align-items:flex-end;justify-content:center}
+.sheet .panel{width:100%;max-width:520px;border-radius:14px 14px 0 0;padding-bottom:calc(18px + env(safe-area-inset-bottom,0px));display:flex;flex-direction:column;gap:12px}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+@media (max-width:380px){.mastery .big{font-size:1.9rem}.qa{grid-template-columns:1fr}}
+</style>
+
+<style>.hublink{display:inline-flex;align-items:center;gap:4px;margin-top:max(12px,env(safe-area-inset-top,0px));font-size:.74rem;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);text-decoration:none;min-height:32px}.hublink:hover{color:var(--fg)}</style>
+</head>
+<body>
+<main>
+  <a class="hublink" href="../">&lsaquo; All games</a>
+  <header class="masthead">
+    <div>
+      <div class="eyebrow">Warband companion</div>
+      <h1>Malediction</h1>
+    </div>
+    <p class="muted" id="modeLine"></p>
+  </header>
+  <div id="gapBox"></div>
+
+  <!-- PLAY -->
+  <section class="view" id="v-play" hidden>
+    <div class="roundbar">
+      <div class="row" style="justify-content:space-between">
+        <div class="row" style="gap:8px"><span class="eyebrow">Round</span><span class="num" style="font-size:1.4rem;font-weight:600" id="roundNum">1</span></div>
+        <div class="row" style="gap:6px">
+          <button class="btn sm ghost" id="undoBtn" type="button">Undo</button>
+          <button class="btn sm primary" id="nextBtn" type="button">Next phase</button>
+        </div>
+      </div>
+      <div class="phases" id="phaseStrip"></div>
+    </div>
+    <div class="pcols">
+    <div class="pcol pl">
+    <div style="order:1" id="winBox"></div>
+    <div style="order:2" class="board" id="board"></div>
+    <div style="order:4" class="stack">
+      <div class="row" style="justify-content:space-between"><h2>Battle log</h2><button class="btn sm ghost" id="newGameBtn" type="button">New game</button></div>
+      <ul class="log" id="log"></ul>
+    </div>
+    </div>
+    <div class="pcol pr">
+    <div style="order:3" class="panel phasecard" id="phaseCard"></div>
+    </div>
+    </div>
+  </section>
+
+  <!-- SETUP -->
+  <section class="view" id="v-setup" hidden>
+    <div id="layoutBox" style="order:0"></div>
+    <div class="pcols">
+    <div class="pcol pl">
+    <div style="order:1" class="stack">
+      <h2>Game mode</h2>
+      <div class="modes" id="modes"></div>
+      <div class="spec" id="spec"></div>
+      <p class="muted" id="modeRules"></p>
+    </div>
+    <div style="order:3" class="stack">
+      <div class="row" style="justify-content:space-between"><h2>Battlefield setup</h2><span class="chip num" id="setupCount"></span></div>
+      <ol class="checklist" id="checklist"></ol>
+    </div>
+    <button style="order:4" class="btn primary" id="startBtn" type="button">Start round 1</button>
+    </div>
+    <div class="pcol pr">
+    <div style="order:2" class="stack">
+      <h2>Warbands</h2>
+      <div class="stack" id="sideForms"></div>
+    </div>
+    </div>
+    </div>
+  </section>
+
+  <!-- COMBAT -->
+  <section class="view" id="v-combat" hidden>
+    <div class="stack">
+      <h2>Attack resolver</h2>
+      <p class="muted">Enter the attacker's Accuracy and Power and the target's Defense, then roll or type the die.</p>
+    </div>
+    <div class="panel stack">
+      <div class="calc">
+        <div class="field"><label for="cAcc">Accuracy</label><input id="cAcc" type="number" inputmode="numeric" value="2"></div>
+        <div class="field"><label for="cDef">Target Defense</label><input id="cDef" type="number" inputmode="numeric" value="10"></div>
+        <div class="field"><label for="cHit">Power (hit)</label><input id="cHit" type="number" inputmode="numeric" value="3"></div>
+        <div class="field"><label for="cGraze">Power (graze)</label><input id="cGraze" type="number" inputmode="numeric" value="1"></div>
+        <div class="field"><label for="cBonus">Power from abilities</label><input id="cBonus" type="number" inputmode="numeric" value="0"></div>
+        <div class="field"><label for="cDie">Die roll (1–20)</label><input id="cDie" type="number" inputmode="numeric" min="1" max="20" value="13"></div>
+      </div>
+      <div class="d20" id="d20">
+        <svg viewBox="0 0 120 120" aria-hidden="true"><polygon points="60,6 110,33 110,87 60,114 10,87 10,33" fill="var(--sunk)" stroke="var(--accent)" stroke-width="2"/><polygon points="60,26 92,80 28,80" fill="none" stroke="var(--line)" stroke-width="1.5"/></svg>
+        <span id="dieFace">13</span>
+      </div>
+      <button class="btn primary" id="rollBtn" type="button">Roll d20</button>
+      <div class="verdict" id="verdict"></div>
+    </div>
+    <div class="panel stack">
+      <h3>Quick reference</h3>
+      <div class="tbl"><table>
+        <tr><th>Roll</th><th>Result</th><th>Damage</th></tr>
+        <tr><td>Natural 20</td><td>Critical hit</td><td>Hit + graze Power, then ability Power</td></tr>
+        <tr><td>Total ≥ Defense</td><td>Hit</td><td>Hit Power</td></tr>
+        <tr><td>Total &lt; Defense</td><td>Graze</td><td>Graze Power</td></tr>
+        <tr><td>Natural 1</td><td>Critical graze</td><td>Exactly 1, no ability Power</td></tr>
+      </table></div>
+      <div class="tbl"><table>
+        <tr><th>Action</th><th>AP</th><th>Notes</th></tr>
+        <tr><td>Move</td><td class="num">1</td><td>Up to Speed. Provokes retaliation if engaged.</td></tr>
+        <tr><td>Attack</td><td class="num">1</td><td>Melee (engaged + LoE) or ranged (Range + LoS). Ranged provokes.</td></tr>
+        <tr><td>Charge</td><td class="num">2</td><td>Up to 2× Speed along LoS, then melee. Provokes.</td></tr>
+        <tr><td>Shift</td><td class="num">2</td><td>Straight line up to Speed. No retaliation.</td></tr>
+      </table></div>
+    </div>
+  </section>
+
+  <!-- REMINDERS -->
+  <section class="view" id="v-reminders" hidden></section>
+
+  <!-- RULES -->
+  <section class="view" id="v-rules" hidden>
+    <div class="stack">
+      <h2>Rules reference</h2>
+      <input class="search" id="ruleSearch" type="search" placeholder="Search rules: retaliation, husk, swift…" aria-label="Search rules">
+      <p class="muted" id="ruleHint" hidden>No rules match that search.</p>
+    </div>
+    <div class="stack" id="rules"></div>
+    <p class="muted" style="font-size:.88rem">Summarised from the Malediction core rulebook. Card text overrides these rules; disabling effects beat enabling ones. Full rules and FAQ at malediction.gg.</p>
+  </section>
+</main>
+
+<nav class="tabs" aria-label="Sections">
+  <a href="#setup" data-v="setup"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/></svg>Setup</a>
+  <a href="#play" data-v="play"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 3l8 9-8 9-8-9z"/><path d="M12 8v8"/></svg>Play</a>
+  <a href="#combat" data-v="combat"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 2l9 5v10l-9 5-9-5V7z"/><path d="M12 7l4.5 8h-9z"/></svg>Combat</a>
+  <a href="#reminders" data-v="reminders"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M9 18h6M10 21h4"/><path d="M12 3a6 6 0 00-3.5 10.9c.6.5 1 1.2 1 2.1h5c0-.9.4-1.6 1-2.1A6 6 0 0012 3z"/></svg>Reminders</a>
+  <a href="#rules" data-v="rules"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 4h7a3 3 0 013 3v13a2 2 0 00-2-2H4zM20 4h-5a3 3 0 00-3 3"/><path d="M20 4v14h-6"/></svg>Rules</a>
+</nav>
+
+<div id="sheet"></div>
+
+<script>
+const MODES = {
+  standard:{name:"Standard",sub:"1v1 · the full game",size:'30" × 30"',husks:4,huskGap:10,terrain:"1 large, 1 medium, 2 small",win:40,relics:4,teams:[1,1],
+    notes:"No special rules."},
+  demo:{name:"Demo",sub:"1v1 · teaching game",size:'24" × 24"',husks:2,huskGap:10,terrain:"1 medium, 1 small",win:25,relics:2,teams:[1,1],demo:true,
+    notes:"Both players start with 10 echo and their Seeker already deployed. No Legacy cards. Only 2 husks and 2 relics on display."},
+  strife:{name:"Strife",sub:"1v1 · small battlefield",size:'24" × 24"',husks:4,huskGap:8,terrain:"1 medium, 1 small",win:40,relics:4,teams:[1,1],
+    notes:"Standard rules on a smaller table."},
+  maelstrom:{name:"Maelstrom",sub:"1v1 · large battlefield",size:'36" × 36"',husks:4,huskGap:12,terrain:"1 large, 1 medium, 3 small",win:40,relics:4,teams:[1,1],
+    notes:"Standard rules on a larger table."},
+  allegiance:{name:"Allegiance",sub:"2v2 · team battle",size:'30" × 30"',husks:4,huskGap:10,terrain:"1 large, 1 medium, 2 small per team",win:50,relics:4,teams:[2,2],team:true,
+    notes:"Teammates may talk and bluff but never show hands. Initiative bids need both teammates; add both card costs. Teammates take different deployment zones on the same side. Teams alternate activations, and no player activates a second unit until every player has activated one."},
+  nemesis:{name:"Nemesis",sub:"2v1 · Union vs Nemesis",size:'30" × 30"',husks:4,huskGap:10,terrain:"1 large, 1 medium, 2 small per team",win:50,relics:4,teams:[2,1],team:true,nemesis:true,
+    notes:"Nemesis: one free basic or elite unit each deploy phase, draws 3 cards each refresh, bid card cost counts double, may use both zones on its side. The first time each action phase the Nemesis has no refreshed unit, it refreshes units equal to the round number."}
+};
+const PHASES=["Refresh","Deploy","Action","End"];
+const KEY="malediction-companion-v1";
+
+function blankState(mode="standard"){
+  const m=MODES[mode];
+  const names=[["Warband A"],["Warband B"]];
+  if(m.teams[0]===2) names[0]=mode==="nemesis"?["Union 1","Union 2"]:["Player 1","Player 2"];
+  if(m.teams[1]===2) names[1]=["Player 3","Player 4"];
+  if(mode==="nemesis") names[1]=["Nemesis"];
+  return {mode,started:false,round:1,phase:1,initiative:0,winner:null,checks:{},
+    sides:[0,1].map(i=>({name:i===0?(m.team?(mode==="nemesis"?"Union":"Team Dawn"):"Warband A"):(m.team?(mode==="nemesis"?"Nemesis":"Team Dusk"):"Warband B"),
+      mastery:0,players:names[i].map(n=>({name:n,echo:m.demo?10:12,start:m.demo?10:12}))})),
+    log:[]};
+}
+let S, history=[];
+try{S=JSON.parse(localStorage.getItem(KEY))}catch(e){}
+if(!S||!S.sides) S=sampleState();
+
+function sampleState(){
+  // Example game in progress so the board shows how it works
+  const s=blankState("standard");
+  s.started=true;s.round=2;s.phase=2;s.initiative=1;s.example=true;
+  s.sides[0].name="Order (example)";s.sides[1].name="Legion (example)";
+  s.sides[0].players[0].echo=9;s.sides[1].players[0].echo=6;
+  s.sides[0].mastery=10;s.sides[1].mastery=7;
+  s.log=[{r:1,t:"Example game loaded. Start a new game from Setup."},{r:1,t:"Order claimed a relic (+10)."},{r:2,t:"Legion defeated a unit costing 7 (+7)."}];
+  return s;
+}
+function save(){try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}}
+function snap(){history.push(JSON.stringify(S));if(history.length>40)history.shift()}
+function log(t){S.log.unshift({r:S.round,t});if(!S.example)S.lastPlayed=Date.now()}
+function echoGain(r){return 2*Math.min(r,5)}
+const $=s=>document.querySelector(s);
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+
+/* ---------- PLAY ---------- */
+function phaseSteps(){
+  const m=MODES[S.mode], r=S.round, g=echoGain(r), ini=S.sides[S.initiative].name, other=S.sides[1-S.initiative].name;
+  const draw=m.nemesis?"Draw 2 cards each (the Nemesis draws 3).":"Draw 2 cards each. A player who can't draw loses.";
+  return [
+    {title:"Refresh phase",steps:[
+      "Refresh every exhausted unit (turn its card upright).",
+      "Advance the round tracker.",draw,
+      `Gain ${g} echo each (2 × round, max 10). The app has added it.`,
+      `Initiative bid: ${esc(other)} may bid a card facedown; ${esc(ini)} may contest or forfeit. Highest cost wins, ties go to the challenger. Bid cards are banished.`],
+      tip:"Tap the initiative label on a warband to hand over the token after the bid."},
+    {title:"Deploy phase",steps:[
+      `${esc(ini)} (initiative) chooses who deploys first.`,
+      "Play units and items, paying echo for each. Use the − buttons on the echo diamonds.",
+      'Standard deployment: fully inside your 6" corner quarter-circle.',
+      r>1?'Reinforcement: within 1" of an unengaged unit that was already on the battlefield.':"Round 1: standard deployment only, no reinforcements yet.",
+      'Unengaged allies within 1" may swap attachments (1 item, 1 relic each).',
+      "Stage freely, then declare: everything enters at once.",
+      ...(m.nemesis?["Nemesis: one basic or elite unit is free this phase."]:[])],
+      tip:"Seekers deploy from the Seeker zone and return there if defeated."},
+    {title:"Action phase",steps:[
+      `${esc(ini)} chooses who activates first. Then alternate one unit at a time.`,
+      "Activate: exhaust the unit, it gains 2 AP. Move 1 · Attack 1 · Charge 2 · Shift 2.",
+      "One channel spell per activation, never mid-action. Swift spells any time.",
+      "Retaliation: engaged enemies strike first when a unit moves, charges or makes a ranged attack.",
+      "When a unit is defeated, score its cost plus attachments for the opponent with “Defeat”.",
+      ...(m.team?["No player activates a second unit until every player has activated one."]:[])],
+      tip:"Use the Combat tab to resolve attacks."},
+    {title:"End phase",steps:[
+      `${esc(ini)} chooses which side claims a relic first; then alternate.`,
+      'A unit can claim if it is within 1" of a husk, not engaged, and no enemy is within 1" of the husk.',
+      "Pick a faceup relic (refill the display) or draw blind from the deck. Remove the husk.",
+      "Each claim is worth 10 mastery: tap “+10 Relic”.",
+      `Victory check: ${m.win}+ mastery and the most mastery wins. Tied leaders play another round.`],
+      tip:"Lost a relic-bearer? Use “−10 Lost relic”, put the relic on the bottom of the deck and place a husk where the unit fell."}
+  ][S.phase];
+}
+function renderPlay(){
+  const m=MODES[S.mode];
+  $("#roundNum").textContent=S.round;
+  $("#phaseStrip").innerHTML=PHASES.map((p,i)=>`<div class="phase ${i===S.phase?"on":i<S.phase?"done":""} ${S.round===1&&i===0?"skip":""}">${p}</div>`).join("");
+  $("#nextBtn").textContent=S.phase===3?"Check victory":"Next phase";
+  $("#undoBtn").disabled=!history.length;
+  $("#board").innerHTML=S.sides.map((s,i)=>`
+    <div class="side ${S.initiative===i?"init":""}">
+      <div class="side-name"><h3 title="${esc(s.name)}">${esc(s.name)}</h3>
+        <button class="token btn ghost sm" data-ini="${i}" style="border:0;padding:4px;min-height:0" aria-label="Give initiative to ${esc(s.name)}">${S.initiative===i?"◆ Initiative":"◇"}</button></div>
+      <div class="mastery"><span class="eyebrow">Mastery</span>
+        <span class="big">${s.mastery}<span class="muted" style="font-size:1rem"> / ${m.win}</span></span>
+        <div class="meter"><i style="width:${Math.min(100,s.mastery/m.win*100)}%"></i></div></div>
+      <div class="qa">
+        <button class="btn" data-relic="${i}">+10 Relic</button>
+        <button class="btn" data-defeat="${i}">Defeat</button>
+        <button class="btn" data-lost="${i}">−10 Lost relic</button>
+        <button class="btn" data-adj="${i}">Adjust</button>
+      </div>
+      ${s.players.map((p,j)=>`<div class="echo">
+        <div class="stepper"><button data-echo="${i},${j},-1" aria-label="Spend 1 echo">−</button></div>
+        <div style="display:flex;align-items:center;gap:6px;min-width:0;flex-direction:column">
+          <div class="diamond"><span>${p.echo}</span></div><span class="who">${esc(p.name)} · echo</span></div>
+        <div class="stepper"><button data-echo="${i},${j},1" aria-label="Gain 1 echo">+</button></div>
+      </div>`).join("")}
+    </div>`).join("");
+  const ph=phaseSteps();
+  $("#phaseCard").innerHTML=`<div class="eyebrow">Round ${S.round} · now</div><h2>${ph.title}</h2>
+    <ol>${ph.steps.map(s=>`<li>${s}</li>`).join("")}</ol>
+    <p class="callout" style="margin-top:12px">${ph.tip}</p>
+    ${S.round===1&&S.phase===1?'<p class="muted" style="margin-top:8px;font-size:.92rem">Round 1 skips the refresh phase. Initiative comes from the setup bid.</p>':""}`;
+  const w=S.winner;
+  $("#winBox").innerHTML=w!=null?`<div class="panel winner stack"><div class="eyebrow">Victory</div><h2>${esc(S.sides[w].name)} masters the Malediction</h2><p class="muted">${S.sides[w].mastery} to ${S.sides[1-w].mastery} after round ${S.round}.</p></div>`:"";
+  $("#log").innerHTML=S.log.map(l=>`<li><span class="r">R${l.r}</span><span>${esc(l.t)}</span></li>`).join("")||'<li class="muted">Nothing yet.</li>';
+}
+function nextPhase(){
+  if(S.winner!=null)return;
+  snap();
+  const m=MODES[S.mode];
+  if(S.phase===3){
+    const [a,b]=S.sides.map(s=>s.mastery);
+    if(Math.max(a,b)>=m.win){
+      if(a===b){log(`Tied at ${a}. Another round begins.`)}
+      else{S.winner=a>b?0:1;log(`${S.sides[S.winner].name} wins with ${Math.max(a,b)} mastery.`);save();render();return}
+    }
+    S.round++;S.phase=0;
+    const g=echoGain(S.round);
+    S.sides.forEach(s=>s.players.forEach(p=>p.echo+=g));
+    log(`Round ${S.round} begins. Everyone gains ${g} echo.`);
+  } else {S.phase++;log(`${PHASES[S.phase]} phase.`)}
+  save();render();window.scrollTo({top:0,behavior:"smooth"});
+}
+document.addEventListener("click",e=>{
+  const t=e.target.closest("button");if(!t)return;
+  const d=t.dataset;
+  if(d.ini!=null){snap();S.initiative=+d.ini;log(`${S.sides[+d.ini].name} takes initiative.`);save();render()}
+  else if(d.relic!=null){snap();S.sides[+d.relic].mastery+=10;log(`${S.sides[+d.relic].name} claimed a relic (+10).`);save();render()}
+  else if(d.lost!=null){snap();S.sides[+d.lost].mastery-=10;log(`${S.sides[+d.lost].name} lost a relic-bearer (−10). Place a husk.`);save();render()}
+  else if(d.defeat!=null){openDefeat(+d.defeat)}
+  else if(d.adj!=null){openAdjust(+d.adj)}
+  else if(d.echo){const[i,j,v]=d.echo.split(",").map(Number);snap();const p=S.sides[i].players[j];p.echo=Math.max(0,p.echo+v);save();render()}
+});
+function sheet(html){$("#sheet").innerHTML=`<div class="sheet" id="sh"><div class="panel">${html}</div></div>`;
+  $("#sh").addEventListener("click",e=>{if(e.target.id==="sh")closeSheet()})}
+function closeSheet(){$("#sheet").innerHTML=""}
+function openDefeat(i){
+  const opp=S.sides[1-i].name;
+  sheet(`<h2>${esc(S.sides[i].name)} defeated a unit</h2>
+    <p class="muted">Score the unit's cost plus the cost of its equipped attachments. Relics have no cost; if it carried one, also tap “−10 Lost relic” for ${esc(opp)}.</p>
+    <div class="row"><div class="field"><label for="dU">Unit cost</label><input id="dU" type="number" inputmode="numeric" value="0"></div>
+    <div class="field"><label for="dI">Item cost</label><input id="dI" type="number" inputmode="numeric" value="0"></div></div>
+    <div class="row"><button class="btn primary" id="dOk" type="button">Add mastery</button><button class="btn ghost" id="dNo" type="button">Cancel</button></div>`);
+  $("#dU").focus();$("#dU").select();
+  $("#dNo").onclick=closeSheet;
+  $("#dOk").onclick=()=>{const v=(+$("#dU").value||0)+(+$("#dI").value||0);snap();S.sides[i].mastery+=v;log(`${S.sides[i].name} defeated an enemy unit (+${v}).`);save();closeSheet();render()};
+}
+function openAdjust(i){
+  sheet(`<h2>Adjust ${esc(S.sides[i].name)}</h2>
+    <p class="muted">For spell effects, destroyed items (opponent gains the item's cost) or corrections.</p>
+    <div class="field"><label for="aV">Mastery change (use − to subtract)</label><input id="aV" type="number" inputmode="numeric" value="0"></div>
+    <div class="row"><button class="btn primary" id="aOk" type="button">Apply</button><button class="btn ghost" id="aNo" type="button">Cancel</button></div>`);
+  $("#aV").focus();$("#aV").select();
+  $("#aNo").onclick=closeSheet;
+  $("#aOk").onclick=()=>{const v=+$("#aV").value||0;if(v){snap();S.sides[i].mastery+=v;log(`${S.sides[i].name} mastery ${v>0?"+":""}${v}.`);save()}closeSheet();render()};
+}
+$("#nextBtn").onclick=nextPhase;
+$("#undoBtn").onclick=()=>{if(!history.length)return;S=JSON.parse(history.pop());save();render()};
+$("#newGameBtn").onclick=()=>{
+  sheet(`<h2>Start a new game?</h2><p class="muted">This clears scores, echo and the battle log. Mode and warband names stay.</p>
+    <div class="row"><button class="btn primary" id="nOk" type="button">Clear and go to setup</button><button class="btn ghost" id="nNo" type="button">Keep playing</button></div>`);
+  $("#nNo").onclick=closeSheet;
+  $("#nOk").onclick=()=>{const keep=S.example?null:S.sides.map(s=>({name:s.name,players:s.players.map(p=>({name:p.name,start:p.start}))}));
+    snap();const mode=S.mode;S=blankState(mode);
+    if(keep)keep.forEach((k,i)=>{S.sides[i].name=k.name;k.players.forEach((p,j)=>{if(S.sides[i].players[j]){S.sides[i].players[j].name=p.name;S.sides[i].players[j].start=p.start;S.sides[i].players[j].echo=p.start}})});
+    save();closeSheet();location.hash="setup";render()};
+};
+
+/* ---------- SETUP ---------- */
+function setupSteps(){
+  const m=MODES[S.mode];
+  const s=[
+    ["Build warbands",`Each player brings a Seeker, its Legacy card, a terrain set with its card, and a 30–50 card deck. A side deck of up to 7 may be swapped in after seeing the opposing Seeker.`],
+    ["Define the battlefield",`Clear a flat ${m.size} area. Mark the four 6" quarter-circle deployment zones in the corners.`],
+    ["Place terrain",`Roll off; the winner places first. Alternate, largest pieces first: ${m.terrain}. Keep terrain fully on the table, out of deployment zones and at least 3" from other terrain.`],
+    ["Place husks",`The player who placed terrain second starts. Alternate until ${m.husks} husks are down, outside deployment zones and obstacles, at least ${m.huskGap}" apart.`],
+    ["Create the relic display",`Shuffle the 15-card relic deck facedown and turn ${m.relics} relics faceup beside it.`],
+    ["Set echo, mastery and round",m.demo?"Set everyone to 10 echo (no Legacy cards in the Demo), mastery to 0 and the round tracker to 1.":"Set echo to the starting value on your Legacy card (enter it below), mastery to 0 and the round tracker to 1."],
+    ["Draw starting hands","Shuffle and draw 7. To mulligan, reshuffle and draw one fewer card each time, up to 5 times, keeping at least 1 card."],
+    ["Setup bid","Bid a card facedown; highest cost wins (roll off on ties). The winner picks a deployment zone or initiative for round 1. Opponent's zone is the diagonal opposite. Bid cards are banished."]
+  ];
+  if(m.demo) s.push(["Deploy Seekers","Both Seekers start already deployed in their deployment zones."]);
+  return s;
+}
+function renderSetup(){renderLayoutBox();
+  $("#modes").innerHTML=Object.entries(MODES).map(([k,m])=>`<button class="mode" type="button" data-mode="${k}" aria-pressed="${k===S.mode}"><b>${m.name}</b><small>${m.sub}</small></button>`).join("");
+  const m=MODES[S.mode];
+  $("#spec").innerHTML=[[m.size,"Battlefield"],[m.win,"Mastery to win"],[m.husks,"Husks"],[m.huskGap+'"',"Between husks"],[m.relics,"Relics shown"]]
+    .map(([v,l])=>`<div><b>${v}</b><span>${l}</span></div>`).join("");
+  $("#modeRules").textContent=m.notes;
+  $("#sideForms").innerHTML=S.sides.map((s,i)=>`<div class="panel stack">
+    <div class="field"><label for="sn${i}">${m.team?"Team name":"Warband name"}</label><input id="sn${i}" data-sn="${i}" value="${esc(s.name)}"></div>
+    ${s.players.map((p,j)=>`<div class="row">
+      ${m.team?`<div class="field"><label for="pn${i}${j}">Player</label><input id="pn${i}${j}" data-pn="${i},${j}" value="${esc(p.name)}"></div>`:""}
+      <div class="field" style="flex:0 1 160px"><label for="pe${i}${j}">Starting echo${m.demo?"":" (Legacy card)"}</label><input id="pe${i}${j}" data-pe="${i},${j}" type="number" inputmode="numeric" value="${p.start}" ${m.demo?"disabled":""}></div>
+    </div>`).join("")}
+  </div>`).join("");
+  const steps=setupSteps();
+  $("#checklist").innerHTML=steps.map(([t,d],i)=>{const on=!!S.checks[S.mode+i];return `<li class="${on?"done":""}"><input type="checkbox" id="ck${i}" data-ck="${i}" ${on?"checked":""}><label for="ck${i}"><strong><span class="n">${i+1}</span> ${t}</strong><p>${d}</p></label></li>`}).join("");
+  const n=steps.filter((_,i)=>S.checks[S.mode+i]).length;
+  $("#setupCount").textContent=`${n} / ${steps.length}`;
+  $("#startBtn").textContent=S.started&&!S.example?"Restart at round 1":"Start round 1";
+}
+document.addEventListener("change",e=>{
+  const d=e.target.dataset;
+  if(d.ck!=null){S.checks[S.mode+d.ck]=e.target.checked;save();renderSetup()}
+});
+document.addEventListener("input",e=>{
+  const d=e.target.dataset;
+  if(d.sn!=null){S.sides[+d.sn].name=e.target.value||"Warband";S.example=false;save()}
+  if(d.pn){const[i,j]=d.pn.split(",").map(Number);S.sides[i].players[j].name=e.target.value||"Player";save()}
+  if(d.pe){const[i,j]=d.pe.split(",").map(Number);const v=Math.max(0,+e.target.value||0);S.sides[i].players[j].start=v;if(!S.started||S.example)S.sides[i].players[j].echo=v;save()}
+});
+$("#modes").addEventListener("click",e=>{
+  const b=e.target.closest("[data-mode]");if(!b||b.dataset.mode===S.mode)return;
+  snap();const checks=S.checks;S=blankState(b.dataset.mode);S.checks=checks;save();render();
+});
+$("#startBtn").onclick=()=>{
+  snap();
+  S.sides.forEach(s=>{s.mastery=0;s.players.forEach(p=>p.echo=MODES[S.mode].demo?10:p.start)});
+  if(S.example){S.sides[0].name="Warband A";S.sides[1].name="Warband B";S.example=false}
+  S.started=true;S.round=1;S.phase=1;S.winner=null;S.log=[];S.remClosed={};
+  log(`${MODES[S.mode].name} game begins. Round 1 skips refresh; deploy now.`);
+  sheet(`<h2>Who won the setup bid?</h2><p class="muted">If the winner chose a deployment zone instead, initiative goes to the other side.</p>
+    <div class="stack">${S.sides.map((s,i)=>`<button class="btn" data-pick="${i}" type="button">${esc(s.name)} has initiative</button>`).join("")}</div>`);
+  document.querySelectorAll("[data-pick]").forEach(b=>b.onclick=()=>{S.initiative=+b.dataset.pick;log(`${S.sides[S.initiative].name} holds initiative for round 1.`);save();closeSheet();location.hash="play";render()});
+};
+
+/* ---------- COMBAT ---------- */
+function resolve(){
+  const acc=+$("#cAcc").value||0,def=+$("#cDef").value||0,hit=+$("#cHit").value||0,gr=+$("#cGraze").value||0,bonus=+$("#cBonus").value||0;
+  let die=Math.round(+$("#cDie").value||1);die=Math.min(20,Math.max(1,die));
+  $("#dieFace").textContent=die;
+  const total=die+acc;let cls,title,dmg,why;
+  if(die===20){cls="v-crit";title="Critical hit";dmg=hit+gr+bonus;why=`Natural 20: ${hit} + ${gr}${bonus?` + ${bonus} from abilities`:""}`}
+  else if(die===1){cls="v-cg";title="Critical graze";dmg=1;why="Natural 1: always exactly 1 damage"}
+  else if(total>=def){cls="v-hit";title="Hit";dmg=hit+bonus;why=`${die} + ${acc} = ${total}, meets Defense ${def}`}
+  else{cls="v-graze";title="Graze";dmg=gr+bonus;why=`${die} + ${acc} = ${total}, below Defense ${def}`}
+  $("#verdict").className="verdict "+cls;
+  $("#verdict").innerHTML=`<b>${title}</b><span class="dmg">${dmg} damage</span><span class="muted" style="font-size:.9rem">${why}</span>`;
+}
+["cAcc","cDef","cHit","cGraze","cBonus","cDie"].forEach(id=>$("#"+id).addEventListener("input",resolve));
+$("#rollBtn").onclick=()=>{
+  const r=1+Math.floor(Math.random()*20);$("#cDie").value=r;
+  const d=$("#d20");d.classList.remove("roll");void d.offsetWidth;d.classList.add("roll");resolve();
+};
+
+/* ---------- RULES ---------- */
+const RULES=[
+ ["Round structure",`<ul><li><b>Refresh</b>: refresh units, advance round, draw 2, gain echo, initiative bid. Skipped in round 1.</li><li><b>Deploy</b>: initiative player picks who deploys first; each side deploys everything at once.</li><li><b>Action</b>: alternate activating one unit at a time until none are left.</li><li><b>End</b>: alternate claiming relics, then check for victory.</li></ul>`],
+ ["Echo",`<p>Echo is your currency for playing cards. Unspent echo carries over.</p><div class="tbl"><table><tr><th>Round</th><th>2</th><th>3</th><th>4</th><th>5+</th></tr><tr><td>Echo gained</td><td class="num">4</td><td class="num">6</td><td class="num">8</td><td class="num">10</td></tr></table></div><p>Starting echo is printed on your Legacy card.</p>`],
+ ["Initiative bid",`<p>The player without initiative may bid a card facedown. The holder may contest with their own card or forfeit for free. Highest cost wins; ties go to the player without initiative. All bid cards are banished.</p>`],
+ ["Deployment",`<ul><li>Pay echo equal to the card's cost.</li><li><b>Standard</b>: fully inside your 6" corner quarter-circle.</li><li><b>Reinforcement</b>: within 1" of an unengaged unit you own that was on the battlefield from a previous round.</li><li>Items go on a unit being deployed or an unengaged unit. One item and one relic per unit.</li><li>Unengaged allies within 1" may swap attachments, each attachment once per deploy phase.</li><li>Seekers deploy from the Seeker zone and return there whenever they leave the battlefield.</li></ul>`],
+ ["Activation and AP",`<p>Exhaust the unit; it gains 2 AP. Finish one action before starting another. Unspent AP is lost when you pass. Extra actions granted by effects cost no AP and work even when exhausted.</p>`],
+ ["Standard actions",`<div class="tbl"><table><tr><th>Action</th><th>AP</th><th>Rule</th></tr><tr><td>Move</td><td class="num">1</td><td>Up to Speed, can curve around obstacles. Can't pass through models, husks or terrain taller than the base.</td></tr><tr><td>Attack</td><td class="num">1</td><td>d20 + Accuracy vs Defense. Melee needs engagement (within 1" with LoE); ranged needs Range and LoS.</td></tr><tr><td>Charge</td><td class="num">2</td><td>Target not already engaged with it, in LoS. Move up to 2× Speed without leaving the LoS path, then melee.</td></tr><tr><td>Shift</td><td class="num">2</td><td>Straight line up to Speed to a point in LoS, not over any obstacle. Can squeeze through gaps. No retaliation.</td></tr></table></div>`],
+ ["Attack results and criticals",`<ul><li>Total ≥ Defense: <b>hit</b>, deal the left Power number.</li><li>Total &lt; Defense: <b>graze</b>, deal the right Power number.</li><li>Natural 20: <b>critical hit</b>, add both Power numbers, then any Power from abilities.</li><li>Natural 1: <b>critical graze</b>, exactly 1 damage.</li></ul>`],
+ ["Retaliation",`<p>A free melee attack by each engaged enemy, resolved <b>before</b> the provoking action. Provoked when an engaged unit moves, charges or makes a ranged attack, or by card effects. Works even when exhausted and any number of times. Retaliation can't trigger retaliation. Forced movement never provokes.</p>`],
+ ["Line of sight and line of effect",`<p><b>LoS</b>: line from the centre of your base to any point of the target's base. Blocked by units, husks and tall obstacles.</p><p><b>LoE</b>: same line, blocked only by tall obstacles (1" or taller). Spells that measure need LoE to each subject.</p>`],
+ ["Spells",`<ul><li><b>Channel</b>: one per activation of a unit you own, at any point when nothing else is resolving. Not during an opponent's activation.</li><li><b>Swift</b>: any time in the action phase, even on the opponent's turn.</li><li>Resolve one sentence at a time; invalid targets are ignored. Then discard.</li></ul>`],
+ ["Defeating units",`<p>At damage ≥ Max Health the unit is defeated: model off, card and items to the discard pile (Seekers back to the Seeker zone). The opponent gains mastery equal to the unit's cost plus its attachments. A destroyed item alone scores its cost.</p>`],
+ ["Relics and husks",`<p><b>Claiming</b> (end phase): your unit is within 1" of a husk, not engaged, and no enemy is within 1" of the husk. Take a faceup relic (refill the display) or the top of the deck. Remove the husk; gain 10 mastery.</p><p><b>Losing</b>: when a relic-bearer is defeated, its owner loses 10 mastery, the relic goes to the bottom of the deck and a husk is placed where the unit stood.</p>`],
+ ["Winning and losing",`<p>After relic claims, a player with 40+ mastery (50 in team modes, 25 in the Demo) and the most mastery wins. A tie for the lead plays another round. A player who must draw from an empty deck loses immediately.</p>`],
+ ["Terrain and obstacles",`<ul><li>A unit is on terrain if any part of its base is on its flat area; the terrain card's effects apply.</li><li>Below 1" is a short obstacle: blocks movement, not LoS or LoE.</li><li>1" or taller is a tall obstacle: blocks LoS and LoE. Off the battlefield counts as tall.</li><li>Overhangs like archways are ignored.</li><li>Shifting units are affected only if the shift line crosses the terrain.</li></ul>`],
+ ["Abilities and stats",`<ul><li>Duplicate abilities: only the highest modifier applies.</li><li>Stat changes: add positives, then subtract negatives.</li><li>Null stats (–) can never be altered; treat as 0 for dependent effects.</li><li>Cards override the rulebook; disabling effects beat enabling effects.</li></ul>`],
+ ["Concurrent triggers",`<p>Your own simultaneous triggers resolve in the order you choose. Between players, the initiative player chooses who resolves all of theirs first. Uncontrolled effects such as terrain resolve last.</p>`],
+ ["Pushes, pulls and placing",`<p>Push and pull along the line through both base centres; stop on contact with an obstacle. Placed models use their centre point; if there's no room, the owner places it at the nearest possible point.</p>`],
+ ["Bidding",`<p>Each bidder places one card facedown, then all reveal. Highest echo cost wins. Every card used to bid is banished, faceup and visible to all.</p>`],
+ ["Premeasuring and take-backs",`<p>You may premeasure anything at any time. You can rearrange your choices until your opponent reacts, a die is rolled or a card is drawn.</p>`],
+ ["Deck building",`<ul><li>One Seeker with its Legacy card, one terrain set and card, 30–50 cards.</li><li>A card is legal only if your Seeker bears all of its faction sigils. Unaligned cards fit any deck.</li><li>Copies: Basic 3, Elite 2, Unique 1. Legendary is your Seeker.</li><li>Tip: about 30 cards with at least 14 units.</li></ul>`]
+];
+function renderRules(q=""){
+  q=q.trim().toLowerCase();
+  const hl=h=>q?h.replace(/>([^<]+)</g,(m,t)=>">"+t.replace(new RegExp("("+q.replace(/[.*+?^${}()|[\]\\]/g,"\\$&")+")","gi"),"<mark>$1</mark>")+"<"):h;
+  const list=RULES.filter(([t,h])=>!q||(t+" "+h.replace(/<[^>]+>/g," ")).toLowerCase().includes(q));
+  $("#rules").innerHTML=list.map(([t,h])=>`<details class="rule" ${q?"open":""}><summary>${t}</summary><div class="body">${hl("<div>"+h+"</div>")}</div></details>`).join("");
+  $("#ruleHint").hidden=list.length>0;
+}
+$("#ruleSearch").addEventListener("input",e=>renderRules(e.target.value));
+
+/* ---------- REMINDERS ---------- */
+const gapDays=()=>S.lastPlayed?Math.floor((Date.now()-S.lastPlayed)/864e5):null;
+const gapText=d=>d<1?"today":d===1?"yesterday":d<14?`${d} days ago`:d<60?`${Math.round(d/7)} weeks ago`:`${Math.round(d/30)} months ago`;
+const forgetGrid=list=>`<div class="forget">${list.map(([t,s])=>`<div><b>${t}</b><span>${s}</span></div>`).join("")}</div>`;
+/* sections: [id, title, bodyHtml, extraHtml] — a notes section is always added last */
+function remPage(lead,sections){
+  const closed=S.remClosed||{},d=gapDays();
+  const sec=(id,title,body,link="")=>`<details class="rem" data-sec="${id}" ${closed[id]?"":"open"}><summary><h3>${title}</h3><span class="chev" aria-hidden="true"></span></summary><div class="rembody">${link}${body}</div></details>`;
+  sections=[...sections,["notes","Our notes",`<p class="muted" style="font-size:.9rem">House rules, rulings you agreed on, things you got wrong last time. Saved on this device.</p>
+    <textarea class="notes" id="notes" aria-label="Our notes" placeholder="Anything you want to remember next time">${esc(S.notes||"")}</textarea>`]];
+  const anyClosed=Object.values(closed).some(Boolean);
+  $("#v-reminders").innerHTML=`<div class="stack">
+      <div class="row between"><h2>Getting back into it</h2><button class="btn sm ghost" id="remAll" type="button">${anyClosed?"Expand all":"Collapse all"}</button></div>
+      <p class="muted">${d!=null?`Your last game was ${gapText(d)}. `:""}${lead} Tap a heading to fold away what you've done; everything opens again when you start a new game.</p>
+    </div>${sections.map(s=>sec(...s)).join("")}`;
+  $("#notes").addEventListener("input",e=>{S.notes=e.target.value;save()});
+  document.querySelectorAll("details.rem").forEach(el=>el.addEventListener("toggle",()=>{
+    S.remClosed=S.remClosed||{};S.remClosed[el.dataset.sec]=!el.open;save();
+    $("#remAll").textContent=Object.values(S.remClosed).some(Boolean)?"Expand all":"Collapse all"}));
+  $("#remAll").onclick=()=>{const close=!Object.values(S.remClosed||{}).some(Boolean);
+    S.remClosed={};document.querySelectorAll("details.rem").forEach(el=>{S.remClosed[el.dataset.sec]=close});save();renderReminders()};
+}
+const FORGET=[
+ ["Retaliation comes first","Engaged enemies strike before you move, charge or make a ranged attack. A Shift (2 AP) avoids it."],
+ ["Channel vs swift","One channel spell per activation of your own unit, never in the middle of an action. Swifts can be played any time in the action phase."],
+ ["Criticals","A natural 20 deals both Power numbers added together. A natural 1 deals exactly 1 damage."],
+ ["Claiming relics","End phase only. Your unit is within 1\" of a husk and not engaged, and no enemy is within 1\" of the husk."],
+ ["Losing a relic","The owner loses 10 mastery, the relic goes to the bottom of the deck, and a husk drops where the unit fell."],
+ ["Kill mastery","A defeated unit is worth its cost plus the cost of its attachments."],
+ ["Echo carries over","Unspent echo stays. From round 5 on you gain 10 echo a round."],
+ ["Initiative ties","In the initiative bid, a tie goes to the player without initiative. Every bid card is banished."],
+ ["Seekers come back","A defeated Seeker returns to the Seeker zone and can be deployed again."],
+ ["Reinforcements","Only units that were on the battlefield from an earlier round can call reinforcements, and they must be unengaged."]
+];
+function renderReminders(){
+  const m=MODES[S.mode];
+  remPage(`This is a ${m.name} game to ${m.win} mastery.`,[
+    ["setup","Setting up",`<ol class="steps">${setupSteps().map(([t,d])=>`<li><b>${t}.</b> ${d}</li>`).join("")}</ol>`,'<a class="btn sm" href="#setup" style="align-self:flex-start">Open setup</a>'],
+    ["round","A round",`<div class="flow">
+        <div><b>1 · Refresh</b><span>Skipped in round 1. Refresh units, draw 2, gain 2 × round echo (10 max), then the initiative bid.</span></div>
+        <div><b>2 · Deploy</b><span>Initiative picks who deploys first. Your 6" corner, or within 1" of an unengaged unit from an earlier round.</span></div>
+        <div><b>3 · Action</b><span>Alternate activating one unit each. Each unit gets 2 AP.</span></div>
+        <div><b>4 · End</b><span>Alternate claiming relics for 10 mastery each, then check for ${m.win} mastery.</span></div>
+      </div>
+      <div class="tbl"><table><tr><th>Action</th><th>AP</th><th>Notes</th></tr>
+        <tr><td>Move</td><td class="num">1</td><td>Up to Speed. Provokes retaliation if engaged.</td></tr>
+        <tr><td>Attack</td><td class="num">1</td><td>d20 + Accuracy against Defense: hit or graze.</td></tr>
+        <tr><td>Charge</td><td class="num">2</td><td>Up to 2× Speed along line of sight, then melee.</td></tr>
+        <tr><td>Shift</td><td class="num">2</td><td>Straight line up to Speed. No retaliation.</td></tr></table></div>`],
+    ["forget","Easy to forget",forgetGrid(FORGET)],
+    ["mode","This game",`<div class="spec">${[[m.size,"Battlefield"],[m.win,"Mastery to win"],[m.husks,"Husks"],[m.huskGap+'"',"Between husks"],[m.relics,"Relics shown"]].map(([v,l])=>`<div><b>${v}</b><span>${l}</span></div>`).join("")}</div>
+      <p class="muted" style="font-size:.92rem">${m.notes}</p>`]
+  ]);
+}
+function renderGap(v){
+  const d=gapDays();
+  $("#gapBox").innerHTML=d!=null&&d>=14&&v!=="reminders"?`<div class="gapnote"><span>Your last game was ${gapText(d)}. Need a refresher?</span><a class="btn sm primary" href="#reminders">Open reminders</a></div>`:"";
+}
+
+/* ---------- SCREEN LAYOUT (per device) ---------- */
+const LKEY=KEY+"-layout",MQ=matchMedia("(min-width: 900px) and (orientation: landscape)");
+let LAY={mode:"auto",awake:false},WAKE=null;
+try{Object.assign(LAY,JSON.parse(localStorage.getItem(LKEY))||{})}catch(e){}
+function saveLay(){try{localStorage.setItem(LKEY,JSON.stringify(LAY))}catch(e){}}
+function applyLayout(){const t=LAY.mode==="tablet"||(LAY.mode==="auto"&&MQ.matches);document.documentElement.classList.toggle("tab",t);return t}
+async function keepAwake(){
+  if(!LAY.awake||document.visibilityState!=="visible"||WAKE||!("wakeLock" in navigator))return;
+  try{WAKE=await navigator.wakeLock.request("screen");WAKE.addEventListener("release",()=>{WAKE=null})}catch(e){WAKE=null}
+}
+document.addEventListener("visibilitychange",keepAwake);
+const onMQ=()=>{applyLayout();renderLayoutBox()};
+if(MQ.addEventListener)MQ.addEventListener("change",onMQ);else MQ.addListener(onMQ);
+function renderLayoutBox(){
+  const box=document.getElementById("layoutBox");if(!box)return;const t=document.documentElement.classList.contains("tab");
+  box.innerHTML=`<div class="layoutbar"><span class="eyebrow">Screen layout</span>
+    <div class="lseg" role="group" aria-label="Screen layout">${[["auto","Auto"],["phone","Phone"],["tablet","Tablet"]].map(([k,l])=>`<button type="button" data-lay="${k}" aria-pressed="${LAY.mode===k}">${l}</button>`).join("")}</div>
+    <span class="lnote">${LAY.mode==="auto"?`Auto uses the tablet layout on wide landscape screens. Now: ${t?"tablet":"phone"}.`:t?"Side rail and two columns.":"One column, tabs along the bottom."}</span>
+    <label class="lchk"><input type="checkbox" id="lAwake" ${LAY.awake?"checked":""}> Keep the screen awake${"wakeLock" in navigator?"":" (not supported here)"}</label></div>`;
+  box.querySelectorAll("[data-lay]").forEach(b=>b.onclick=()=>{LAY.mode=b.dataset.lay;saveLay();applyLayout();renderLayoutBox()});
+  document.getElementById("lAwake").onchange=async e=>{LAY.awake=e.target.checked;saveLay();if(LAY.awake)await keepAwake();else if(WAKE){WAKE.release().catch(()=>{});WAKE=null}renderLayoutBox()};
+}
+applyLayout();keepAwake();
+
+/* ---------- ROUTER ---------- */
+function view(){const h=location.hash.slice(1);if(["setup","play","combat","reminders","rules"].includes(h))return h;
+  const d=gapDays();return d!=null&&d>=14?"reminders":S.started?"play":"setup"}
+function render(){
+  const v=view(),m=MODES[S.mode];
+  document.querySelectorAll("section.view").forEach(s=>s.hidden=s.id!=="v-"+v);
+  document.querySelectorAll("nav.tabs a").forEach(a=>{if(a.dataset.v===v)a.setAttribute("aria-current","page");else a.removeAttribute("aria-current")});
+  $("#modeLine").textContent=`${m.name} · ${m.win} mastery`;
+  if(v==="play")renderPlay();if(v==="setup")renderSetup();if(v==="reminders")renderReminders();renderGap(v);
+}
+window.addEventListener("hashchange",()=>{render();window.scrollTo(0,0)});
+renderRules();resolve();render();
+</script>
+<script>if("serviceWorker" in navigator&&location.protocol!=="file:")addEventListener("load",()=>navigator.serviceWorker.register("../sw.js",{scope:"../"}).catch(()=>{}));</script>
+</body>
+</html>

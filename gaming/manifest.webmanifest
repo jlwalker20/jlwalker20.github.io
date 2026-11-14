@@ -1,0 +1,16 @@
+{
+  "name": "Tabletop Companions",
+  "short_name": "Games",
+  "description": "Companion apps for Malediction, Oak & Iron and Grimdark Future: Firefight.",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#111314",
+  "theme_color": "#1a1d1f",
+  "icons": [
+    { "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png" },
+    { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" },
+    { "src": "icons/icon.svg", "sizes": "any", "type": "image/svg+xml" }
+  ]
+}

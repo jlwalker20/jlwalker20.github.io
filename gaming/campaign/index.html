@@ -1,0 +1,1250 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#1a1d1f">
+<link rel="manifest" href="../manifest.webmanifest">
+<link rel="icon" href="../icons/icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="../icons/icon-192.png">
+<title>Firefight Campaign</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Oxanium:wght@500;700&family=Barlow:ital,wght@0,400;0,500;0,700;1,400&family=JetBrains+Mono:wght@500;700&display=swap">
+<style>
+/* Layout: a campaign ledger. Standings and history on the Campaign tab, army sheets on Armies, a staged mission flow on Mission */
+:root{
+  --bg:#e9eae7; --surface:#f7f7f5; --sunk:#dcdeda; --fg:#1b1e1f; --muted:#5d6462; --line:#c7cbc6;
+  --accent:#b86b00; --accent-ink:#ffffff; --a:#2f5f8f; --b:#9a3b2c; --danger:#b3261e; --good:#2b7a47;
+  --display:"Oxanium","Eurostile","Bank Gothic",system-ui,sans-serif;
+  --body:"Barlow","Segoe UI",system-ui,sans-serif;
+  --mono:"JetBrains Mono",ui-monospace,Menlo,monospace;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#111314; --surface:#1a1d1f; --sunk:#0b0d0e; --fg:#e6e8e6; --muted:#9aa29f; --line:#2c3134;
+  --accent:#f2a93b; --accent-ink:#1a1206; --a:#7fb0e0; --b:#e58a78; --danger:#f2766c; --good:#6fd29a; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#111314; --surface:#1a1d1f; --sunk:#0b0d0e; --fg:#e6e8e6; --muted:#9aa29f; --line:#2c3134;
+  --accent:#f2a93b; --accent-ink:#1a1206; --a:#7fb0e0; --b:#e58a78; --danger:#f2766c; --good:#6fd29a; color-scheme:dark}
+*{box-sizing:border-box}
+/* layout: phone by default; html.tab = tablet landscape */
+[hidden]{display:none!important}
+.pcols,.pcol{display:contents}
+html.tab body{padding-left:calc(96px + max(20px,env(safe-area-inset-left,0px)));padding-right:max(24px,env(safe-area-inset-right,0px));padding-bottom:32px}
+html.tab main{max-width:1440px}
+html.tab nav.tabs{top:0;bottom:0;right:auto;width:96px;grid-template-columns:1fr;grid-auto-rows:min-content;align-content:start;gap:4px;border-top:0;border-right:1px solid var(--line);
+  padding:calc(16px + env(safe-area-inset-top,0px)) 8px calc(16px + env(safe-area-inset-bottom,0px)) calc(8px + env(safe-area-inset-left,0px))}
+html.tab nav.tabs a{font-size:.68rem;padding:10px 0;gap:4px}
+html.tab nav.tabs a svg{width:26px;height:26px}
+html.tab .pcols{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:24px;align-items:start}
+html.tab .pcol{display:flex;flex-direction:column;gap:22px;min-width:0}
+html.tab .log{max-height:340px}
+html.tab #v-combat{max-width:980px}
+html.tab #rules{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px 16px;align-items:start}
+html.tab #rules .group{display:contents}
+html.tab #rules .group>.row,html.tab #rules .group>p{grid-column:1/-1}
+html.tab #v-reminders{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px;align-items:start}
+html.tab #v-reminders>.stack:first-child{grid-column:1/-1}
+html.tab .deck{grid-auto-columns:320px}
+html.tab .sheet{align-items:center}
+html.tab .sheet>.panel{border-radius:12px;max-width:680px;max-height:86vh;padding-bottom:18px}
+.layoutbar{display:flex;flex-wrap:wrap;align-items:center;gap:10px 16px;padding:10px 12px;border:1px solid var(--line);border-radius:8px;background:var(--surface)}
+.lseg{display:grid;grid-template-columns:repeat(3,1fr);flex:1 1 240px;max-width:400px;border:1px solid var(--line);border-radius:6px;overflow:hidden}
+.lseg button{border:0;background:var(--surface);color:var(--fg);padding:8px 6px;min-height:40px;font-weight:700;font:inherit;font-weight:700;cursor:pointer}
+.lseg button[aria-pressed="true"]{background:var(--fg);color:var(--bg)}
+.lchk{display:flex;gap:8px;align-items:center;font-size:.92rem}
+.lchk input{width:20px;height:20px;accent-color:var(--accent)}
+.lnote{font-size:.86rem;color:var(--muted)}
+
+[hidden]{display:none!important}
+.stack>.field,.sheet>.panel>.field{flex:none}
+body{background:var(--bg);color:var(--fg);font:16.5px/1.45 var(--body);
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));
+  padding-block:0 calc(84px + env(safe-area-inset-bottom,0px))}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:10;background:var(--bg)}
+main{max-width:720px;margin:0 auto}
+h1,h2,h3{font-family:var(--display);font-weight:700;text-wrap:balance;margin:0;letter-spacing:.01em}
+h1{font-size:1.85rem;line-height:1.05;text-transform:uppercase;letter-spacing:.04em}
+h2{font-size:1.25rem}
+h3{font-size:1.02rem}
+p{margin:0}
+.muted{color:var(--muted)}
+.eyebrow{font-size:.72rem;text-transform:uppercase;letter-spacing:.14em;color:var(--muted);font-weight:700}
+button,select,input{font:inherit;color:inherit}
+button{cursor:pointer}
+button:disabled{opacity:.45;cursor:default}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.num{font-family:var(--mono);font-variant-numeric:tabular-nums}
+.stack{display:flex;flex-direction:column;gap:14px}
+.row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+.between{justify-content:space-between}
+section.view{display:flex;flex-direction:column;gap:22px;padding-top:14px}
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:6px;padding:16px}
+.btn{border:1px solid var(--line);background:var(--surface);border-radius:4px;padding:9px 14px;min-height:42px}
+.btn.primary{background:var(--accent);color:var(--accent-ink);border-color:var(--accent);font-weight:700}
+.btn.ghost{background:transparent}
+.btn.sm{min-height:34px;padding:5px 10px;font-size:.9rem}
+.chip{display:inline-flex;align-items:center;gap:5px;border:1px solid var(--line);border-radius:3px;padding:1px 7px;font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--muted)}
+.chip.warn{border-color:var(--accent);color:var(--accent)}
+.chip.bad{border-color:var(--danger);color:var(--danger)}
+.chip.dead{background:var(--danger);border-color:var(--danger);color:var(--surface)}
+.chip.ok{border-color:var(--good);color:var(--good)}
+.ta{color:var(--a)} .tb{color:var(--b)}
+
+.masthead{display:flex;justify-content:space-between;align-items:flex-end;gap:4px 12px;padding-top:18px;flex-wrap:wrap}
+.masthead>div{min-width:0}
+.masthead h1 span{color:var(--accent)}
+.masthead p{font-size:.9rem;text-align:right}
+
+/* round bar */
+.roundbar{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;background:var(--bg);padding-block:10px;border-bottom:2px solid var(--fg)}
+.rounds{display:grid;grid-template-columns:repeat(4,1fr);gap:4px;margin-top:8px}
+.rounds div{height:8px;background:var(--sunk);clip-path:polygon(0 0,calc(100% - 6px) 0,100% 100%,0 100%)}
+.rounds div.past{background:var(--muted)}
+.rounds div.now{background:var(--accent)}
+.turnflag{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:12px 14px;border-radius:6px;border:2px solid var(--line);background:var(--surface)}
+.turnflag.pa{border-color:var(--a)} .turnflag.pb{border-color:var(--b)}
+.turnflag b{font-family:var(--display);font-size:1.2rem}
+
+/* score */
+.board{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.army{background:var(--surface);border:1px solid var(--line);border-top:4px solid var(--a);border-radius:6px;padding:12px;display:flex;flex-direction:column;gap:8px;min-width:0}
+.army.b{border-top-color:var(--b)}
+.army h3{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.big{font-family:var(--mono);font-size:2.2rem;font-weight:700;line-height:1}
+.bar{display:flex;gap:3px}
+.bar i{flex:1;height:6px;border-radius:1px;background:var(--sunk)}
+.bar i.done{background:var(--muted)}
+.obj{display:flex;flex-wrap:wrap;gap:8px}
+.marker{width:52px;height:52px;border-radius:50%;border:2px dashed var(--line);background:var(--surface);display:grid;place-items:center;font-family:var(--mono);font-weight:700;padding:0}
+.marker.oa{border:3px solid var(--a);color:var(--a);background:color-mix(in srgb,var(--a) 12%,var(--surface))}
+.marker.ob{border:3px solid var(--b);color:var(--b);background:color-mix(in srgb,var(--b) 12%,var(--surface))}
+
+/* units */
+.seg{display:grid;grid-template-columns:1fr 1fr;border:1px solid var(--line);border-radius:4px;overflow:hidden}
+.seg button{border:0;background:var(--surface);padding:8px 6px;min-height:40px;font-weight:700;font-size:.92rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.seg button[aria-pressed="true"]{background:var(--fg);color:var(--bg)}
+.seg.three{grid-template-columns:repeat(3,1fr)}
+.roster{display:flex;flex-direction:column;gap:8px}
+.unit{background:var(--surface);border:1px solid var(--line);border-left:4px solid var(--a);border-radius:6px;padding:12px;display:flex;flex-direction:column;gap:10px}
+.unit.b{border-left-color:var(--b)}
+.unit.spent{opacity:.6}
+.unit.gone{opacity:.45}
+.uhead{display:flex;justify-content:space-between;gap:8px;align-items:flex-start}
+.uhead h3{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.qd{font-family:var(--mono);font-size:.82rem;color:var(--muted)}
+.qd b{color:var(--fg)}
+.hp{display:grid;grid-template-columns:auto 1fr auto;gap:10px;align-items:center}
+.hpbar{height:10px;background:var(--sunk);border-radius:2px;overflow:hidden;position:relative}
+.hpbar i{position:absolute;inset:0 auto 0 0;background:var(--good)}
+.hpbar.half i{background:var(--accent)}
+.hpbar.zero i{background:var(--danger)}
+.hpbar::after{content:"";position:absolute;left:50%;top:0;bottom:0;width:1px;background:var(--fg);opacity:.35}
+.stepper{display:flex;gap:4px;align-items:center}
+.stepper button{width:32px;height:32px;border-radius:4px;border:1px solid var(--line);background:var(--bg);font-weight:700;padding:0}
+.stepper .num{min-width:3.4em;text-align:center;font-weight:700;font-size:.9rem}
+.toggles{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+.tg{border:1px solid var(--line);background:var(--bg);border-radius:4px;padding:4px 9px;min-height:32px;font-size:.84rem}
+.tg[aria-pressed="true"]{background:var(--fg);color:var(--bg);border-color:var(--fg)}
+.act{margin-left:auto}
+.kws{display:flex;flex-wrap:wrap;gap:4px}
+.kw{border:1px solid var(--line);background:var(--bg);border-radius:3px;padding:2px 7px;font-size:.76rem;font-weight:700;min-height:26px;color:var(--fg)}
+.kw:hover{border-color:var(--accent)}
+.group{display:flex;flex-direction:column;gap:8px}
+.group+.group{margin-top:10px}
+details.rule.dim{opacity:.55}
+details.rule summary>span:first-child{flex:1;min-width:0}
+details.rule .cnt{font-family:var(--mono);font-size:.78rem;font-weight:700;display:flex;gap:6px}
+.used{font-size:.92rem}
+details.ref{font-size:.9rem;border-top:1px dashed var(--line);padding-top:6px}
+details.ref summary{cursor:pointer;color:var(--accent);font-weight:700;font-size:.82rem;text-transform:uppercase;letter-spacing:.06em}
+details.ref p{margin-top:4px}
+
+/* cards */
+.callout{border-left:3px solid var(--accent);padding:8px 12px;background:var(--sunk);border-radius:0 4px 4px 0;font-size:.94rem}
+.winner{border:2px solid var(--accent);text-align:center}
+.log{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;max-height:220px;overflow:auto;font-size:.88rem}
+.log li{display:flex;gap:10px;padding:5px 0;border-bottom:1px solid var(--line)}
+.log .r{font-family:var(--mono);color:var(--muted);flex:none;width:2.4em}
+
+/* setup */
+.modes{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:8px}
+.mode{border:1px solid var(--line);background:var(--surface);border-radius:6px;padding:10px 12px;text-align:left;display:flex;flex-direction:column;gap:2px}
+.mode b{font-family:var(--display);font-size:1.05rem}
+.mode small{color:var(--muted);font-size:.82rem}
+.mode[aria-pressed="true"]{border-color:var(--accent);box-shadow:0 0 0 1px var(--accent) inset}
+.spec{display:grid;grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:1px;background:var(--line);border:1px solid var(--line);border-radius:6px;overflow:hidden}
+.spec div{background:var(--surface);padding:10px 12px;display:flex;flex-direction:column}
+.spec b{font-family:var(--mono);font-size:1.05rem}
+.spec span{font-size:.72rem;color:var(--muted);text-transform:uppercase;letter-spacing:.08em}
+.field{display:flex;flex-direction:column;gap:4px;min-width:0;flex:1 1 110px}
+.field label{font-size:.74rem;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;font-weight:700}
+.field input,.field select{border:1px solid var(--line);background:var(--bg);border-radius:4px;padding:8px 10px;min-height:42px;width:100%}
+.ulist{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:6px}
+.ulist li{display:flex;justify-content:space-between;align-items:center;gap:8px;border:1px solid var(--line);border-radius:4px;padding:6px 10px;background:var(--bg)}
+.ulist li span{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.checklist{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:8px}
+.checklist li{display:flex;gap:12px;align-items:flex-start;background:var(--surface);border:1px solid var(--line);border-radius:6px;padding:12px}
+.checklist input{width:22px;height:22px;flex:none;margin-top:2px;accent-color:var(--accent)}
+.checklist .n{font-family:var(--mono);color:var(--accent);font-weight:700}
+.checklist li.done{opacity:.6}
+.checklist li.done strong{text-decoration:line-through}
+.checklist strong{display:block}
+.checklist p{font-size:.92rem;color:var(--muted)}
+.check{display:flex;gap:8px;align-items:center;font-size:.93rem;min-height:30px}
+.check input{width:20px;height:20px;accent-color:var(--accent);flex:none}
+
+/* combat */
+.grid2{display:grid;grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:10px}
+.checks{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:2px 12px}
+.need{display:flex;justify-content:space-between;align-items:baseline;gap:10px;border-top:1px solid var(--line);padding-top:10px}
+.need b{font-family:var(--mono);font-size:1.6rem}
+.tray{display:flex;flex-wrap:wrap;gap:6px;padding:10px;background:var(--sunk);border-radius:6px;min-height:52px}
+.d6{width:38px;height:38px;border-radius:6px;border:2px solid var(--line);background:var(--surface);display:grid;place-items:center;font-family:var(--mono);font-weight:700;font-size:1.05rem;color:var(--muted)}
+.d6.ok{border-color:var(--accent);color:var(--fg);background:color-mix(in srgb,var(--accent) 16%,var(--surface))}
+.d6.save{border-color:var(--good);color:var(--good)}
+.d6.fail{border-color:var(--danger);color:var(--danger)}
+.d6.pop{animation:pop .3s ease-out}
+@keyframes pop{from{transform:scale(.4) rotate(-60deg);opacity:.2}to{transform:none;opacity:1}}
+.facts{display:grid;grid-template-columns:repeat(3,1fr);gap:1px;background:var(--line);border:1px solid var(--line);border-radius:6px;overflow:hidden}
+.facts div{background:var(--surface);padding:8px 10px;display:flex;flex-direction:column}
+.facts b{font-family:var(--mono);font-size:1.35rem}
+.facts span{font-size:.7rem;text-transform:uppercase;letter-spacing:.08em;color:var(--muted)}
+
+/* rules */
+.search{border:1px solid var(--line);background:var(--surface);border-radius:6px;padding:10px 14px;min-height:46px;width:100%}
+details.rule{background:var(--surface);border:1px solid var(--line);border-radius:6px}
+details.rule summary{padding:12px 14px;cursor:pointer;font-family:var(--display);font-weight:700;list-style:none;display:flex;justify-content:space-between;gap:10px}
+details.rule summary::-webkit-details-marker{display:none}
+details.rule summary::after{content:"+";font-family:var(--mono);color:var(--accent)}
+details.rule[open] summary::after{content:"–"}
+details.rule .body{padding:0 14px 14px;display:flex;flex-direction:column;gap:8px;font-size:.96rem}
+.body ul{margin:0;padding-left:1.2em;display:flex;flex-direction:column;gap:4px}
+.tbl{overflow-x:auto}
+table{border-collapse:collapse;width:100%;font-size:.93rem}
+th,td{text-align:left;padding:6px 8px;border-bottom:1px solid var(--line);vertical-align:top}
+th{font-size:.72rem;text-transform:uppercase;letter-spacing:.08em;color:var(--muted)}
+mark{background:color-mix(in srgb,var(--accent) 35%,transparent);color:inherit;border-radius:2px}
+
+nav.tabs{position:fixed;left:0;right:0;bottom:0;z-index:6;background:var(--surface);border-top:1px solid var(--line);
+  display:grid;grid-template-columns:repeat(4,1fr);
+  padding:6px max(8px,env(safe-area-inset-right,0px)) calc(6px + env(safe-area-inset-bottom,0px)) max(8px,env(safe-area-inset-left,0px))}
+nav.tabs a{display:flex;flex-direction:column;align-items:center;gap:2px;text-decoration:none;color:var(--muted);font-size:.66rem;font-weight:700;letter-spacing:.04em;text-transform:uppercase;padding:6px 0;border-radius:4px;min-width:0;overflow:hidden}
+.gapnote{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;border:2px solid var(--accent);border-radius:6px;padding:10px 12px;background:color-mix(in srgb,var(--accent) 10%,var(--surface))}
+.flow{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:8px}
+.flow div{border:1px solid var(--line);border-radius:6px;padding:10px 12px;background:var(--bg);display:flex;flex-direction:column;gap:2px}
+.flow b{font-family:var(--display)}
+.flow span{font-size:.9rem;color:var(--muted)}
+.forget{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:8px}
+.forget div{background:var(--surface);border:1px solid var(--line);border-radius:6px;padding:10px 12px;display:flex;flex-direction:column;gap:3px}
+.forget b{font-family:var(--display)}
+.forget span{font-size:.92rem;color:var(--muted)}
+.mu{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+@media (max-width:560px){.mu{grid-template-columns:1fr}}
+.mu>div{display:flex;flex-direction:column;gap:6px;min-width:0}
+.kwrow{display:grid;grid-template-columns:6.8em 1fr;gap:8px;text-align:left;border:1px solid var(--line);background:var(--surface);border-radius:6px;padding:8px 10px;min-height:0}
+.kwrow b{font-family:var(--display)}
+.kwrow span{font-size:.88rem;color:var(--muted)}
+textarea.notes{width:100%;min-height:120px;border:1px solid var(--line);background:var(--surface);border-radius:6px;padding:10px 12px;font:inherit;line-height:1.45;resize:vertical}
+.steps{margin:0;padding-left:1.3em;display:flex;flex-direction:column;gap:5px}
+details.rem{background:var(--surface);border:1px solid var(--line);border-radius:6px}
+details.rem>summary{list-style:none;cursor:pointer;display:flex;justify-content:space-between;align-items:center;gap:10px;padding:12px 16px;min-height:48px}
+details.rem>summary::-webkit-details-marker{display:none}
+details.rem .chev{width:10px;height:10px;border-right:2px solid var(--accent);border-bottom:2px solid var(--accent);transform:rotate(45deg);margin-top:-4px;transition:transform .15s}
+details.rem:not([open]) .chev{transform:rotate(-45deg);margin-top:0}
+details.rem:not([open]){background:var(--sunk)}
+details.rem:not([open]) h3{color:var(--muted)}
+.rembody{padding:0 16px 16px;display:flex;flex-direction:column;gap:12px}
+.steps li::marker{color:var(--accent);font-family:var(--mono)}
+nav.tabs a svg{width:22px;height:22px}
+nav.tabs a[aria-current="page"]{color:var(--accent);background:var(--sunk)}
+.sheet{position:fixed;inset:0;z-index:20;background:color-mix(in srgb,#000 50%,transparent);display:flex;align-items:flex-end;justify-content:center}
+.sheet>.panel{width:100%;max-width:520px;max-height:90vh;overflow:auto;border-radius:10px 10px 0 0;padding-bottom:calc(18px + env(safe-area-inset-bottom,0px));display:flex;flex-direction:column;gap:12px}
+.actions{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.actions button{display:flex;flex-direction:column;align-items:flex-start;gap:2px;text-align:left;padding:10px 12px;min-height:64px}
+.actions b{font-family:var(--display);font-size:1.05rem}
+.actions small{color:var(--muted);font-size:.84rem}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+@media (max-width:380px){.big{font-size:1.8rem}.actions{grid-template-columns:1fr}}
+
+a.btn{text-decoration:none;color:inherit;display:inline-flex;align-items:center;justify-content:center;align-self:flex-start}a.btn.primary{color:var(--accent-ink)}
+.btn.danger{border-color:var(--danger);color:var(--danger);background:transparent}
+.btn.danger:not(.ghost){background:var(--danger);color:var(--surface)}
+body.lobby nav.tabs{display:none}body.lobby{padding-bottom:40px}a.lbrow{text-decoration:none;color:inherit;grid-template-columns:minmax(0,1fr) auto}
+#toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(92px + env(safe-area-inset-bottom,0px));z-index:30;background:var(--fg);color:var(--bg);padding:10px 16px;border-radius:6px;font-size:.92rem;max-width:min(520px,90vw);box-shadow:0 4px 18px rgba(0,0,0,.25)}
+.status{display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end}
+/* standings */
+.lb{display:flex;flex-direction:column;gap:6px}
+.lbrow{display:grid;grid-template-columns:2em minmax(0,1fr) repeat(3,minmax(54px,auto));gap:10px;align-items:center;text-align:left;border:1px solid var(--line);background:var(--surface);border-radius:6px;padding:10px 12px;min-height:56px}
+.lbrow:first-child{border-color:var(--accent);box-shadow:0 0 0 1px var(--accent) inset}
+.lbrow .rk{font-size:1.3rem;font-weight:700;color:var(--accent)}
+.lbn{display:flex;flex-direction:column;min-width:0}.lbn b{font-family:var(--display);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.lbn small,.lbv small{color:var(--muted);font-size:.72rem}
+.lbv{display:flex;flex-direction:column;align-items:flex-end}.lbv b{font-size:1.1rem}
+@media (max-width:440px){.lbrow{grid-template-columns:1.6em minmax(0,1fr) repeat(2,auto)}.lbrow .lbv:last-child{display:none}}
+.hist{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:6px}
+.hist li{background:var(--surface);border:1px solid var(--line);border-radius:6px;padding:10px 12px;display:flex;flex-direction:column;gap:4px}
+.hist li .btn{align-self:flex-start}
+/* army sheet */
+.ahead{border-top:4px solid var(--a)}.ahead.ai{border-top-color:var(--b)}
+.build{border:2px dashed var(--accent)}
+.xp{display:grid;grid-template-columns:auto 1fr auto;gap:10px;align-items:center}
+.xpbar{display:grid;grid-template-columns:repeat(6,1fr);gap:3px}
+.xpbar i{height:10px;background:var(--sunk);border-radius:2px}.xpbar i.done{background:var(--accent)}
+.kw.tr{border-color:var(--accent)}.kw.sk{border-color:var(--a);color:var(--a)}.kw.ta{border-color:var(--good);color:var(--good)}.kw.in{border-color:var(--danger);color:var(--danger)}.kw.up{border-style:dashed}
+.lvl{border:2px solid var(--accent);border-radius:6px;padding:10px 12px;display:flex;flex-direction:column;gap:8px;background:color-mix(in srgb,var(--accent) 8%,var(--surface))}
+.lvl .btn{align-self:flex-start}
+.lvr{display:grid;grid-template-columns:38px 1fr;gap:10px;align-items:center}
+.lvr select,.cas select{border:1px solid var(--line);background:var(--bg);border-radius:4px;padding:6px 8px;min-height:38px;margin-top:4px;max-width:100%}
+/* mission */
+.stagebar{display:grid;grid-template-columns:repeat(3,1fr);gap:4px}
+.stagebar span{padding:8px 10px;background:var(--sunk);font-size:.78rem;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);clip-path:polygon(0 0,calc(100% - 8px) 0,100% 50%,calc(100% - 8px) 100%,0 100%)}
+.stagebar span.now{background:var(--accent);color:var(--accent-ink)}.stagebar span.past{background:var(--muted);color:var(--surface)}
+.aib{border-left:4px solid var(--b)}
+.objrow{display:flex;justify-content:space-between;align-items:center;gap:10px;border:1px solid var(--line);border-radius:6px;padding:10px 12px;background:var(--surface)}
+.objrow p{font-size:.9rem;display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.objrow .d6{width:28px;height:28px;font-size:.9rem}
+.pips{display:flex;gap:4px;margin-top:4px;flex-wrap:wrap}.pips i{width:14px;height:14px;border-radius:50%;background:var(--accent)}.pips i.used{background:transparent;border:2px solid var(--line)}
+.ev{display:grid;grid-template-columns:38px 1fr;gap:12px;align-items:start}
+.ev.on h3{font-size:1.3rem;color:var(--accent)}
+.ures{display:flex;flex-direction:column;gap:8px}
+.ur{border:1px solid var(--line);border-radius:6px;padding:10px;display:flex;flex-direction:column;gap:8px;background:var(--bg)}
+.ur .stepper .num{min-width:1.8em}.ur .stepper button{width:30px;height:30px}
+.mini{display:flex;flex-direction:column;gap:2px}.mini>span{font-size:.7rem;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);font-weight:700}
+.cas{display:grid;grid-template-columns:38px 1fr auto;gap:10px;align-items:start;border-top:1px dashed var(--line);padding-top:8px}
+.cas p{font-size:.9rem}
+.d6.sm{display:inline-grid;width:24px;height:24px;font-size:.8rem;vertical-align:middle}
+html.tab #v-rules .rules{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px 16px;align-items:start}
+</style>
+<style>.hublink{display:inline-flex;align-items:center;gap:4px;margin-top:max(12px,env(safe-area-inset-top,0px));font-size:.74rem;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);text-decoration:none;min-height:32px}.hublink:hover{color:var(--fg)}</style>
+</head>
+<body>
+<main>
+  <a class="hublink" href="../">&lsaquo; All games</a>
+  <header class="masthead">
+    <div>
+      <div class="eyebrow">Grimdark Future</div>
+      <h1>Firefight<span>/</span>Campaign</h1>
+    </div>
+    <div class="stack" style="gap:4px;align-items:flex-end"><p class="muted" id="modeLine"></p><div class="status" id="status"></div></div>
+  </header>
+  <section class="view" id="v-camp"><div id="layoutBox"></div><div id="campBody" class="stack"></div></section>
+  <section class="view" id="v-armies" hidden><div id="armiesBody" class="stack"></div></section>
+  <section class="view" id="v-match" hidden><div id="matchBody" class="stack"></div></section>
+  <section class="view" id="v-rules" hidden><h2>Campaign rules</h2><div id="rulesBody" class="stack rules"></div></section>
+</main>
+<nav class="tabs" aria-label="Sections">
+  <a href="#camp" data-v="camp"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 21V4M4 4h12l-2 4 2 4H4"/></svg>Campaign</a>
+  <a href="#armies" data-v="armies"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 3l8 3v6c0 5-3.5 8-8 9-4.5-1-8-4-8-9V6z"/></svg>Armies</a>
+  <a href="#match" data-v="match"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="3" width="18" height="18" rx="3"/><circle cx="8" cy="8" r="1.3" fill="currentColor"/><circle cx="16" cy="16" r="1.3" fill="currentColor"/><circle cx="12" cy="12" r="1.3" fill="currentColor"/></svg>Mission</a>
+  <a href="#rules" data-v="rules"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 4h7a3 3 0 013 3v13a2 2 0 00-2-2H4zM20 4h-5a3 3 0 00-3 3"/><path d="M20 4v14h-6"/></svg>Rules</a>
+</nav>
+<div id="sheet"></div>
+<div id="toast" hidden role="status"></div>
+<script src="../config.js"></script>
+<script src="../vendor/supabase.js"></script>
+<script>
+/* ---------- CAMPAIGN TABLES (OPR Campaign Rules v3.6.0) ---------- */
+const CTYPES={
+  game:{name:"Game-limited",sub:"Play D3+4 missions; most VP wins",len:"missions"},
+  points:{name:"Point-limited",sub:"First to D3+4 VP after a match wins",len:"VP"},
+  time:{name:"Time-limited",sub:"Ends after D3+4 weeks; most VP wins",len:"weeks"},
+  endless:{name:"Endless",sub:"Never ends; a running leaderboard",len:null}
+};
+const SPECIAL=[
+  ["Hexer","Successfully cast four or more spells by the end of the game."],
+  ["Annihilator","Be the first player to destroy an enemy unit."],
+  ["Headhunter","Kill one or more enemy Heroes."],
+  ["Dominator","Have one unit fully within each table quarter at the end of the game."],
+  ["Intimidator","Have most of your units inside the enemy deployment zone at the end of the game."],
+  ["Strategist","Control most objectives at the end of the game."]
+];
+const TRAITS=[
+  ["Agile",'Moves +1" on Advance and +2" on Rush and Charge.'],
+  ["Headstrong","+1 to rolls when taking Morale Tests."],
+  ["Specialist","+1 to hit rolls in melee or when shooting (pick one). Can be gained twice."],
+  ["Resilient","+1 to Defense rolls when blocking hits."],
+  ["Elite","May re-roll one roll of any kind once per game."],
+  ["Fast Learner","Pick any other trait from the list."]
+];
+const INJURIES=[
+  ["Dead","Removed from the army sheet, losing all its points."],
+  ["Weakened","−1 to Defense rolls when blocking hits."],
+  ["Maimed","−1 to hit rolls when fighting in melee."],
+  ["Blinded","−1 to hit rolls when using move actions and shooting."],
+  ["Crippled",'Moves −1" on Advance and −2" on Rush and Charge.'],
+  ["Lucky Break","Pick any other injury from the list."]
+];
+const TALENTS=[
+  ["Natural Talent","Earns +1 XP. Can be gained more than once."],
+  ["Motivated","+1 to rolls when taking Morale Tests."],
+  ["Crazed","+1 to hit rolls in melee when charging."],
+  ["Vigilant","+1 to hit rolls when shooting."],
+  ["Toughened","Gets Tough(+3)."],
+  ["Learned Lesson","Pick any other talent from the list."]
+];
+const SETPAIRS=[["Pathfinder","Captain"],["Warrior","Hunter"],["Warden","Overseer"]];
+const SKILLS={
+  Pathfinder:[["Prowler",'Moves +1" on Advance actions.'],["Runner",'Moves +2" on Rush and Charge actions.'],["Explorer","Once per game, ignores Difficult and Dangerous terrain."]],
+  Captain:[["Motivator","+1 to Morale Test rolls triggered by shooting."],["Leader","+1 to Morale Test rolls in melee."],["Idol","Once per game, may ignore becoming Shaken."]],
+  Warrior:[["Duellist","AP(+1) in melee when charged."],["Fanatic","AP(+1) in melee when charging."],["Berserker","Once per game, may ignore becoming Fatigued."]],
+  Hunter:[["Suppressor","AP(+1) when using Hold and shooting."],["Destroyer","AP(+1) when using move actions and shooting."],["Sharpshooter",'Once per game, +12" range when shooting.']],
+  Warden:[["Herbalist","+1 to Defense rolls in melee."],["Chemist","+1 to Defense rolls when shot."],["Healer","Once per game, when activated, may restore D3 wounds."]],
+  Overseer:[["Tactician","Once per game, may re-roll one roll of any kind in melee."],["Strategist","Once per game, may re-roll one roll of any kind when shooting."],["Mastermind","Once per game, when targeted, may force the enemy to re-roll one roll of any kind."]]
+};
+const EVENTS={
+ 11:["Falling Debris","One random unit takes D3 wounds."],
+ 12:["Explosive Trap","One random unit takes 2D3 hits."],
+ 13:["Venomous Moss",'The area within 3" of one random objective counts as Dangerous terrain until the end of the round.'],
+ 14:["Razor Vines",'The area within 3" of one random objective counts as Difficult terrain until the end of the round.'],
+ 15:["Lightning Strike","One random unit must take a Dangerous Terrain Test."],
+ 16:["Stuck in the Mud","One random unit counts as being in Difficult terrain until the end of the round."],
+ 21:["Swarm Attack","One random non-Shaken unit becomes Shaken."],
+ 22:["Debilitating Static","One random unit gets −1 to Defense rolls until the end of the round."],
+ 23:["Dazing Spores","One random unit gets −1 to hit rolls when shooting until the end of the round."],
+ 24:["Anomalous Gale","One random unit gets −1 to hit rolls in melee until the end of the round."],
+ 25:["Alien Shriek","One random unit gets −1 to Morale Test rolls until the end of the round."],
+ 26:["Sticky Foliage",'One random unit moves −1" on Advance and −2" on Rush and Charge until the end of the round.'],
+ 31:["Sinkhole",'One random unit within 3" of any objective takes D3 wounds.'],
+ 32:["Solar Flare",'One random unit within 3" of any objective takes 2D3 hits.'],
+ 33:["Crumbling Earth","One random captured objective becomes neutral again."],
+ 34:["Spotter Drone","One random non-captured objective becomes captured by one random player."],
+ 35:["Robot Guide","One random captured objective becomes captured by the opponent."],
+ 36:["Psychic Pool",'Until the end of the round, any unit within 3" of one random objective gets +1 to Defense rolls.'],
+ 41:["Terrifying Quakes","One random table quarter counts as Dangerous terrain until the end of the round."],
+ 42:["Heavy Rain","One random table quarter counts as Difficult terrain until the end of the round."],
+ 43:["Thick Clouds","Until the end of the round, any unit fully within a random table quarter halves its weapon ranges."],
+ 44:["Psychic Fog",'Until the end of the round, any unit that activates fully within a random table quarter moves +1" on Advance and +2" on Rush and Charge.'],
+ 45:["Shifting Illusions","Until the end of the round, any unit fully within a random table quarter gets +1 to Morale Test rolls."],
+ 46:["Support Robots","Until the end of the round, any unit fully within a random table quarter gets +1 to Defense rolls."],
+ 51:["Haste Stims",'One random unit moves +1" on Advance and +2" on Rush and Charge until the end of the round.'],
+ 52:["Prophetic Vision","One random unit gets +1 to Morale Test rolls until the end of the round."],
+ 53:["Invigorating Fumes","One random unit gets +1 to hit rolls in melee until the end of the round."],
+ 54:["Enhancing Force-Field","One random unit gets +1 to hit rolls when shooting until the end of the round."],
+ 55:["Shield-Projector Drone","One random unit gets +1 to Defense rolls until the end of the round."],
+ 56:["Refreshment Kit","One random Shaken unit stops being Shaken."],
+ 61:["Credits Stash","One random army gets 25 pts.",{pts:25}],
+ 62:["Injector Pouch","One random unit gets 1 XP.",{xp:1}],
+ 63:["Grenade Bag","One random player gets 1 VP.",{vp:1}],
+ 64:["Treasure Holopad","One random army gets D3 × 25 pts.",{pts:"d3x25"}],
+ 65:["Kit Box","One random unit gets D3 XP.",{xp:"d3"}],
+ 66:["Godly Blessing","One random player gets D3 VP.",{vp:"d3"}]
+};
+
+/* rules reference for the Rules tab */
+const CRULES=[
+ ["Campaign types",`<ul><li><b>Game-limited:</b> play D3+4 missions. After the last one, most VP wins.</li><li><b>Point-limited:</b> the campaign ends when a player has D3+4 VP after a match, and that player wins.</li><li><b>Time-limited:</b> ends after D3+4 weeks; most VP wins.</li><li><b>Endless:</b> never ends; keep a running leaderboard.</li></ul>
+ <p><b>Parallel play:</b> armies may play matches in parallel, but then each army's VP is divided by the matches it played. <b>Late joiners</b> start with a regular army and use the same VP division.</p>`],
+ ["Preparation",`<ul><li>Each player starts with a 400 pt treasury.</li><li>Before the first mission, spend at least 320 pts on the army, with at most one Hero.</li><li>Give the army and every unit a unique name.</li></ul>
+ <p>Each campaign cycle: <b>1</b> Mission setup · <b>2</b> Play mission · <b>3</b> Check for casualties · <b>4</b> Earn experience · <b>5</b> Upgrade armies · <b>6</b> Recruit units.</p>`],
+ ["1 · Mission setup",`<ul><li><b>No points limit.</b> Bring any units (at least one), but your total may be at most 125 pts over the value of the army with the lowest points.</li>
+ <li><b>Underdog bonus:</b> 1 underdog point per full 25 pts your army is below the highest-valued army. Spend one to change all dice in a friendly or enemy roll by +1 or −1; only one point per roll.</li>
+ <li><b>Special objectives:</b> each army rolls one. Completing it puts 40 pts in its treasury. Re-roll objectives that can't be completed.</li></ul>`],
+ ["2 · Play mission",`<ul><li>Standard rules, but if there's no winner after 4 rounds, keep playing rounds until there is one.</li><li><b>Conceding:</b> at the start of any round, remove all your units. They don't count as casualties.</li><li><b>Random events:</b> at the start of each round roll a die. On 5+, roll two dice (tens, then units) on the events table.</li><li><b>Mission goals:</b> the winner gets 2 VP and 80 pts; every losing army gets 160 pts.</li></ul>`],
+ ["3 · Casualties",`<p>Units fully destroyed or Routed are casualties. Roll a die for each:</p><ul><li><b>1</b> Dead: remove it from the army sheet.</li><li><b>2–5</b> Recovered.</li><li><b>6</b> Natural Talent: recovers and earns +1 XP.</li></ul>
+ <p><b>Heroes</b> use the same roll, but on a 1 the Hero counts as 15 pts cheaper and rolls on the Injury table, and on a 6 counts as 15 pts more expensive and rolls on the Talent table. Injuries and talents (except Natural Talent) can only be gained once; re-roll duplicates.</p>
+ <p><b>No permadeath (optional):</b> instead of being removed, a dead unit loses the XP it earned that match and sits out the next D3 matches.</p>`],
+ ["4 · Experience",`<ul><li>+1 XP: not a casualty</li><li>+1 XP: killed a unit</li><li>+2 XP: killed a Hero</li></ul>
+ <p>Every 5 XP a unit levels up (max 30 XP, six levels). Regular units count as 15 pts more expensive per level and roll a trait. Heroes count as 25 pts more expensive and also get a skill trait: the first time, roll a skill set; then roll a skill from it each level. Traits can only be gained once (except Specialist); re-roll duplicates. A Hero with all three skills in its set rolls a new second set.</p>`],
+ ["5 · Upgrade armies",`<ul><li>Buy upgrades with treasury points. Buying an upgrade worth less than 0 pts gives you those points.</li><li>Sell upgrades for half their price, rounded down to a multiple of 5. A 5 pt item sells for 5 pts on a 4+, one attempt per item after each mission.</li><li>Selling a negative-cost upgrade costs its full value.</li></ul>`],
+ ["6 · Recruit units",`<ul><li>Recruit as many regular units as you like after each mission. One of them may start with 5 XP for +30 pts.</li><li>At most one new Hero after each mission, and at most 3 Heroes in the army.</li><li>Units may be disbanded for free, losing their XP and upgrades. You may also disband the whole army and start again from scratch.</li></ul>`]
+];
+
+/* ---------- HELPERS ---------- */
+const $=s=>document.querySelector(s);
+const esc=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const d6=()=>1+Math.floor(Math.random()*6);
+const d3=()=>1+Math.floor(Math.random()*3);
+const rid=()=>Math.random().toString(36).slice(2,10)+Date.now().toString(36).slice(-4);
+const clone=o=>o==null?o:JSON.parse(JSON.stringify(o));
+const today=()=>new Date().toISOString().slice(0,10);
+const fmtDate=s=>{try{return new Date(s+(s.length===10?"T12:00:00":"")).toLocaleDateString(undefined,{month:"short",day:"numeric",year:"numeric"})}catch(e){return s}};
+const LKEY="firefight-campaign-v1";
+
+/* ---------- STORE: Supabase. Anyone can read; writes need the campaign password ---------- */
+const CFG=window.GAMING_CONFIG||{};
+const SLUG=(new URLSearchParams(location.search).get("c")||"").toLowerCase().replace(/[^a-z0-9-]/g,"");
+const PKEY="gaming-campaign-pass:"+SLUG,MYKEY="gaming-campaign-mine:"+SLUG;
+const D={camp:null,armies:{},matches:{},live:null};
+let SB=null,MODE="loading",RO=true,STALE=false,ROW=null,PASS=null,MINE=null,LIST=null;
+const lsGet=k=>{try{return localStorage.getItem(k)}catch(e){return null}};
+const lsSet=(k,v)=>{try{v==null?localStorage.removeItem(k):localStorage.setItem(k,v)}catch(e){}};
+PASS=SLUG?lsGet(PKEY):null;MINE=SLUG?lsGet(MYKEY):null;RO=!PASS;
+const Q={};
+function slot(path){const [c,id]=path.split("/");return {c,id}}
+function setLocal(path,obj){const {c,id}=slot(path);
+  if(c==="camp")D.camp=obj;else if(c==="live")D.live=obj;else if(D[c]){if(obj==null)delete D[c][id];else D[c][id]=obj}}
+let toastT=null;
+function toast(msg){const t=$("#toast");t.textContent=msg;t.hidden=false;clearTimeout(toastT);toastT=setTimeout(()=>t.hidden=true,4200)}
+const badPass=e=>/password/i.test((e&&(e.message||e.details||e.hint))||"");
+function put(path,obj){
+  if(MODE!=="db")return Promise.resolve(false);
+  if(!PASS){setTimeout(unlockSheet,0);return Promise.resolve(false)}
+  setLocal(path,obj==null?null:clone(obj));render();
+  const run=async()=>{
+    for(let i=0;i<2;i++){
+      const {error}=await SB.rpc("gaming_put",{p_slug:SLUG,p_pass:PASS,p_path:path,p_data:obj==null?null:clone(obj)});
+      if(!error)return true;
+      if(badPass(error)){setPass(null);toast("The campaign password has changed. Unlock again to keep editing.");await fetchAll();return false}
+      if(i===0&&/fetch|network|timeout/i.test(error.message||""))await new Promise(r=>setTimeout(r,800));else{toast("Couldn't save just now. "+(error.message||""));await fetchAll();return false}
+    }
+    return false};
+  Q[path]=(Q[path]||Promise.resolve()).then(run);return Q[path];
+}
+function setPass(p){PASS=p;RO=!p;lsSet(PKEY,p);render()}
+async function fetchAll(){
+  const {data,error}=await SB.from("gaming_docs").select("path,data").eq("campaign",SLUG);
+  if(error){STALE=true;render();return}
+  D.camp=null;D.live=null;D.armies={};D.matches={};
+  (data||[]).forEach(r=>setLocal(r.path,r.data));STALE=false;render();
+}
+async function boot(){
+  render();
+  if(!CFG.supabaseUrl||!CFG.supabaseAnonKey||!window.supabase){MODE="noconfig";render();return}
+  SB=window.supabase.createClient(CFG.supabaseUrl,CFG.supabaseAnonKey,{auth:{persistSession:false,autoRefreshToken:false}});
+  if(!SLUG){MODE="lobby";render();loadLobby();return}
+  const {data:row,error}=await SB.from("gaming_campaigns").select("slug,name,created_at,updated_at").eq("slug",SLUG).maybeSingle();
+  if(error){MODE="offline";render();return}
+  if(!row){MODE="missing";render();return}
+  ROW=row;MODE="db";await fetchAll();
+  if(PASS){const {data:ok}=await SB.rpc("gaming_check",{p_slug:SLUG,p_pass:PASS});if(ok===false){setPass(null);toast("The saved password no longer works. Unlock again to edit.")}}
+  const apply=p=>{const r=p.new&&p.new.path?p.new:null;if(r&&r.campaign===SLUG){setLocal(r.path,r.data);render()}};
+  SB.channel("gaming-"+SLUG)
+    .on("postgres_changes",{event:"INSERT",schema:"public",table:"gaming_docs",filter:`campaign=eq.${SLUG}`},apply)
+    .on("postgres_changes",{event:"UPDATE",schema:"public",table:"gaming_docs",filter:`campaign=eq.${SLUG}`},apply)
+    .on("postgres_changes",{event:"DELETE",schema:"public",table:"gaming_docs"},p=>{const o=p.old||{};if(o.campaign===SLUG&&o.path){setLocal(o.path,null);render()}})
+    .subscribe(st=>{if(st==="CHANNEL_ERROR"||st==="TIMED_OUT"){STALE=true;render()}else if(st==="SUBSCRIBED"&&STALE){fetchAll()}});
+  document.addEventListener("visibilitychange",()=>{if(document.visibilityState==="visible")fetchAll()});
+  setInterval(()=>{if(document.visibilityState==="visible")fetchAll()},60000);
+}
+function unlockSheet(){
+  sheet(`<h2>Unlock editing</h2><p class="muted">Anyone with the link can view this campaign. Enter the campaign password to make changes on this device.</p>
+    ${field("pwIn","Campaign password","","password",'autocomplete="current-password"')}
+    <p id="pwMsg" class="muted"></p>
+    <div class="row"><button class="btn primary" id="pwGo" type="button">Unlock</button><button class="btn ghost" data-close type="button">Cancel</button></div>`,()=>{
+    const go=async()=>{const p=$("#pwIn").value;if(!p)return;$("#pwGo").disabled=true;
+      const {data,error}=await SB.rpc("gaming_check",{p_slug:SLUG,p_pass:p});
+      if(error){$("#pwMsg").textContent="Couldn't check the password. Are you online?";$("#pwGo").disabled=false;return}
+      if(!data){$("#pwMsg").textContent="That's not the password.";$("#pwGo").disabled=false;return}
+      closeSheet();setPass(p);toast("Editing unlocked on this device.")};
+    $("#pwGo").onclick=go;$("#pwIn").onkeydown=e=>{if(e.key==="Enter")go()};setTimeout(()=>$("#pwIn").focus(),50)});
+}
+document.addEventListener("click",e=>{
+  if(e.target.closest("#unlockBtn"))unlockSheet();
+  if(e.target.closest("#lockBtn")){setPass(null);toast("Locked. This device can only view now.")}
+  if(e.target.closest("#shareBtn")){const url=location.href.split("#")[0];(navigator.share?navigator.share({title:D.camp&&D.camp.name||"Campaign",url}):navigator.clipboard.writeText(url).then(()=>toast("Link copied."))).catch(()=>{})}
+});
+
+/* ---------- LOBBY ---------- */
+const slugify=s=>String(s).toLowerCase().normalize("NFKD").replace(/[^a-z0-9]+/g,"-").replace(/^-+|-+$/g,"").slice(0,40);
+async function loadLobby(){const {data,error}=await SB.from("gaming_campaigns").select("slug,name,updated_at").order("updated_at",{ascending:false}).limit(60);LIST=error?[]:data||[];render()}
+function lobbyHTML(){
+  return `<div class="pcols"><div class="pcol pl"><div style="order:1" class="stack" id="lobbyList">
+    <h2>Campaigns</h2>
+    ${LIST==null?`<p class="muted">Loading…</p>`:LIST.length?`<div class="lb">${LIST.map(c=>`<a class="lbrow lobby" href="?c=${encodeURIComponent(c.slug)}"><span class="lbn"><b>${esc(c.name)}</b><small>${esc(c.slug)}${lsGet("gaming-campaign-pass:"+c.slug)?" · you can edit":""}</small></span><span class="lbv"><small>updated</small><b style="font-size:.85rem">${esc(fmtDate(String(c.updated_at).slice(0,10)))}</b></span></a>`).join("")}</div>`:`<p class="muted">No campaigns yet.</p>`}
+  </div></div><div class="pcol pr"><div style="order:2" class="panel stack">
+    <h2>Start a new campaign</h2>
+    <p class="muted" style="font-size:.9rem">Every campaign gets its own page. Anyone with the link can follow along; only people with the password can change it.</p>
+    ${field("nName","Campaign name","","text",'placeholder="The Ashfall Front" maxlength="60"')}
+    ${field("nSlug","Page address","","text",'placeholder="ashfall-front" maxlength="40"')}
+    <p class="muted num" style="font-size:.8rem" id="nUrl"></p>
+    ${field("nPass","Password for editing","","password",'autocomplete="new-password"')}
+    ${field("nPass2","Password again","","password",'autocomplete="new-password"')}
+    <p id="nMsg" class="muted"></p>
+    <button class="btn primary" id="nGo" type="button">Create the campaign</button>
+    <p class="muted" style="font-size:.84rem">Share the password with your players yourself. It can be changed later in the campaign settings, but it can't be recovered if everyone forgets it.</p>
+  </div></div></div>`;
+}
+function wireLobby(){
+  let touched=false;const nm=$("#nName"),sl=$("#nSlug"),url=$("#nUrl");
+  const show=()=>url.textContent=location.origin+location.pathname+"?c="+(sl.value||"…");
+  nm.oninput=()=>{if(!touched)sl.value=slugify(nm.value);show()};
+  sl.oninput=()=>{touched=true;sl.value=slugify(sl.value);show()};show();
+  $("#nGo").onclick=async()=>{const name=nm.value.trim(),slug=slugify(sl.value||name),p=$("#nPass").value,p2=$("#nPass2").value,msg=$("#nMsg");
+    if(!name){nm.focus();return}if(slug.length<3){msg.textContent="The page address needs at least 3 letters or numbers.";return}
+    if(p.length<4){msg.textContent="Use a password of at least 4 characters.";return}if(p!==p2){msg.textContent="The passwords don't match.";return}
+    $("#nGo").disabled=true;msg.textContent="Creating…";
+    const {error}=await SB.rpc("gaming_create",{p_slug:slug,p_name:name,p_pass:p});
+    if(error){$("#nGo").disabled=false;msg.textContent=/duplicate|exists|unique/i.test(error.message||"")?"That page address is taken. Pick another.":"Couldn't create it: "+(error.message||"try again");return}
+    lsSet("gaming-campaign-pass:"+slug,p);location.href="?c="+encodeURIComponent(slug)};
+}
+async function deleteCampaign(){
+  const {error}=await SB.rpc("gaming_delete",{p_slug:SLUG,p_pass:PASS});
+  if(error){toast(badPass(error)?"Wrong password.":"Couldn't delete it: "+(error.message||""));return}
+  lsSet(PKEY,null);lsSet(MYKEY,null);location.href=location.pathname;
+}
+function passSheet(){
+  sheet(`<h2>Change the password</h2><p class="muted">Everyone else will need the new password to keep editing.</p>
+    ${field("cpOld","Current password",PASS||"","password")}${field("cpNew","New password","","password",'autocomplete="new-password"')}${field("cpNew2","New password again","","password",'autocomplete="new-password"')}
+    <p id="cpMsg" class="muted"></p><div class="row"><button class="btn primary" id="cpGo" type="button">Change it</button><button class="btn ghost" data-close type="button">Cancel</button></div>`,()=>{
+    $("#cpGo").onclick=async()=>{const o=$("#cpOld").value,n=$("#cpNew").value;
+      if(n.length<4){$("#cpMsg").textContent="Use at least 4 characters.";return}if(n!==$("#cpNew2").value){$("#cpMsg").textContent="The new passwords don't match.";return}
+      const {error}=await SB.rpc("gaming_change_pass",{p_slug:SLUG,p_old:o,p_new:n});
+      if(error){$("#cpMsg").textContent=badPass(error)?"The current password is wrong.":"Couldn't change it: "+(error.message||"");return}
+      closeSheet();setPass(n);toast("Password changed.")}});
+}
+
+/* ---------- MODEL ---------- */
+const armies=()=>Object.values(D.armies).sort((a,b)=>(a.created||0)-(b.created||0));
+const army=id=>D.armies[id]||null;
+const lvCost=u=>u.hero?25:15;
+const upCost=u=>(u.ups||[]).reduce((s,x)=>s+(+x.cost||0),0);
+const uval=u=>(+u.pts||0)+upCost(u)+(u.lv||0)*lvCost(u)+(+u.mod||0);
+const aval=a=>(a.units||[]).reduce((s,u)=>s+uval(u),0);
+const heroes=a=>(a.units||[]).filter(u=>u.hero).length;
+const missions=()=>D.camp?D.camp.missions||0:0;
+const ratio=a=>a.played?a.vp/a.played:0;
+const useRatio=()=>D.camp&&D.camp.opts&&(D.camp.opts.parallel||D.camp.opts.late);
+function standings(){return armies().slice().sort((x,y)=>useRatio()?ratio(y)-ratio(x)||y.vp-x.vp:y.vp-x.vp||y.treasury-x.treasury)}
+function newUnit(o){return {id:rid(),name:o.name,base:o.base||o.name,models:o.models||1,q:o.q||4,d:o.d||4,tough:o.tough||1,hero:!!o.hero,
+  pts:o.pts||0,rules:o.rules||"",weapons:o.weapons||"",xp:0,lv:0,traits:[],injuries:[],talents:[],sets:[],skills:[],mod:0,ups:[],sit:0,pend:[],joined:missions()}}
+function uniqName(a,name,skip){const names=new Set((a.units||[]).filter(u=>u.id!==skip).map(u=>u.name.toLowerCase()));if(!names.has(name.toLowerCase()))return name;let i=2;while(names.has(`${name} ${i}`.toLowerCase()))i++;return `${name} ${i}`}
+let LOGM=null;
+function alog(a,t){a.log=[{m:LOGM??missions(),t,ts:Date.now()},...(a.log||[])].slice(0,80)}
+
+/* XP and level-ups */
+function addXP(a,u,n,why){
+  const old=u.xp||0,nu=Math.max(0,Math.min(30,old+n));u.xp=nu;
+  const lv=Math.floor(nu/5)-Math.floor(old/5);
+  for(let i=0;i<lv;i++){u.lv=(u.lv||0)+1;u.pend=[...(u.pend||[]),{id:rid(),lv:u.lv}]}
+  if(lv>0)alog(a,`${u.name} reached ${nu} XP and levelled up${lv>1?` ${lv} times`:""}${why?` (${why})`:""}.`);
+  return lv;
+}
+/* trait rolling: re-roll duplicates; "pick" results return options */
+function ownedTraits(u){return u.traits||[]}
+function rollTrait(u){
+  for(let i=0;i<60;i++){const r=d6(),name=TRAITS[r-1][0];
+    if(r===6)return {roll:r,name,opts:traitOpts(u)};
+    if(r===3)return {roll:r,name,opts:["Specialist (melee)","Specialist (shooting)"]};
+    if(!ownedTraits(u).includes(name))return {roll:r,val:name}}
+  return {roll:6,name:"Fast Learner",opts:traitOpts(u)};
+}
+function traitOpts(u){return TRAITS.slice(0,5).flatMap(([n])=>n==="Specialist"?["Specialist (melee)","Specialist (shooting)"]:ownedTraits(u).includes(n)?[]:[n])}
+function rollInjury(u){for(let i=0;i<60;i++){const r=d6(),n=INJURIES[r-1][0];
+  if(r===6)return {roll:r,name:n,opts:INJURIES.slice(1,5).map(x=>x[0]).filter(x=>!(u.injuries||[]).includes(x))};
+  if(r===1||!(u.injuries||[]).includes(n))return {roll:r,val:n}}return {roll:1,val:"Dead"}}
+function rollTalent(u){for(let i=0;i<60;i++){const r=d6(),n=TALENTS[r-1][0];
+  if(r===6)return {roll:r,name:n,opts:TALENTS.slice(0,5).map(x=>x[0]).filter(x=>x==="Natural Talent"||!(u.talents||[]).includes(x))};
+  if(r===1||!(u.talents||[]).includes(n))return {roll:r,val:n}}return {roll:1,val:"Natural Talent"}}
+function curSet(u){const s=u.sets||[];return s[s.length-1]||null}
+function setDone(u,set){return set&&SKILLS[set].every(([n])=>(u.skills||[]).includes(n))}
+function needsSet(u){const s=curSet(u);return !s||setDone(u,s)}
+function rollSet(u){for(let i=0;i<60;i++){const r=d6(),pair=SETPAIRS[Math.floor((r-1)/2)].filter(x=>!(u.sets||[]).includes(x));
+  if(pair.length)return pair.length===1?{roll:r,val:pair[0]}:{roll:r,opts:pair}}return null}
+function rollSkill(u,set){const left=SKILLS[set].filter(([n])=>!(u.skills||[]).includes(n));if(!left.length)return null;
+  for(let i=0;i<60;i++){const r=d6(),n=SKILLS[set][Math.floor((r-1)/2)][0];if(!(u.skills||[]).includes(n))return {roll:r,val:n}}return {roll:0,val:left[0][0]}}
+const desc=name=>{const base=name.replace(/ \((melee|shooting)\)$/,"");const all=[...TRAITS,...INJURIES,...TALENTS,...Object.values(SKILLS).flat()];const f=all.find(x=>x[0]===base);return f?f[1]:""};
+
+/* text export for the game apps (Army Forge format) */
+function exportText(a,ids){
+  const us=(a.units||[]).filter(u=>!ids||ids.includes(u.id));
+  const tot=us.reduce((s,u)=>s+uval(u),0);
+  return `++ ${a.name} [GFF ${tot}pts] ++\n\n`+us.map(u=>{
+    let rules=u.rules||"";const extra=[...(u.traits||[]),...(u.injuries||[]),...(u.talents||[]).filter(t=>t!=="Natural Talent"),...(u.skills||[]),...(u.ups||[]).map(x=>x.name)];
+    if((u.talents||[]).includes("Toughened")){if(/Tough\((\d+)\)/i.test(rules))rules=rules.replace(/Tough\((\d+)\)/i,(m,n)=>`Tough(${+n+3})`);else if(u.models===1)extra.push("Tough(4)")}
+    const all=[u.hero&&!/\bHero\b/.test(rules)?"Hero":"",u.tough>1&&!/Tough\(/i.test(rules)?`Tough(${u.tough})`:"",rules,...extra].filter(Boolean).join(", ");
+    return `${u.name} [${u.models}] Q${u.q}+ D${u.d}+ | ${uval(u)}pts | ${all}\n${u.weapons||""}`.trim();
+  }).join("\n\n")+"\n";
+}
+
+/* Army Forge text import */
+function parseList(text){
+  const lines=String(text).replace(/\r/g,"").split("\n");
+  let armyName="";const units=[];let cur=null;
+  const af=/^(.+?)\s*\[(\d+)\]\s*Q(\d)\+\s*D(\d)\+\s*\|\s*(\d+)\s*pts?\b\s*(?:\|\s*(.*))?$/i;
+  for(const raw of lines){const l=raw.trim();let m;
+    if(!l){cur=null;continue}
+    if((m=l.match(/^\+\+\s*(.+?)\s*\+\+$/))){armyName=armyName||m[1].replace(/\[.*?\]|\(.*?\)/g,"").trim();continue}
+    if((m=l.match(af))){const rest=m[6]||"";const toks=rest.split(",").map(s=>s.trim()).filter(Boolean);
+      cur={name:m[1].trim(),models:+m[2],q:+m[3],d:+m[4],pts:+m[5],hero:/\bHero\b/i.test(rest),tough:+((rest.match(/Tough\((\d+)\)/i)||[])[1]||1),
+        rules:toks.join(", "),weapons:""};
+      const mm=cur.name.match(/^(\d+)\s*x\s+(.+)$/i);if(mm){cur.count=+mm[1];cur.name=mm[2].trim()}
+      units.push(cur);continue}
+    if(cur)cur.weapons=[cur.weapons,l].filter(Boolean).join("; ");
+  }
+  return {army:armyName,units:units.flatMap(u=>{const n=Math.min(10,u.count||1);delete u.count;return Array.from({length:n},()=>({...u}))})};
+}
+
+/* ---------- UI SHELL ---------- */
+let SEL=null;      // selected army id
+let pendingRender=false;
+function busyField(){const a=document.activeElement;return a&&a.closest&&a.closest("main")&&/^(INPUT|TEXTAREA|SELECT)$/.test(a.tagName)&&a.type!=="checkbox"&&a.type!=="radio"}
+document.addEventListener("focusout",()=>{if(pendingRender)setTimeout(()=>{if(!busyField()){pendingRender=false;render()}},0)});
+function view(){const h=location.hash.slice(1);return ["camp","armies","match","rules"].includes(h)?h:"camp"}
+function render(){
+  if(busyField()&&!$("#sheet").innerHTML){pendingRender=true;return}
+  document.body.classList.toggle("lobby",MODE==="lobby"||MODE==="noconfig");
+  const v=MODE==="lobby"||MODE==="noconfig"?"camp":view();
+  document.querySelectorAll("section.view").forEach(s=>s.hidden=s.id!=="v-"+v);
+  document.querySelectorAll("nav.tabs a").forEach(a=>{if(a.dataset.v===v)a.setAttribute("aria-current","page");else a.removeAttribute("aria-current")});
+  $("#modeLine").textContent=MODE==="lobby"?"All campaigns":D.camp?`${D.camp.name||"Campaign"} · ${CTYPES[D.camp.type].name}`:ROW?ROW.name:"";
+  $("#status").innerHTML=statusLine();
+  if(v==="camp")renderCamp();if(v==="armies")renderArmies();if(v==="match")renderMatch();if(v==="rules")renderRules();
+}
+function statusLine(){
+  if(MODE==="loading")return `<span class="chip">Connecting…</span>`;
+  if(MODE!=="db")return "";
+  const bits=[RO?`<span class="chip">View only</span><button class="btn sm primary" id="unlockBtn" type="button">Unlock to edit</button>`:`<span class="chip ok">Editing</span><button class="btn sm ghost" id="lockBtn" type="button">Lock</button>`,
+    `<button class="btn sm ghost" id="shareBtn" type="button">Share link</button>`,`<a class="btn sm ghost" href="${location.pathname}">All campaigns</a>`];
+  if(STALE)bits.push(`<span class="chip bad">Can't reach the server; this may be out of date</span>`);
+  return bits.join(" ");
+}
+function sheet(html,wire){$("#sheet").innerHTML=`<div class="sheet" id="sh"><div class="panel">${html}</div></div>`;
+  $("#sh").onclick=e=>{if(e.target.id==="sh")closeSheet()};document.querySelectorAll("#sh [data-close]").forEach(b=>b.onclick=closeSheet);if(wire)wire()}
+function closeSheet(){$("#sheet").innerHTML="";if(pendingRender){pendingRender=false}render()}
+function confirmSheet(title,body,label,fn,danger){sheet(`<h2>${esc(title)}</h2><p>${body}</p><div class="row"><button class="btn ${danger?"danger":"primary"}" id="cfOk" type="button">${esc(label)}</button><button class="btn ghost" data-close type="button">Cancel</button></div>`,()=>{$("#cfOk").onclick=async()=>{closeSheet();await fn()}})}
+const field=(id,label,val,type="text",extra="")=>`<div class="field"><label for="${id}">${label}</label><input id="${id}" type="${type}" value="${esc(val)}" ${extra}></div>`;
+
+/* ---------- CAMPAIGN TAB ---------- */
+let draft={name:"",type:"game",len:null,opts:{noPerma:false,parallel:false,late:false}};
+function renderCamp(){
+  const box=$("#campBody");
+  if(MODE==="lobby"){if($("#nName")){const t=document.createElement("div");t.innerHTML=lobbyHTML();$("#lobbyList").replaceWith(t.querySelector("#lobbyList"))}else{box.innerHTML=lobbyHTML();wireLobby()}return}
+  if(MODE==="loading"){box.innerHTML=`<p class="muted">Loading the campaign…</p>`;return}
+  if(MODE==="noconfig"){box.innerHTML=`<div class="panel stack"><h2>Not connected yet</h2><p>This page needs your Supabase project's URL and anon key in <span class="num">config.js</span>. The README in the site folder walks through it.</p></div>`;return}
+  if(MODE==="missing"){box.innerHTML=`<div class="panel stack"><h2>No campaign here</h2><p class="muted">Nothing lives at this address. It may have been deleted, or the link has a typo.</p><a class="btn primary" href="${location.pathname}">See all campaigns</a></div>`;return}
+  if(MODE==="offline"){box.innerHTML=`<div class="panel stack"><h2>Can't reach the campaign</h2><p class="muted">Campaigns are kept online so everyone sees the same thing. Check the connection and try again.</p><button class="btn primary" type="button" onclick="location.reload()">Try again</button></div>`;return}
+  if(!D.camp){if(RO){box.innerHTML=`<div class="panel stack"><h2>${esc(ROW.name)}</h2><p class="muted">This campaign hasn't been set up yet. Whoever has the password can unlock it and choose how it runs.</p><button class="btn primary" id="unlockBtn" type="button">Unlock to set it up</button></div>`;return}
+    if(!draft.name)draft.name=ROW.name;box.innerHTML=campSetupHTML();wireCampSetup();return}
+  const c=D.camp,end=endState();
+  let h=`<div class="pcols"><div class="pcol pl">`;
+  h+=`<div style="order:1" class="panel stack ${end.over?"winner":""}">
+    ${end.over?`<span class="eyebrow">Campaign over</span><h2>${esc(end.winner?end.winner.name:"No winner")} ${end.winner?"wins":""}</h2><p class="muted">${esc(end.why)}</p>`:
+      `<div class="row between"><span class="eyebrow">${esc(CTYPES[c.type].name)}</span><span class="chip">Mission ${missions()+1} next</span></div><h2>${esc(c.name||"Campaign")}</h2><p>${esc(end.why)}</p>`}
+    <div class="spec">${progressSpec()}</div>
+    ${c.opts&&(c.opts.noPerma||c.opts.parallel||c.opts.late)?`<div class="row" style="gap:6px">${c.opts.noPerma?`<span class="chip">No permadeath</span>`:""}${c.opts.parallel?`<span class="chip">Parallel play</span>`:""}${c.opts.late?`<span class="chip">Late joiners</span>`:""}</div>`:""}
+  </div>`;
+  h+=`<div style="order:2" class="stack"><div class="row between"><h2>Standings</h2><a class="btn sm" href="#armies">Armies</a></div>${leaderboard()}</div>`;
+  h+=`<div style="order:6" class="stack"><h2>Each cycle</h2><div class="flow">
+    <div><b>1 · Setup</b><span>Pick who plays, units brought, underdog points, special objectives.</span></div>
+    <div><b>2 · Play</b><span>Random event check every round. Play past round 4 until someone wins.</span></div>
+    <div><b>3 · Casualties</b><span>Roll for every destroyed or Routed unit.</span></div>
+    <div><b>4 · Experience</b><span>XP for surviving and kills. Level up every 5 XP.</span></div>
+    <div><b>5 · Upgrade</b><span>Buy and sell upgrades from the treasury.</span></div>
+    <div><b>6 · Recruit</b><span>New units, one new Hero at most.</span></div></div></div>`;
+  h+=`</div><div class="pcol pr">`;
+  h+=`<div style="order:3" class="stack"><div class="row between"><h2>Next mission</h2></div>${D.live?`<div class="callout">A mission is in progress: <b>${esc(liveStageName())}</b>.</div><a class="btn primary" href="#match">Go to the mission</a>`:
+    armies().length>=2?`<p class="muted">Set up who plays, then use the Mission tab during and after the game.</p><a class="btn primary" href="#match" ${end.over?"aria-disabled=true":""}>Set up mission ${missions()+1}</a>`:`<p class="muted">Add at least two armies first. Playing solo? Add one army for the AI.</p><a class="btn primary" href="#armies">Add armies</a>`}</div>`;
+  h+=`<div style="order:4" class="stack"><h2>Mission history</h2>${historyHTML()}</div>`;
+  h+=`<div style="order:5" class="stack"><details class="rem"><summary><h3>Campaign settings</h3><span class="chev"></span></summary><div class="rembody">
+    ${field("cName","Campaign name",c.name)}
+    <div class="row">${c.type!=="endless"?`${field("cLen",`Length (${CTYPES[c.type].len})`,c.len??"","number",'min="1" max="20" style="max-width:120px"')}`:""}${c.type==="time"?field("cStart","Started",c.start||today(),"date"):""}</div>
+    ${["noPerma","parallel","late"].map(k=>`<label class="check"><input type="checkbox" data-copt="${k}" ${c.opts&&c.opts[k]?"checked":""}> ${OPTN[k]}</label>`).join("")}
+    <div class="row"><button class="btn sm" id="cPass" type="button">Change password</button><button class="btn sm danger" id="cReset" type="button">Delete this campaign</button></div>
+    <p class="muted" style="font-size:.85rem">Anyone with the link can view this campaign. Changes need the campaign password, entered once per device.</p>
+  </div></details></div>`;
+  h+=`</div></div>`;
+  box.innerHTML=h;
+  const nm=$("#cName");nm.onchange=()=>put("camp/main",{...D.camp,name:nm.value.trim()||"Campaign"});
+  const ln=$("#cLen");if(ln)ln.onchange=()=>put("camp/main",{...D.camp,len:Math.max(1,+ln.value||1)});
+  const st=$("#cStart");if(st)st.onchange=()=>put("camp/main",{...D.camp,start:st.value});
+  document.querySelectorAll("[data-copt]").forEach(x=>x.onchange=()=>put("camp/main",{...D.camp,opts:{...D.camp.opts,[x.dataset.copt]:x.checked}}));
+  $("#cReset").onclick=()=>{if(RO)return unlockSheet();confirmSheet("Delete this campaign?","Every army, unit and mission record is removed for everyone, and the page address is freed. This can't be undone.","Delete everything",deleteCampaign,true)};
+  $("#cPass").onclick=()=>RO?unlockSheet():passSheet();
+  document.querySelectorAll("[data-undo]").forEach(b=>b.onclick=()=>undoMatch(b.dataset.undo));
+  document.querySelectorAll("[data-go]").forEach(b=>b.onclick=()=>{SEL=b.dataset.go;location.hash="armies"});
+}
+const OPTN={noPerma:"No permadeath: dead units lose that match's XP and sit out D3 matches instead",parallel:"Parallel play: VP divided by matches played",late:"Late joiners allowed (they also use VP per match)"};
+function campSetupHTML(){
+  const d=draft;
+  return `<div class="pcols"><div class="pcol pl"><div style="order:1" class="stack">
+    <h2>Set up the campaign</h2>
+    <p class="muted">Pick how the campaign ends, roll its length, then add armies. Each army starts with a 400 pt treasury.</p>
+    ${field("dName","Campaign name",d.name,"text",'placeholder="The Ashfall Front"')}
+    <div class="modes" id="dTypes">${Object.entries(CTYPES).map(([k,t])=>`<button class="mode" type="button" data-ct="${k}" aria-pressed="${d.type===k}"><b>${t.name}</b><small>${t.sub}</small></button>`).join("")}</div>
+    ${d.type!=="endless"?`<div class="panel stack"><div class="row between"><div><span class="eyebrow">Length</span><p><b class="num" style="font-size:1.6rem">${d.len??"–"}</b> ${CTYPES[d.type].len}</p></div><button class="btn" id="dRoll" type="button">Roll D3+4</button></div>
+      <p class="muted" style="font-size:.88rem">${d.type==="points"?"The first army to reach this many VP after a match wins.":d.type==="time"?"The campaign ends this many weeks from today.":"After this many missions, the army with most VP wins."}</p></div>`:""}
+  </div></div><div class="pcol pr"><div style="order:2" class="stack">
+    <h2>Options</h2>
+    ${["noPerma","parallel","late"].map(k=>`<label class="check"><input type="checkbox" data-dopt="${k}" ${d.opts[k]?"checked":""}> ${OPTN[k]}</label>`).join("")}
+    <button class="btn primary" id="dGo" type="button" ${d.type!=="endless"&&!d.len?"disabled":""}>Create the campaign</button>
+    ${d.type!=="endless"&&!d.len?`<p class="muted" style="font-size:.86rem">Roll the length first.</p>`:""}
+  </div></div></div>`;
+}
+function wireCampSetup(){
+  $("#dName").oninput=e=>draft.name=e.target.value;
+  document.querySelectorAll("[data-ct]").forEach(b=>b.onclick=()=>{draft.type=b.dataset.ct;draft.len=null;renderCamp()});
+  const r=$("#dRoll");if(r)r.onclick=()=>{draft.len=d3()+4;renderCamp()};
+  document.querySelectorAll("[data-dopt]").forEach(x=>x.onchange=()=>draft.opts[x.dataset.dopt]=x.checked);
+  $("#dGo").onclick=()=>put("camp/main",{name:draft.name.trim()||"Campaign",type:draft.type,len:draft.type==="endless"?null:draft.len,start:today(),opts:{...draft.opts},missions:0,created:Date.now()});
+}
+function progressSpec(){
+  const c=D.camp,m=missions(),as=armies();const top=as.reduce((s,a)=>Math.max(s,a.vp||0),0);
+  const items=c.type==="game"?[]:[[m,"missions played"]];items.push([as.length,"armies"]);
+  if(c.type==="game")items.push([`${m}/${c.len}`,"missions"]);
+  if(c.type==="points")items.push([`${top}/${c.len}`,"highest VP"]);
+  if(c.type==="time"){const endD=timeEnd();items.push([fmtDate(endD.toISOString().slice(0,10)),"ends"])}
+  return items.map(([v,l])=>`<div><b>${esc(v)}</b><span>${l}</span></div>`).join("");
+}
+function timeEnd(){const s=new Date((D.camp.start||today())+"T12:00:00");s.setDate(s.getDate()+7*(D.camp.len||5));return s}
+function endState(){
+  const c=D.camp;const as=standings();const lead=as[0]||null;
+  if(c.over)return {over:true,winner:army(c.winner)||null,why:c.why||""};
+  if(c.type==="game")return {over:false,why:`${Math.max(0,c.len-missions())} of ${c.len} missions left. Most VP after the last one wins.`};
+  if(c.type==="points")return {over:false,why:`First army to ${c.len} VP after a match wins.`};
+  if(c.type==="time"){const e=timeEnd();if(new Date()>e)return {over:true,winner:lead,why:`The ${c.len} weeks ran out on ${fmtDate(e.toISOString().slice(0,10))}. Most VP wins.`};
+    const days=Math.ceil((e-new Date())/864e5);return {over:false,why:`${days} day${days===1?"":"s"} left. Most VP at the end wins.`}}
+  return {over:false,why:"Endless campaign: keep climbing the leaderboard."};
+}
+function leaderboard(){
+  const as=standings();if(!as.length)return `<p class="muted">No armies yet.</p>`;
+  return `<div class="lb">${as.map((a,i)=>`<button type="button" class="lbrow" data-go="${a.id}">
+    <span class="rk num">${i+1}</span>
+    <span class="lbn"><b>${esc(a.name)}</b><small>${esc(a.player||"")}${a.ai?" · AI":""}${a.id===MINE?" · yours":""}</small></span>
+    <span class="lbv"><b class="num">${a.vp||0}</b><small>VP${useRatio()&&a.played?` · ${ratio(a).toFixed(2)}/match`:""}</small></span>
+    <span class="lbv"><b class="num">${aval(a)}</b><small>value</small></span>
+    <span class="lbv"><b class="num">${a.treasury||0}</b><small>treasury</small></span></button>`).join("")}</div>`;
+}
+function historyHTML(){
+  const ms=Object.values(D.matches).sort((a,b)=>b.n-a.n);if(!ms.length)return `<p class="muted">No missions yet.</p>`;
+  const last=ms[0];
+  return `<ul class="hist">${ms.map(m=>`<li><div><b>Mission ${m.n}</b> <span class="muted">${fmtDate(m.date)}</span></div>
+    <p>${m.armies.map(id=>{const nm=(m.names||{})[id]||"?";return m.winners.includes(id)?`<b>${esc(nm)}</b> won`:esc(nm)}).join(" · ")}</p>
+    ${m.notes&&m.notes.length?`<details class="ref"><summary>What happened</summary><ul>${m.notes.map(t=>`<li>${esc(t)}</li>`).join("")}</ul></details>`:""}
+    ${m===last&&m.before?`<button class="btn sm ghost" type="button" data-undo="${m.id}">Undo this mission</button>`:""}</li>`).join("")}</ul>`;
+}
+async function resetAll(){
+  if(MODE==="db"){for(const id of Object.keys(D.armies))await put("armies/"+id,null);for(const id of Object.keys(D.matches))await put("matches/"+id,null);await put("live/main",null);await put("camp/main",null)}
+  else{D.camp=null;D.armies={};D.matches={};D.live=null;saveLocal();render()}
+  draft={name:"",type:"game",len:null,opts:{noPerma:false,parallel:false,late:false}};
+}
+function undoMatch(id){
+  const m=D.matches[id];if(!m||!m.before)return;
+  confirmSheet(`Undo mission ${m.n}?`,"Every army in it goes back to how it was before the results were applied. Any upgrades, recruits or level-up rolls made since then for those armies are lost too.","Undo the mission",async()=>{
+    for(const [aid,a] of Object.entries(m.before.armies))await put("armies/"+aid,a);
+    await put("camp/main",m.before.camp);await put("matches/"+id,null);toast(`Mission ${m.n} undone.`)},true);
+}
+
+/* ---------- ARMIES TAB ---------- */
+function renderArmies(){
+  const box=$("#armiesBody");
+  if(!D.camp){box.innerHTML=`<p class="muted">Start a campaign on the Campaign tab first.</p>`;return}
+  const as=armies();
+  if(!SEL||!army(SEL)){const mine=as.find(a=>a.id===MINE);SEL=(mine||as[0]||{}).id||null}
+  let h=`<div class="row" style="gap:6px">${as.map(a=>`<button type="button" class="tg" data-sel="${a.id}" aria-pressed="${a.id===SEL}">${esc(a.name)}${a.ai?" · AI":""}</button>`).join("")}<button class="btn sm" id="addArmy" type="button">Add army</button></div>`;
+  const a=army(SEL);
+  if(!a){h+=`<p class="muted">No armies yet. Add one for each player${", plus one for the AI if you're playing solo or co-op"}.</p>`;box.innerHTML=h;wireArmiesTop();return}
+  const val=aval(a),built=a.built,spent=400-(a.start??400);
+  h+=`<div class="pcols"><div class="pcol pl">`;
+  h+=`<div style="order:1" class="panel stack ahead ${a.ai?"ai":""}">
+    <div class="row between"><div><span class="eyebrow">${a.ai?"AI army":"Army"}${a.player?` · ${esc(a.player)}`:""}${a.id===MINE?" · yours":""}</span><h2>${esc(a.name)}</h2></div><button class="btn sm ghost" id="editArmy" type="button">Edit</button></div>
+    <div class="facts"><div><b>${a.treasury||0}</b><span>Treasury</span></div><div><b>${a.vp||0}</b><span>VP</span></div><div><b>${val}</b><span>Value</span></div></div>
+    <p class="muted" style="font-size:.88rem">${a.played||0} mission${a.played===1?"":"s"} played · ${heroes(a)} of 3 Heroes${useRatio()&&a.played?` · ${ratio(a).toFixed(2)} VP per match`:""}</p>
+  </div>`;
+  if(!built){
+    const total=(a.units||[]).reduce((s,u)=>s+uval(u),0),hs=heroes(a);
+    const ok=total>=320&&total<=400&&hs<=1&&(a.units||[]).length>0;
+    h+=`<div style="order:2" class="panel stack build"><span class="eyebrow">Starting army</span>
+      <p>Spend at least 320 of your 400 pts, with at most one Hero. Import the list from Army Forge or add units by hand.</p>
+      <div class="row" style="gap:6px"><span class="chip ${total>=320&&total<=400?"ok":"warn"} num">${total} / 400 pts</span><span class="chip ${hs<=1?"ok":"bad"}">${hs} Hero${hs===1?"":"es"}</span></div>
+      ${total>400?`<p class="chip bad" style="align-self:flex-start">Over 400 pts</p>`:""}
+      <div class="row" style="gap:6px"><button class="btn primary" id="impStart" type="button">Import from Army Forge</button><button class="btn sm ghost" id="addHand" type="button">Add a unit by hand</button></div>
+      <button class="btn" id="lockIn" type="button" ${ok?"":"disabled"}>Lock in the starting army</button>
+      <p class="muted" style="font-size:.85rem">Locking in moves the ${400-total} unspent pts to the treasury. After that, new units are recruited with treasury points.</p></div>`;
+  }else{
+    const recruits=a.recM===missions(),heroRec=a.heroM===missions();
+    h+=`<div style="order:2" class="stack"><h2>Between missions</h2>
+      <div class="actions">
+        <button class="btn" type="button" id="recruit"><b>Recruit</b><small>Pay from the treasury${heroRec?" · Hero already recruited this time":""}</small></button>
+        <button class="btn" type="button" id="buyUp"><b>Buy upgrade</b><small>Weapons, gear, unit options</small></button>
+        <button class="btn" type="button" id="exportA"><b>Copy for the game</b><small>Army Forge text for Firefight Solo</small></button>
+        <button class="btn" type="button" id="adjust"><b>Adjust</b><small>Treasury or VP corrections</small></button>
+      </div>
+      ${a.ai?`<p class="callout">AI army: spend its treasury the way a player would, preferring new units from its Army Forge list, then upgrades for its highest-XP units. Re-roll ties with a die.</p>`:""}</div>`;
+  }
+  h+=`<div style="order:5" class="stack"><h2>Army log</h2>${(a.log||[]).length?`<ul class="log">${a.log.map(l=>`<li><span class="r">${l.m?`M${l.m}`:"Pre"}</span><span>${esc(l.t)}</span></li>`).join("")}</ul>`:`<p class="muted">Nothing yet.</p>`}</div>`;
+  h+=`</div><div class="pcol pr"><div style="order:3" class="stack"><div class="row between"><h2>Units</h2><span class="chip num">${(a.units||[]).length}</span></div>
+    <div class="roster">${(a.units||[]).map(u=>unitCard(a,u)).join("")||`<p class="muted">No units yet.</p>`}</div></div></div></div>`;
+  box.innerHTML=h;wireArmiesTop();wireArmy(a);
+}
+function unitCard(a,u){
+  const segs=[5,10,15,20,25,30].map(n=>`<i class="${(u.xp||0)>=n?"done":""}"></i>`).join("");
+  const tags=[...(u.traits||[]).map(t=>["tr",t]),...(u.skills||[]).map(t=>["sk",t]),...(u.talents||[]).map(t=>["ta",t]),...(u.injuries||[]).map(t=>["in",t]),...(u.ups||[]).map(x=>["up",`${x.name} (${x.cost>0?"+":""}${x.cost})`])];
+  return `<div class="unit ${a.ai?"b":""} ${u.sit?"gone":""}" data-uid="${u.id}">
+    <div class="uhead"><div style="min-width:0"><h3>${esc(u.name)}</h3><div class="qd">${u.base&&u.base!==u.name?`${esc(u.base)} · `:""}Q<b>${u.q}+</b> D<b>${u.d}+</b> · ${u.models>1?`${u.models} models`:u.tough>1?`Tough(${u.tough})`:"1 model"} · <b>${uval(u)}</b>pts</div></div>
+      <button class="btn sm ghost" type="button" data-uedit="${u.id}">Edit</button></div>
+    <div class="row" style="gap:5px">${u.hero?`<span class="chip">Hero</span>`:""}${u.sets&&u.sets.length?u.sets.map(s=>`<span class="chip warn">${esc(s)}</span>`).join(""):""}${u.sit?`<span class="chip bad">Sits out ${u.sit} more match${u.sit>1?"es":""}</span>`:""}</div>
+    <div class="xp"><span class="eyebrow">XP</span><div class="xpbar">${segs}</div><span class="num">${u.xp||0}/30</span></div>
+    ${tags.length?`<div class="kws">${tags.map(([k,t])=>`<span class="kw ${k}" title="${esc(desc(t))}">${esc(t)}</span>`).join("")}</div>`:""}
+    ${(u.pend||[]).map(p=>levelBox(a,u,p)).join("")}
+  </div>`;
+}
+function levelBox(a,u,p){
+  const sel=(key,r)=>`<select data-lp="${u.id},${p.id},${key}"><option value="">Choose…</option>${r.opts.map(o=>`<option ${r.val===o?"selected":""}>${esc(o)}</option>`).join("")}</select>`;
+  const show=(key,r,label)=>!r?"":`<div class="lvr"><span class="d6 ok">${r.roll||"·"}</span><div><span class="eyebrow">${label}</span>${r.opts&&!r.locked?`<p>${esc(r.name||"")}${r.name?": ":""}pick one</p>${sel(key,r)}`:`<p><b>${esc(r.val)}</b> <span class="muted">${esc(desc(r.val))}</span></p>`}</div></div>`;
+  const firstSet=u.hero&&needsSet(u);
+  let h=`<div class="lvl"><div class="row between"><b>Level ${p.lv}${u.hero?" · Hero":""}</b><span class="chip ok">+${lvCost(u)} pts</span></div>`;
+  h+=p.trait?show("trait",p.trait,"Trait"):`<button class="btn sm primary" type="button" data-lr="${u.id},${p.id},trait">Roll trait</button>`;
+  if(u.hero){
+    if(firstSet||p.set){h+=p.set?show("set",p.set,"Skill set"):`<button class="btn sm" type="button" data-lr="${u.id},${p.id},set">Roll skill set</button>`}
+    const set=p.set?p.set.val:(!firstSet?curSet(u):null);
+    if(set)h+=p.skill?show("skill",p.skill,`${set} skill`):`<button class="btn sm" type="button" data-lr="${u.id},${p.id},skill">Roll ${esc(set)} skill</button>`;
+  }
+  const done=p.trait&&p.trait.val&&(!u.hero||(p.skill&&p.skill.val));
+  h+=`<button class="btn sm ${done?"primary":"ghost"}" type="button" data-ldone="${u.id},${p.id}" ${done?"":"disabled"}>Keep these</button></div>`;
+  return h;
+}
+function wireArmiesTop(){
+  document.querySelectorAll("[data-sel]").forEach(b=>b.onclick=()=>{SEL=b.dataset.sel;renderArmies()});
+  $("#addArmy").onclick=()=>armySheet(null);
+}
+function saveArmy(a){return put("armies/"+a.id,a)}
+function wireArmy(a0){
+  const A=()=>clone(army(a0.id));
+  const on=(id,fn)=>{const el=$("#"+id);if(el)el.onclick=fn};
+  on("editArmy",()=>armySheet(A()));
+  on("impStart",()=>importSheet(A(),true));
+  on("addHand",()=>unitSheet(A(),null,true));
+  on("lockIn",()=>{const a=A();const total=aval(a);a.built=true;a.start=total;a.treasury=400-total;alog(a,`Starting army locked in at ${total} pts; ${a.treasury} pts to the treasury.`);saveArmy(a)});
+  on("recruit",()=>importSheet(A(),false));
+  on("buyUp",()=>upgradeSheet(A()));
+  on("exportA",()=>exportSheet(A()));
+  on("adjust",()=>adjustSheet(A()));
+  document.querySelectorAll("[data-uedit]").forEach(b=>b.onclick=()=>unitSheet(A(),b.dataset.uedit,!A().built));
+  document.querySelectorAll("[data-lr]").forEach(b=>b.onclick=()=>{const [uid,pid,key]=b.dataset.lr.split(",");const a=A();const u=a.units.find(x=>x.id===uid);const p=u.pend.find(x=>x.id===pid);
+    if(key==="trait")p.trait=rollTrait(u);
+    if(key==="set")p.set=rollSet(u);
+    if(key==="skill"){const set=p.set?p.set.val:curSet(u);const tmp={...u,skills:u.skills};p.skill=rollSkill(tmp,set)}
+    saveArmy(a)});
+  document.querySelectorAll("[data-lp]").forEach(s=>s.onchange=()=>{const [uid,pid,key]=s.dataset.lp.split(",");const a=A();const u=a.units.find(x=>x.id===uid);const p=u.pend.find(x=>x.id===pid);
+    p[key].val=s.value||undefined;if(key==="set"){p.skill=null}saveArmy(a)});
+  document.querySelectorAll("[data-ldone]").forEach(b=>b.onclick=()=>{const [uid,pid]=b.dataset.ldone.split(",");const a=A();const u=a.units.find(x=>x.id===uid);const p=u.pend.find(x=>x.id===pid);
+    u.traits=[...(u.traits||[]),p.trait.val];
+    if(u.hero){if(p.set&&p.set.val)u.sets=[...(u.sets||[]),p.set.val];if(p.skill&&p.skill.val)u.skills=[...(u.skills||[]),p.skill.val]}
+    u.pend=u.pend.filter(x=>x.id!==pid);
+    alog(a,`${u.name} gained ${[p.trait.val,u.hero&&p.skill?p.skill.val:null].filter(Boolean).join(" and ")}.`);saveArmy(a)});
+}
+function armySheet(a){
+  const isNew=!a;a=a||{name:"",player:"",ai:false};
+  sheet(`<h2>${isNew?"Add an army":"Edit army"}</h2>
+    ${field("aName","Army name",a.name,"text",'placeholder="The Iron Wardens"')}
+    ${field("aPlayer","Player",a.player,"text",'placeholder="Who plays it"')}
+    <label class="check"><input type="checkbox" id="aAI" ${a.ai?"checked":""}> Played by the AI (solo and co-op games)</label>
+    <label class="check"><input type="checkbox" id="aMine" ${a.id&&a.id===MINE?"checked":""}> This is my army (it opens first on this device)</label>
+    ${isNew&&missions()>0?`<p class="callout">Late joiner: it starts with a regular 400 pt army.${useRatio()?"":" Consider turning on \"Late joiners\" in the campaign settings so VP is compared per match."}</p>`:""}
+    <div class="row"><button class="btn primary" id="aSave" type="button">${isNew?"Add army":"Save"}</button><button class="btn ghost" data-close type="button">Cancel</button></div>
+    ${!isNew?`<details class="ref"><summary>Disband</summary><p>Disbanding the whole army removes every unit, VP and point so the player can start again from scratch.</p><div class="row"><button class="btn sm danger" id="aDisband" type="button">Disband and start over</button><button class="btn sm danger ghost" id="aDelete" type="button">Remove from the campaign</button></div></details>`:""}`,()=>{
+    $("#aSave").onclick=()=>{const name=$("#aName").value.trim();if(!name){$("#aName").focus();return}
+      const o=isNew?{id:rid(),created:Date.now(),treasury:400,vp:0,played:0,units:[],built:false,log:[]}:a;
+      o.name=name;o.player=$("#aPlayer").value.trim();o.ai=$("#aAI").checked;
+      const mine=$("#aMine");if(mine){if(mine.checked){MINE=o.id;lsSet(MYKEY,o.id)}else if(MINE===o.id){MINE=null;lsSet(MYKEY,null)}}
+      if(isNew)alog(o,`Joined the campaign${missions()?` before mission ${missions()+1}`:""} with a 400 pt treasury.`);
+      SEL=o.id;saveArmy(o);closeSheet()};
+    const db=$("#aDisband");if(db)db.onclick=()=>{const o={...a,units:[],treasury:400,vp:0,played:0,built:false};alog(o,"Disbanded and started over.");closeSheet();saveArmy(o)};
+    const dl=$("#aDelete");if(dl)dl.onclick=()=>confirmSheet(`Remove ${a.name}?`,"The army disappears from the campaign and the standings.","Remove",()=>{SEL=null;return put("armies/"+a.id,null)},true);
+  });
+}
+function importSheet(a,start){
+  const rec=!start,heroUsed=a.heroM===missions(),xpUsed=a.recM===missions();
+  sheet(`<h2>${start?"Import the starting army":"Recruit units"}</h2>
+    <p class="muted">${start?"Paste the list shared from Army Forge (Share → copy as text). It replaces the units below.":`Paste units from Army Forge, or add one by hand. Their points come out of the treasury (${a.treasury} pts).`}</p>
+    <textarea class="notes" id="impText" placeholder="++ My Army [GFF 400pts] ++&#10;&#10;Squad Leader [1] Q4+ D4+ | 45pts | Hero, Tough(3)&#10;Pistol (12&quot;, A1), CCW (A2)"></textarea>
+    <div id="impPrev"></div>
+    <div class="row"><button class="btn primary" id="impGo" type="button" disabled>${start?"Use these units":"Recruit"}</button>${rec?`<button class="btn sm ghost" id="impHand" type="button">Add one by hand</button>`:""}<button class="btn ghost" data-close type="button">Cancel</button></div>`,()=>{
+    let parsed=[];const pick=new Set();let xpOne=null;
+    const draw=()=>{const ta=$("#impText").value;parsed=parseList(ta).units;
+      if(start)parsed.forEach((u,i)=>pick.add(i));
+      const chosen=parsed.filter((u,i)=>pick.has(i));
+      const cost=chosen.reduce((s,u)=>s+u.pts,0)+(xpOne!=null&&pick.has(xpOne)?30:0);
+      const newH=chosen.filter(u=>u.hero).length;
+      const probs=[];
+      if(start){if(cost>400)probs.push("Over 400 pts.");if(newH>1)probs.push("At most one Hero in the starting army.")}
+      else{if(cost>(a.treasury||0))probs.push(`Costs ${cost} pts; the treasury has ${a.treasury}.`);if(newH>1||(newH&&heroUsed))probs.push("Only one new Hero can be recruited after each mission.");if(newH+heroes(a)>3)probs.push("An army can have at most 3 Heroes.")}
+      $("#impPrev").innerHTML=parsed.length?`<ul class="ulist">${parsed.map((u,i)=>`<li><label class="check" style="min-width:0"><input type="checkbox" data-ip="${i}" ${pick.has(i)?"checked":""} ${start?"disabled":""}> <span>${esc(u.name)}${u.hero?" · Hero":""}</span></label><span class="num">${u.pts}pts</span></li>`).join("")}</ul>
+        ${rec&&!xpUsed?`<div class="field"><label for="xpOne">One recruit may start with 5 XP for +30 pts</label><select id="xpOne"><option value="">None</option>${parsed.map((u,i)=>pick.has(i)?`<option value="${i}" ${xpOne===i?"selected":""}>${esc(u.name)}</option>`:"").join("")}</select></div>`:""}
+        <p class="row between"><span class="muted">Total</span><b class="num">${cost} pts</b></p>${probs.map(p=>`<p class="chip bad" style="align-self:flex-start">${esc(p)}</p>`).join("")}`:ta.trim()?`<p class="muted">No units found. Each unit line looks like <span class="num">Name [5] Q4+ D4+ | 100pts | rules</span>.</p>`:"";
+      $("#impGo").disabled=!chosen.length||probs.length>0;
+      document.querySelectorAll("[data-ip]").forEach(c=>c.onchange=()=>{const i=+c.dataset.ip;c.checked?pick.add(i):pick.delete(i);draw()});
+      const xo=$("#xpOne");if(xo)xo.onchange=()=>{xpOne=xo.value===""?null:+xo.value;draw()};
+    };
+    $("#impText").oninput=()=>{if(!start)pick.clear();draw()};
+    const hd=$("#impHand");if(hd)hd.onclick=()=>unitSheet(a,null,false);
+    $("#impGo").onclick=()=>{
+      const chosen=parsed.map((u,i)=>({u,i})).filter(x=>pick.has(x.i));
+      if(start)a.units=[];
+      let cost=0;
+      chosen.forEach(({u,i})=>{const nu=newUnit({...u,name:uniqName(a,u.name)});a.units.push(nu);cost+=u.pts;
+        if(rec&&xpOne===i){cost+=30;addXP(a,nu,5,"recruited as a veteran");a.recM=missions()}});
+      if(rec){a.treasury=(a.treasury||0)-cost;if(chosen.some(x=>x.u.hero))a.heroM=missions();alog(a,`Recruited ${chosen.map(x=>x.u.name).join(", ")} for ${cost} pts.`)}
+      closeSheet();saveArmy(a)};
+  });
+}
+function unitSheet(a,uid,free){
+  const u=uid?a.units.find(x=>x.id===uid):null,isNew=!u;const x=u||{name:"",models:1,q:4,d:4,tough:1,pts:0,hero:false,rules:"",weapons:""};
+  sheet(`<h2>${isNew?"Add a unit":esc(u.name)}</h2>
+    ${field("uName","Unit name (unique)",x.name)}
+    ${!isNew?field("uBase","Unit type",x.base||""):""}
+    <div class="row">${field("uModels","Models",x.models,"number",'min="1"')}${field("uQ","Quality",x.q,"number",'min="2" max="6"')}${field("uD","Defense",x.d,"number",'min="2" max="6"')}${field("uT","Tough",x.tough,"number",'min="1"')}${field("uPts","Base pts",x.pts,"number",'min="0"')}</div>
+    <label class="check"><input type="checkbox" id="uHero" ${x.hero?"checked":""}> Hero</label>
+    ${field("uRules","Special rules",x.rules)}
+    ${field("uWeap","Weapons",x.weapons)}
+    ${isNew&&!free?`<p class="muted">The base points come out of the treasury (${a.treasury} pts).</p>`:""}
+    ${!isNew?`<div class="panel stack"><div class="row between"><span class="eyebrow">XP</span><span class="num">${u.xp||0}/30</span></div>
+      <div class="row" style="gap:6px"><button class="btn sm" data-xp="1" type="button">+1 XP</button><button class="btn sm" data-xp="2" type="button">+2 XP</button><button class="btn sm ghost" data-xp="-1" type="button">−1 XP</button></div>
+      <p class="muted" style="font-size:.85rem">For random events and corrections. Reaching a multiple of 5 adds a level-up to roll.</p></div>
+      ${(u.ups||[]).length?`<div class="stack"><span class="eyebrow">Upgrades</span><ul class="ulist">${u.ups.map((p,i)=>`<li><span>${esc(p.name)} <span class="num muted">${p.cost>0?"+":""}${p.cost}</span></span><button class="btn sm" type="button" data-sell="${i}">${sellLabel(a,p)}</button></li>`).join("")}</ul></div>`:""}`:""}
+    <div class="row"><button class="btn primary" id="uSave" type="button">${isNew?(free?"Add":"Recruit"):"Save"}</button><button class="btn ghost" data-close type="button">Cancel</button>
+    ${!isNew?`<button class="btn sm danger ghost" id="uDis" type="button">Disband</button>`:""}</div>`,()=>{
+    const read=o=>{o.name=uniqName(a,$("#uName").value.trim()||"Unit",o.id);const b=$("#uBase");if(b)o.base=b.value.trim()||o.name;o.models=Math.max(1,+$("#uModels").value||1);o.q=+$("#uQ").value||4;o.d=+$("#uD").value||4;o.tough=Math.max(1,+$("#uT").value||1);o.pts=Math.max(0,+$("#uPts").value||0);o.hero=$("#uHero").checked;o.rules=$("#uRules").value.trim();o.weapons=$("#uWeap").value.trim();return o};
+    $("#uSave").onclick=()=>{
+      if(isNew){const nu=read(newUnit({name:"Unit"}));
+        if(!free){if(nu.pts>(a.treasury||0)){toast(`The treasury only has ${a.treasury} pts.`);return}if(nu.hero&&(a.heroM===missions()||heroes(a)>=3)){toast(a.heroM===missions()?"One new Hero per mission.":"At most 3 Heroes.");return}
+          a.treasury-=nu.pts;if(nu.hero)a.heroM=missions();alog(a,`Recruited ${nu.name} for ${nu.pts} pts.`)}
+        a.units.push(nu)}
+      else read(u);
+      closeSheet();saveArmy(a)};
+    document.querySelectorAll("[data-xp]").forEach(b=>b.onclick=()=>{addXP(a,u,+b.dataset.xp,"adjusted");closeSheet();saveArmy(a)});
+    document.querySelectorAll("[data-sell]").forEach(b=>b.onclick=()=>{sellUp(a,u,+b.dataset.sell);closeSheet();saveArmy(a)});
+    const dis=$("#uDis");if(dis)dis.onclick=()=>confirmSheet(`Disband ${u.name}?`,"It leaves the army with its XP and upgrades. There's no refund.","Disband",()=>{a.units=a.units.filter(x=>x.id!==u.id);alog(a,`Disbanded ${u.name}.`);return saveArmy(a)},true);
+  });
+}
+const sellVal=c=>Math.floor(c/2/5)*5;
+function sellLabel(a,p){if(p.cost<0)return `Remove (pay ${-p.cost})`;if(p.cost===5)return p.tried===missions()?"Tried this time":"Try to sell (4+)";return `Sell for ${sellVal(p.cost)}`}
+function sellUp(a,u,i){const p=u.ups[i];
+  if(p.cost<0){if((a.treasury||0)<-p.cost){toast(`Removing it costs ${-p.cost} pts.`);return}a.treasury+=p.cost;u.ups.splice(i,1);alog(a,`Removed ${p.name} from ${u.name}, paying ${-p.cost} pts.`);return}
+  if(p.cost===5){if(p.tried===missions()){toast("Only one try per item after each mission.");return}const r=d6();if(r>=4){a.treasury+=5;u.ups.splice(i,1);alog(a,`Sold ${p.name} from ${u.name} for 5 pts (rolled ${r}).`);toast(`Rolled ${r}: sold for 5 pts.`)}else{p.tried=missions();toast(`Rolled ${r}: it can't be sold this time.`)}return}
+  const v=sellVal(p.cost);a.treasury+=v;u.ups.splice(i,1);alog(a,`Sold ${p.name} from ${u.name} for ${v} pts.`);
+}
+function upgradeSheet(a){
+  sheet(`<h2>Buy an upgrade</h2><p class="muted">Use the cost shown in Army Forge. A negative cost (swapping to a cheaper option) adds those points to the treasury.</p>
+    <div class="field"><label for="upU">Unit</label><select id="upU">${a.units.map(u=>`<option value="${u.id}">${esc(u.name)}</option>`).join("")}</select></div>
+    ${field("upN","Upgrade","","text",'placeholder="Plasma Rifle"')}${field("upC","Cost (pts)","","number")}
+    <p class="muted">Treasury: <b class="num">${a.treasury}</b> pts</p>
+    <div class="row"><button class="btn primary" id="upGo" type="button">Buy</button><button class="btn ghost" data-close type="button">Cancel</button></div>`,()=>{
+    $("#upGo").onclick=()=>{const u=a.units.find(x=>x.id===$("#upU").value);const n=$("#upN").value.trim(),c=Math.round(+$("#upC").value||0);
+      if(!u||!n){$("#upN").focus();return}if(c>(a.treasury||0)){toast(`The treasury only has ${a.treasury} pts.`);return}
+      u.ups=[...(u.ups||[]),{name:n,cost:c}];a.treasury-=c;alog(a,c<0?`Swapped ${u.name} to ${n}, gaining ${-c} pts.`:`Bought ${n} for ${u.name} (${c} pts).`);closeSheet();saveArmy(a)}});
+}
+function adjustSheet(a){
+  sheet(`<h2>Adjust ${esc(a.name)}</h2><p class="muted">For random events like Credits Stash or Grenade Bag, or to fix a mistake. Changes are written to the army log.</p>
+    <div class="row">${field("adT","Treasury change","0","number")}${field("adV","VP change","0","number")}</div>${field("adWhy","Reason","","text",'placeholder="Treasure Holopad"')}
+    <div class="row"><button class="btn primary" id="adGo" type="button">Apply</button><button class="btn ghost" data-close type="button">Cancel</button></div>`,()=>{
+    $("#adGo").onclick=()=>{const t=Math.round(+$("#adT").value||0),v=Math.round(+$("#adV").value||0),why=$("#adWhy").value.trim();if(!t&&!v){closeSheet();return}
+      a.treasury=(a.treasury||0)+t;a.vp=(a.vp||0)+v;alog(a,`Adjusted ${[t?`${t>0?"+":""}${t} pts`:"",v?`${v>0?"+":""}${v} VP`:""].filter(Boolean).join(", ")}${why?` (${why})`:""}.`);closeSheet();saveArmy(a)}});
+}
+function exportSheet(a,ids){
+  const txt=exportText(a,ids);
+  sheet(`<h2>Copy for the game</h2><p class="muted">Paste this into Firefight Solo's "Import from Army Forge". Traits, skills and injuries come through as special rules${ids?"; only the units brought to this mission are included":""}.</p>
+    <textarea class="notes" id="exT" readonly style="min-height:220px;font-family:var(--mono);font-size:.8rem">${esc(txt)}</textarea>
+    <div class="row"><button class="btn primary" id="exCopy" type="button">Copy</button><button class="btn ghost" data-close type="button">Close</button></div>`,()=>{
+    $("#exCopy").onclick=async()=>{try{await navigator.clipboard.writeText(txt);toast("Copied.")}catch(e){const t=$("#exT");t.focus();t.select();toast("Select all and copy.")}}});
+}
+
+/* ---------- MISSION TAB ---------- */
+const STAGES={setup:"Setup",play:"Playing",after:"Results"};
+function liveStageName(){return D.live?STAGES[D.live.stage]||"":""}
+function blankLive(){return {stage:"setup",n:missions()+1,armies:[],bring:{},obj:{},under:{},round:1,events:[],win:[],conc:[],res:{},spec:{},cas:{},adj:{},started:Date.now()}}
+function saveLive(l){return put("live/main",l)}
+function L(){return clone(D.live)}
+function renderMatch(){
+  const box=$("#matchBody");
+  if(!D.camp){box.innerHTML=`<p class="muted">Start a campaign on the Campaign tab first.</p>`;return}
+  if(D.camp.over||endState().over){box.innerHTML=`<div class="panel winner stack"><h2>The campaign is over</h2><p>${esc(endState().why)}</p><p class="muted">Switch to an Endless campaign in the settings to keep playing.</p></div>`;return}
+  if(!D.live){box.innerHTML=`<div class="panel stack"><span class="eyebrow">Mission ${missions()+1}</span><h2>Set up the next mission</h2><p class="muted">Choose who plays, which units they bring, and roll special objectives. Everyone with the page open sees the same mission as you go.</p>
+    <button class="btn primary" id="mNew" type="button" ${armies().length<2?"disabled":""}>Start setting up</button>${armies().length<2?`<p class="muted">You need at least two armies.</p>`:""}</div>`;
+    const b=$("#mNew");if(b)b.onclick=()=>saveLive(blankLive());return}
+  const l=D.live;
+  let h=`<div class="stagebar">${Object.entries(STAGES).map(([k,n],i)=>`<span class="${l.stage===k?"now":Object.keys(STAGES).indexOf(l.stage)>i?"past":""}">${i+1} · ${n}</span>`).join("")}</div>`;
+  if(l.stage==="setup")h+=setupStage(l);
+  if(l.stage==="play")h+=playStage(l);
+  if(l.stage==="after")h+=afterStage(l);
+  h+=`<div class="row"><button class="btn sm ghost danger" id="mCancel" type="button">Cancel this mission</button></div>`;
+  box.innerHTML=h;wireMatch(l);
+}
+function broughtVal(l,aid){const a=army(aid);if(!a)return 0;const ids=l.bring[aid]||[];return a.units.filter(u=>ids.includes(u.id)).reduce((s,u)=>s+uval(u),0)}
+function underdog(l){const vals=l.armies.map(id=>broughtVal(l,id));const top=Math.max(0,...vals);const o={};l.armies.forEach((id,i)=>o[id]=Math.floor((top-vals[i])/25));return o}
+function setupStage(l){
+  const as=armies();
+  let h=`<div class="stack"><h2>Who plays?</h2><div class="row" style="gap:6px">${as.map(a=>`<button type="button" class="tg" data-ma="${a.id}" aria-pressed="${l.armies.includes(a.id)}" ${!a.built?"disabled":""}>${esc(a.name)}${a.ai?" · AI":""}${!a.built?" · not ready":""}</button>`).join("")}</div>
+    ${as.some(a=>!a.built)?`<p class="muted" style="font-size:.86rem">Armies still building their starting list can't play yet.</p>`:""}</div>`;
+  if(l.armies.length){
+    const vals=l.armies.map(id=>aval(army(id)||{units:[]}));const cap=Math.min(...vals)+125;const ud=underdog(l);
+    h+=`<div class="pcols"><div class="pcol pl"><div style="order:1" class="stack"><h2>Units brought</h2><p class="muted" style="font-size:.9rem">No points limit, but each side may bring at most <b class="num">${cap}</b> pts: 125 over the lowest-valued army.</p>`;
+    l.armies.forEach(id=>{const a=army(id);if(!a)return;const bv=broughtVal(l,id);
+      h+=`<div class="panel stack ${a.ai?"aib":""}"><div class="row between"><h3>${esc(a.name)}</h3><span class="chip num ${bv>cap?"bad":"ok"}">${bv} pts</span></div>
+        <ul class="ulist">${a.units.map(u=>`<li><label class="check" style="min-width:0"><input type="checkbox" data-mb="${id},${u.id}" ${(l.bring[id]||[]).includes(u.id)?"checked":""} ${u.sit?"disabled":""}> <span>${esc(u.name)}${u.sit?` · sitting out`:""}${(u.pend||[]).length?` · level-up to roll`:""}</span></label><span class="num">${uval(u)}</span></li>`).join("")}</ul>
+        <div class="row" style="gap:6px"><button class="btn sm ghost" type="button" data-mall="${id}">Bring all</button><button class="btn sm ghost" type="button" data-mexp="${id}">Copy for the game</button></div></div>`});
+    h+=`</div></div><div class="pcol pr"><div style="order:2" class="stack"><h2>Underdog points</h2><div class="spec">${l.armies.map(id=>`<div><b>${ud[id]}</b><span>${esc((army(id)||{}).name||"")}</span></div>`).join("")}</div>
+      <p class="muted" style="font-size:.88rem">1 point per full 25 pts below the highest. Spend one to change every die in a friendly or enemy roll by +1 or −1, one point per roll.</p></div>
+      <div style="order:3" class="stack"><h2>Special objectives</h2><p class="muted" style="font-size:.9rem">Worth 40 pts to the treasury. Re-roll any that can't be completed.</p>
+      ${l.armies.map(id=>{const o=l.obj[id];const a=army(id)||{};return `<div class="objrow"><div><b>${esc(a.name)}</b>${o?`<p><span class="d6 ok">${o.r}</span> <b>${esc(SPECIAL[o.r-1][0])}</b>: ${esc(SPECIAL[o.r-1][1])}</p>`:`<p class="muted">Not rolled yet</p>`}</div><button class="btn sm ${o?"ghost":""}" type="button" data-mo="${id}">${o?"Re-roll":"Roll"}</button></div>`}).join("")}
+      </div><div style="order:4" class="stack">
+      <button class="btn primary" id="mStart" type="button" ${l.armies.length<2||l.armies.some(id=>!(l.bring[id]||[]).length)||l.armies.some(id=>!l.obj[id])?"disabled":""}>Start the mission</button>
+      ${l.armies.length<2?`<p class="muted">Pick at least two armies.</p>`:l.armies.some(id=>!(l.bring[id]||[]).length)?`<p class="muted">Every army needs at least one unit.</p>`:l.armies.some(id=>!l.obj[id])?`<p class="muted">Roll every army's special objective.</p>`:""}
+      </div></div></div>`;
+  }
+  return h;
+}
+function playStage(l){
+  const ud=underdog(l);const last=l.events.filter(e=>e.round===l.round);
+  return `<div class="pcols"><div class="pcol pl">
+    <div style="order:1" class="panel stack"><div class="row between"><div><span class="eyebrow">Round</span><p><b class="num" style="font-size:2rem">${l.round}</b> ${l.round>4?`<span class="chip warn">Overtime</span>`:""}</p></div>
+      <div class="row" style="gap:6px"><button class="btn sm ghost" type="button" id="rPrev" ${l.round<=1?"disabled":""}>Back</button><button class="btn primary" type="button" id="rNext">Next round</button></div></div>
+      <p class="muted" style="font-size:.9rem">${l.round>=4?"If there's no winner after round 4, keep playing rounds until there is one.":"At the start of each round: random event check. Players may also concede now."}</p></div>
+    <div style="order:2" class="panel stack"><div class="row between"><h2>Random event</h2><button class="btn ${last.length?"ghost sm":"primary"}" id="evRoll" type="button">${last.length?"Roll again":"Roll for round "+l.round}</button></div>
+      ${last.length?last.map(evHTML).join(""):`<p class="muted">Roll a die at the start of the round. On a 5+ a random event happens.</p>`}
+      <div class="row" style="gap:6px"><button class="btn sm ghost" id="rUnit" type="button">Pick a random unit</button><button class="btn sm ghost" id="rArmy" type="button">Pick a random army</button><button class="btn sm ghost" id="rQuarter" type="button">Random table quarter</button></div><p id="rOut" class="num"></p></div>
+    <div style="order:5" class="stack"><h2>Events so far</h2>${l.events.length?`<ul class="log">${l.events.slice().reverse().map(e=>`<li><span class="r">R${e.round}</span><span>${e.code?`<b>${e.code} ${esc(EVENTS[e.code][0])}</b>: ${esc(EVENTS[e.code][1])}`:`Rolled ${e.r}: no event.`}</span></li>`).join("")}</ul>`:`<p class="muted">None yet.</p>`}</div>
+  </div><div class="pcol pr">
+    <div style="order:3" class="stack"><h2>Underdog points</h2>${l.armies.map(id=>{const a=army(id)||{};const have=ud[id],used=(l.under[id]||0),left=have-used;return have?`<div class="objrow"><div><b>${esc(a.name)}</b><div class="pips">${Array.from({length:have},(_,i)=>`<i class="${i<used?"used":""}"></i>`).join("")}</div></div><div class="row" style="gap:6px"><button class="btn sm" type="button" data-ud="${id},1" ${left<=0?"disabled":""}>Spend</button><button class="btn sm ghost" type="button" data-ud="${id},-1" ${used<=0?"disabled":""}>Undo</button></div></div>`:`<div class="objrow"><div><b>${esc(a.name)}</b><p class="muted">No underdog points</p></div></div>`}).join("")}</div>
+    <div style="order:4" class="stack"><h2>Special objectives</h2>${l.armies.map(id=>{const o=l.obj[id];const a=army(id)||{};return o?`<div class="objrow"><div><b>${esc(a.name)}: ${esc(SPECIAL[o.r-1][0])}</b><p class="muted">${esc(SPECIAL[o.r-1][1])}</p></div></div>`:""}).join("")}</div>
+    <div style="order:6" class="stack"><button class="btn primary" id="toAfter" type="button">The game is over: enter results</button><button class="btn sm ghost" id="toSetup" type="button">Back to setup</button></div>
+  </div></div>`;
+}
+function evHTML(e){if(!e.code)return `<div class="ev"><span class="d6">${e.r}</span><p>No event this round.</p></div>`;
+  const [n,t,fx]=EVENTS[e.code];return `<div class="ev on"><span class="d6 ok">${e.r}</span><div><span class="eyebrow">Event ${e.code}</span><h3>${esc(n)}</h3><p>${esc(t)}</p>${e.extra?`<p class="num"><b>${esc(e.extra)}</b></p>`:""}${fx&&(fx.pts||fx.vp)?`<p class="muted" style="font-size:.86rem">Add it in the results step as an extra for that army.</p>`:fx&&fx.xp?`<p class="muted" style="font-size:.86rem">Add the XP in the results step for that unit.</p>`:""}</div></div>`}
+function afterStage(l){
+  const c=D.camp;const no=c.opts&&c.opts.noPerma;
+  let h=`<div class="stack"><h2>Who won?</h2><p class="muted" style="font-size:.9rem">The winner gets 2 VP and 80 pts. Every other army gets 160 pts. In co-op, tick every player on the winning side.</p>
+    <div class="row" style="gap:6px">${l.armies.map(id=>`<button type="button" class="tg" data-win="${id}" aria-pressed="${l.win.includes(id)}">${esc((army(id)||{}).name)}</button>`).join("")}</div>
+    <div class="row" style="gap:6px"><span class="muted" style="font-size:.88rem">Conceded:</span>${l.armies.map(id=>`<label class="check"><input type="checkbox" data-conc="${id}" ${l.conc.includes(id)?"checked":""}> ${esc((army(id)||{}).name)}</label>`).join("")}</div>
+    <p class="muted" style="font-size:.85rem">Units removed by conceding are not casualties.</p></div>`;
+  h+=`<div class="stack"><h2>Units</h2><p class="muted" style="font-size:.9rem">Tick casualties (destroyed or Routed), then count the units and Heroes each unit killed. Extra XP is for events like Kit Box.</p>`;
+  l.armies.forEach(id=>{const a=army(id);if(!a)return;const ids=l.bring[id]||[];const conc=l.conc.includes(id);
+    h+=`<div class="panel stack ${a.ai?"aib":""}"><div class="row between"><h3>${esc(a.name)}</h3><label class="check"><input type="checkbox" data-spec="${id}" ${l.spec[id]?"checked":""}> ${esc(SPECIAL[(l.obj[id]||{r:1}).r-1][0])} done (+40)</label></div>
+      <div class="ures">${a.units.filter(u=>ids.includes(u.id)).map(u=>{const r=l.res[u.id]||{};const cr=l.cas[u.id];return `<div class="ur">
+        <div class="urh"><b>${esc(u.name)}</b>${u.hero?` <span class="chip">Hero</span>`:""}</div>
+        <label class="check"><input type="checkbox" data-cas="${u.id}" ${r.cas&&!conc?"checked":""} ${conc?"disabled":""}> Casualty</label>
+        <div class="row" style="gap:10px">${stepper("Kills",u.id,"k",r.k||0)}${stepper("Hero kills",u.id,"hk",r.hk||0)}${stepper("Extra XP",u.id,"x",r.x||0)}</div>
+        ${r.cas&&!conc?casBox(u,cr,no):""}
+      </div>`}).join("")}</div>
+      <div class="row">${field("adjT_"+id,"Extra pts (events)",(l.adj[id]||{}).t||0,"number",'style="max-width:110px" data-adj="'+id+',t"')}${field("adjV_"+id,"Extra VP (events)",(l.adj[id]||{}).v||0,"number",'style="max-width:110px" data-adj="'+id+',v"')}</div></div>`});
+  h+=`</div>`;
+  const miss=pendingCas(l);
+  h+=`<div class="panel stack"><h2>Apply the results</h2>${summaryHTML(l)}
+    ${!l.win.length?`<p class="chip warn" style="align-self:flex-start">Pick the winner</p>`:""}${miss?`<p class="chip warn" style="align-self:flex-start">${miss} casualty roll${miss>1?"s":""} to make</p>`:""}
+    <div class="row"><button class="btn primary" id="apply" type="button" ${!l.win.length||miss?"disabled":""}>Apply to the campaign</button><button class="btn sm ghost" id="backPlay" type="button">Back to the game</button></div>
+    <p class="muted" style="font-size:.86rem">After applying, roll level-ups on the Armies tab, then buy upgrades and recruit.</p></div>`;
+  return h;
+}
+const stepper=(lab,uid,k,v)=>`<div class="mini"><span>${lab}</span><div class="stepper"><button type="button" data-st="${uid},${k},-1">−</button><span class="num">${v}</span><button type="button" data-st="${uid},${k},1">+</button></div></div>`;
+function casBox(u,cr,no){
+  if(!cr)return `<button class="btn sm primary" type="button" data-cr="${u.id}">Roll casualty</button>`;
+  let h=`<div class="cas"><span class="d6 ${cr.r===1?"fail":cr.r===6?"save":"ok"}">${cr.r}</span><div>`;
+  if(!u.hero){h+=cr.r===1?(no?`<b>Out of action</b><p class="muted">Loses this match's XP and sits out ${cr.sit} match${cr.sit>1?"es":""}.</p>`:`<b>Dead</b><p class="muted">Removed from the army.</p>`):cr.r===6?`<b>Natural Talent</b><p class="muted">Recovers and earns +1 XP.</p>`:`<b>Recovered</b>`}
+  else if(cr.r>=2&&cr.r<=5)h+=`<b>Recovered</b>`;
+  else{const s=cr.sub,kind=cr.r===1?"Injury":"Talent";
+    h+=`<b>${cr.r===1?"Injured: −15 pts":"Talent: +15 pts"}</b>`;
+    if(s){h+=`<p><span class="d6 sm">${s.roll}</span> ${s.opts?`${esc(s.name)}: pick one <select data-cs="${u.id}"><option value="">Choose…</option>${s.opts.map(o=>`<option ${s.val===o?"selected":""}>${esc(o)}</option>`).join("")}</select>`:`<b>${esc(s.val)}</b> <span class="muted">${esc(desc(s.val))}</span>`}</p>`;
+      if(s.val==="Dead")h+=no?`<p class="muted">No permadeath: loses this match's XP and sits out ${cr.sit} match${cr.sit>1?"es":""}.</p>`:`<p class="muted">Removed from the army.</p>`}
+  }
+  return h+`</div><button class="btn sm ghost" type="button" data-crx="${u.id}">Re-roll</button></div>`;
+}
+function pendingCas(l){let n=0;l.armies.forEach(id=>{if(l.conc.includes(id))return;(l.bring[id]||[]).forEach(uid=>{const r=l.res[uid];if(!r||!r.cas)return;const cr=l.cas[uid];if(!cr)n++;else if(cr.sub&&!cr.sub.val)n++})});return n}
+function outcome(l){
+  /* computes every change without saving: {armyId:{a, notes}} */
+  const c=D.camp,no=c.opts&&c.opts.noPerma,out={},notes=[];LOGM=l.n;
+  l.armies.forEach(id=>{const a=clone(army(id));if(!a)return;const ids=l.bring[id]||[];const conc=l.conc.includes(id);const an=[];
+    a.units.forEach(u=>{if(u.sit&&!ids.includes(u.id)){u.sit--;if(!u.sit)an.push(`${u.name} is back from the sidelines.`)}});
+    const keep=[];
+    a.units.forEach(u=>{
+      if(!ids.includes(u.id)){keep.push(u);return}
+      const r=l.res[u.id]||{},cas=!!r.cas&&!conc,cr=l.cas[u.id];
+      let xp=(cas?0:1)+(r.k||0)+2*(r.hk||0)+(r.x||0),dead=false,why=[];
+      if(cas&&cr){
+        if(!u.hero){if(cr.r===1)dead=true;if(cr.r===6){xp+=1;why.push("Natural Talent")}}
+        else if(cr.r===1&&cr.sub){u.mod=(u.mod||0)-15;if(cr.sub.val==="Dead")dead=true;else{u.injuries=[...(u.injuries||[]),cr.sub.val];an.push(`${u.name} was injured: ${cr.sub.val}.`)}}
+        else if(cr.r===6&&cr.sub){u.mod=(u.mod||0)+15;if(cr.sub.val==="Natural Talent")xp+=1;else u.talents=[...(u.talents||[]),cr.sub.val];an.push(`${u.name} gained the ${cr.sub.val} talent.`)}
+      }
+      if(dead){if(no){u.sit=cr.sit||1;an.push(`${u.name} is out of action for ${u.sit} match${u.sit>1?"es":""}.`);keep.push(u);return}
+        an.push(`${u.name} died.`);return}
+      const lv=addXP(a,u,xp);if(xp)an.push(`${u.name} +${xp} XP${lv?` and levels up`:""}.`);keep.push(u);
+    });
+    a.units=keep;
+    const won=l.win.includes(id);let pts=won?80:160,vp=won?2:0;
+    if(l.spec[id])pts+=40;const ad=l.adj[id]||{};pts+=+ad.t||0;vp+=+ad.v||0;
+    a.treasury=(a.treasury||0)+pts;a.vp=(a.vp||0)+vp;a.played=(a.played||0)+1;
+    alog(a,`Mission ${l.n}: ${won?"won":"lost"}${conc?" (conceded)":""}. +${vp} VP, +${pts} pts${l.spec[id]?" including 40 for the special objective":""}.`);
+    out[id]={a,notes:an,won,pts,vp};notes.push(`${a.name}: ${won?"won":"lost"}, +${vp} VP, +${pts} pts.`,...an);
+  });
+  LOGM=null;return {out,notes};
+}
+function summaryHTML(l){if(!l.win.length)return "";const {out}=outcome(l);
+  return `<div class="tbl"><table><tr><th>Army</th><th>Result</th><th>VP</th><th>Pts</th></tr>${Object.values(out).map(o=>`<tr><td>${esc(o.a.name)}</td><td>${o.won?"Won":"Lost"}</td><td class="num">+${o.vp}</td><td class="num">+${o.pts}</td></tr>`).join("")}</table></div>
+    ${Object.values(out).some(o=>o.notes.length)?`<details class="ref"><summary>Unit changes</summary><ul>${Object.values(out).flatMap(o=>o.notes).map(t=>`<li>${esc(t)}</li>`).join("")}</ul></details>`:""}`}
+async function applyMatch(){
+  const l=L();if(!l)return;const {out,notes}=outcome(l);const c=clone(D.camp);
+  const before={camp:clone(D.camp),armies:{}};l.armies.forEach(id=>before.armies[id]=clone(army(id)));
+  const mid=rid();
+  c.missions=(c.missions||0)+1;
+  const m={id:mid,n:l.n,date:today(),armies:l.armies,names:Object.fromEntries(l.armies.map(id=>[id,(army(id)||{}).name||""])),winners:l.win,
+    obj:Object.fromEntries(l.armies.map(id=>[id,l.obj[id]?SPECIAL[l.obj[id].r-1][0]:""])),events:l.events.filter(e=>e.code).map(e=>e.code),notes,before};
+  /* end conditions */
+  const after=armies().map(a=>out[a.id]?out[a.id].a:a);
+  const top=after.slice().sort((x,y)=>useRatio()?ratio(y)-ratio(x)||y.vp-x.vp:y.vp-x.vp)[0];
+  if(c.type==="game"&&c.missions>=c.len){c.over=true;c.winner=top&&top.id;c.why=`All ${c.len} missions played. ${top?top.name:""} has the most VP.`}
+  if(c.type==="points"){const hit=after.filter(a=>(a.vp||0)>=c.len).sort((x,y)=>y.vp-x.vp)[0];if(hit){c.over=true;c.winner=hit.id;c.why=`${hit.name} reached ${hit.vp} VP after mission ${l.n}.`}}
+  for(const id of Object.keys(out))await put("armies/"+id,out[id].a);
+  await put("matches/"+mid,m);await put("camp/main",c);await put("live/main",null);
+  toast(`Mission ${l.n} applied.`);location.hash="armies";
+}
+function wireMatch(l0){
+  const upd=fn=>{const l=L();fn(l);return saveLive(l)};
+  $("#mCancel").onclick=()=>confirmSheet("Cancel this mission?","The setup and anything entered so far is discarded. Armies aren't changed.","Cancel mission",()=>put("live/main",null),true);
+  document.querySelectorAll("[data-ma]").forEach(b=>b.onclick=()=>upd(l=>{const id=b.dataset.ma;if(l.armies.includes(id)){l.armies=l.armies.filter(x=>x!==id);delete l.bring[id]}else{l.armies.push(id);const a=army(id);l.bring[id]=a.units.filter(u=>!u.sit).map(u=>u.id)}}));
+  document.querySelectorAll("[data-mb]").forEach(c=>c.onchange=()=>upd(l=>{const [aid,uid]=c.dataset.mb.split(",");const s=new Set(l.bring[aid]||[]);c.checked?s.add(uid):s.delete(uid);l.bring[aid]=[...s]}));
+  document.querySelectorAll("[data-mall]").forEach(b=>b.onclick=()=>upd(l=>{const a=army(b.dataset.mall);l.bring[a.id]=a.units.filter(u=>!u.sit).map(u=>u.id)}));
+  document.querySelectorAll("[data-mexp]").forEach(b=>b.onclick=()=>exportSheet(army(b.dataset.mexp),l0.bring[b.dataset.mexp]||[]));
+  document.querySelectorAll("[data-mo]").forEach(b=>b.onclick=()=>upd(l=>{l.obj[b.dataset.mo]={r:d6()}}));
+  const on=(id,fn)=>{const el=$("#"+id);if(el)el.onclick=fn};
+  on("mStart",()=>upd(l=>{l.stage="play";l.round=Math.max(1,l.round||1)}));
+  on("rNext",()=>upd(l=>{l.round++}));
+  on("rPrev",()=>upd(l=>{l.round=Math.max(1,l.round-1)}));
+  on("evRoll",()=>upd(l=>{const r=d6();const e={round:l.round,r};if(r>=5){e.code=d6()*10+d6();const fx=EVENTS[e.code][2];
+    if(fx){if(fx.pts==="d3x25")e.extra=`${d3()*25} pts`;else if(fx.vp==="d3")e.extra=`${d3()} VP`;else if(fx.xp==="d3")e.extra=`${d3()} XP`}}
+    l.events=[...l.events.filter(x=>x.round!==l.round),e]}));
+  const pickUnit=()=>{const all=[];l0.armies.forEach(id=>{const a=army(id);if(!a)return;a.units.filter(u=>(l0.bring[id]||[]).includes(u.id)).forEach(u=>all.push(`${u.name} (${a.name})`))});return all[Math.floor(Math.random()*all.length)]};
+  on("rUnit",()=>{$("#rOut").textContent=`Random unit: ${pickUnit()||"none"}. Re-roll if it isn't eligible.`});
+  on("rArmy",()=>{const a=army(l0.armies[Math.floor(Math.random()*l0.armies.length)]);$("#rOut").textContent=`Random army: ${a?a.name:"none"}.`});
+  on("rQuarter",()=>{$("#rOut").textContent=`Table quarter ${1+Math.floor(Math.random()*4)}. Number them 1–4 clockwise from your left.`});
+  document.querySelectorAll("[data-ud]").forEach(b=>b.onclick=()=>upd(l=>{const [id,n]=b.dataset.ud.split(",");l.under[id]=Math.max(0,(l.under[id]||0)+ +n)}));
+  on("toAfter",()=>upd(l=>{l.stage="after"}));
+  on("toSetup",()=>upd(l=>{l.stage="setup"}));
+  on("backPlay",()=>upd(l=>{l.stage="play"}));
+  document.querySelectorAll("[data-win]").forEach(b=>b.onclick=()=>upd(l=>{const id=b.dataset.win;l.win=l.win.includes(id)?l.win.filter(x=>x!==id):[...l.win,id]}));
+  document.querySelectorAll("[data-conc]").forEach(c=>c.onchange=()=>upd(l=>{const id=c.dataset.conc;l.conc=c.checked?[...l.conc,id]:l.conc.filter(x=>x!==id)}));
+  document.querySelectorAll("[data-spec]").forEach(c=>c.onchange=()=>upd(l=>{l.spec[c.dataset.spec]=c.checked}));
+  document.querySelectorAll("[data-cas]").forEach(c=>c.onchange=()=>upd(l=>{const id=c.dataset.cas;l.res[id]={...(l.res[id]||{}),cas:c.checked};if(!c.checked)delete l.cas[id]}));
+  document.querySelectorAll("[data-st]").forEach(b=>b.onclick=()=>upd(l=>{const [id,k,n]=b.dataset.st.split(",");const r={...(l.res[id]||{})};r[k]=Math.max(0,(r[k]||0)+ +n);l.res[id]=r}));
+  const rollCas=uid=>upd(l=>{const u=findUnit(uid);if(!u)return;const r=d6();const cr={r};
+    if(u.hero&&r===1)cr.sub=rollInjury(u);if(u.hero&&r===6)cr.sub=rollTalent(u);cr.sit=d3();l.cas[uid]=cr});
+  document.querySelectorAll("[data-cr]").forEach(b=>b.onclick=()=>rollCas(b.dataset.cr));
+  document.querySelectorAll("[data-crx]").forEach(b=>b.onclick=()=>rollCas(b.dataset.crx));
+  document.querySelectorAll("[data-cs]").forEach(s=>s.onchange=()=>upd(l=>{const cr=l.cas[s.dataset.cs];if(cr&&cr.sub)cr.sub.val=s.value||undefined}));
+  document.querySelectorAll("[data-adj]").forEach(i=>i.onchange=()=>upd(l=>{const [id,k]=i.dataset.adj.split(",");l.adj[id]={...(l.adj[id]||{}),[k]:Math.round(+i.value||0)}}));
+  on("apply",()=>{const {notes}=outcome(L());confirmSheet(`Apply mission ${l0.n}?`,`${notes.slice(0,8).map(esc).join("<br>")}${notes.length>8?"<br>…":""}`,"Apply",applyMatch)});
+}
+function findUnit(uid){for(const a of armies()){const u=(a.units||[]).find(x=>x.id===uid);if(u)return u}return null}
+
+/* ---------- RULES TAB ---------- */
+function renderRules(){
+  const tbl=(rows,hd)=>`<div class="tbl"><table><tr>${hd.map(x=>`<th>${x}</th>`).join("")}</tr>${rows.map(r=>`<tr>${r.map(x=>`<td>${x}</td>`).join("")}</tr>`).join("")}</table></div>`;
+  const six=t=>t.map(([n,d],i)=>[`<b class="num">${i+1}</b>`,`<b>${esc(n)}</b>`,esc(d)]);
+  const sec=(t,b,open)=>`<details class="rule" ${open?"open":""}><summary><span>${t}</span></summary><div class="body">${b}</div></details>`;
+  let h=CRULES.map(([t,b],i)=>sec(t,b,i===0)).join("");
+  h+=sec("Special objectives",tbl(six(SPECIAL),["D6","Objective",""]));
+  h+=sec("Unit traits (level-ups)",tbl(six(TRAITS),["D6","Trait",""]));
+  h+=sec("Hero injuries",tbl(six(INJURIES),["D6","Injury",""]));
+  h+=sec("Hero talents",tbl(six(TALENTS),["D6","Talent",""]));
+  h+=sec("Hero skill sets",`<p>The first time a Hero levels up, roll: <b>1–2</b> Pathfinder or Captain · <b>3–4</b> Warrior or Hunter · <b>5–6</b> Warden or Overseer (pick one). Each level, roll a skill from the set: 1–2, 3–4, 5–6.</p>`+
+    Object.entries(SKILLS).map(([s,list])=>`<h3>${s}</h3>`+tbl(list.map(([n,d],i)=>[`<b class="num">${["1–2","3–4","5–6"][i]}</b>`,`<b>${esc(n)}</b>`,esc(d)]),["D6","Skill",""])).join(""));
+  h+=sec("Random events",`<p>Roll two dice one at a time: the first is the tens, the second the units.</p>`+tbl(Object.entries(EVENTS).map(([k,[n,d]])=>[`<b class="num">${k}</b>`,`<b>${esc(n)}</b>`,esc(d)]),["D66","Event",""]));
+  $("#rulesBody").innerHTML=h+`<p class="muted" style="font-size:.86rem">Summarised from One Page Rules' Campaign Rules v3.6.0.</p>`;
+}
+
+/* ---------- SCREEN LAYOUT (per device) ---------- */
+const LYKEY=LKEY+"-layout",MQ=matchMedia("(min-width: 900px) and (orientation: landscape)");
+let LAY={mode:"auto"};
+try{Object.assign(LAY,JSON.parse(localStorage.getItem(LYKEY))||{})}catch(e){}
+function applyLayout(){const t=LAY.mode==="tablet"||(LAY.mode==="auto"&&MQ.matches);document.documentElement.classList.toggle("tab",t);return t}
+function renderLayoutBox(){const box=$("#layoutBox");if(!box)return;const t=document.documentElement.classList.contains("tab");
+  box.innerHTML=`<div class="layoutbar"><span class="eyebrow">Screen layout</span><div class="lseg" role="group" aria-label="Screen layout">${[["auto","Auto"],["phone","Phone"],["tablet","Tablet"]].map(([k,l])=>`<button type="button" data-lay="${k}" aria-pressed="${LAY.mode===k}">${l}</button>`).join("")}</div>
+    <span class="lnote">${LAY.mode==="auto"?`Now: ${t?"tablet":"phone"}.`:""}</span></div>`;
+  box.querySelectorAll("[data-lay]").forEach(b=>b.onclick=()=>{LAY.mode=b.dataset.lay;try{localStorage.setItem(LYKEY,JSON.stringify(LAY))}catch(e){}applyLayout();renderLayoutBox()})}
+if(MQ.addEventListener)MQ.addEventListener("change",()=>{applyLayout();renderLayoutBox()});
+applyLayout();renderLayoutBox();
+window.addEventListener("hashchange",()=>{render();window.scrollTo(0,0)});
+boot();
+
+</script>
+<script>if("serviceWorker" in navigator&&location.protocol!=="file:")addEventListener("load",()=>navigator.serviceWorker.register("../sw.js",{scope:"../"}).catch(()=>{}));</script>
+</body>
+</html>

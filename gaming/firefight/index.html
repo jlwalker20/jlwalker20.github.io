@@ -1,0 +1,1057 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#1a1d1f">
+<link rel="manifest" href="../manifest.webmanifest">
+<link rel="icon" href="../icons/icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="../icons/icon-192.png">
+<title>Firefight Companion</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Oxanium:wght@500;700&family=Barlow:ital,wght@0,400;0,500;0,700;1,400&family=JetBrains+Mono:wght@500;700&display=swap">
+<style>
+/* Layout: a field slate. Sticky round bar on top, activation queue and unit roster in the middle, tab bar fixed at the bottom */
+:root{
+  --bg:#e9eae7; --surface:#f7f7f5; --sunk:#dcdeda; --fg:#1b1e1f; --muted:#5d6462; --line:#c7cbc6;
+  --accent:#b86b00; --accent-ink:#ffffff; --a:#2f5f8f; --b:#9a3b2c; --danger:#b3261e; --good:#2b7a47;
+  --display:"Oxanium","Eurostile","Bank Gothic",system-ui,sans-serif;
+  --body:"Barlow","Segoe UI",system-ui,sans-serif;
+  --mono:"JetBrains Mono",ui-monospace,Menlo,monospace;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#111314; --surface:#1a1d1f; --sunk:#0b0d0e; --fg:#e6e8e6; --muted:#9aa29f; --line:#2c3134;
+  --accent:#f2a93b; --accent-ink:#1a1206; --a:#7fb0e0; --b:#e58a78; --danger:#f2766c; --good:#6fd29a; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#111314; --surface:#1a1d1f; --sunk:#0b0d0e; --fg:#e6e8e6; --muted:#9aa29f; --line:#2c3134;
+  --accent:#f2a93b; --accent-ink:#1a1206; --a:#7fb0e0; --b:#e58a78; --danger:#f2766c; --good:#6fd29a; color-scheme:dark}
+*{box-sizing:border-box}
+/* layout: phone by default; html.tab = tablet landscape */
+[hidden]{display:none!important}
+.pcols,.pcol{display:contents}
+html.tab body{padding-left:calc(96px + max(20px,env(safe-area-inset-left,0px)));padding-right:max(24px,env(safe-area-inset-right,0px));padding-bottom:32px}
+html.tab main{max-width:1440px}
+html.tab nav.tabs{top:0;bottom:0;right:auto;width:96px;grid-template-columns:1fr;grid-auto-rows:min-content;align-content:start;gap:4px;border-top:0;border-right:1px solid var(--line);
+  padding:calc(16px + env(safe-area-inset-top,0px)) 8px calc(16px + env(safe-area-inset-bottom,0px)) calc(8px + env(safe-area-inset-left,0px))}
+html.tab nav.tabs a{font-size:.68rem;padding:10px 0;gap:4px}
+html.tab nav.tabs a svg{width:26px;height:26px}
+html.tab .pcols{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:24px;align-items:start}
+html.tab .pcol{display:flex;flex-direction:column;gap:22px;min-width:0}
+html.tab .log{max-height:340px}
+html.tab #v-combat{max-width:980px}
+html.tab #rules{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px 16px;align-items:start}
+html.tab #rules .group{display:contents}
+html.tab #rules .group>.row,html.tab #rules .group>p{grid-column:1/-1}
+html.tab #v-reminders{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px;align-items:start}
+html.tab #v-reminders>.stack:first-child{grid-column:1/-1}
+html.tab .deck{grid-auto-columns:320px}
+html.tab .sheet{align-items:center}
+html.tab .sheet>.panel{border-radius:12px;max-width:680px;max-height:86vh;padding-bottom:18px}
+.layoutbar{display:flex;flex-wrap:wrap;align-items:center;gap:10px 16px;padding:10px 12px;border:1px solid var(--line);border-radius:8px;background:var(--surface)}
+.lseg{display:grid;grid-template-columns:repeat(3,1fr);flex:1 1 240px;max-width:400px;border:1px solid var(--line);border-radius:6px;overflow:hidden}
+.lseg button{border:0;background:var(--surface);color:var(--fg);padding:8px 6px;min-height:40px;font-weight:700;font:inherit;font-weight:700;cursor:pointer}
+.lseg button[aria-pressed="true"]{background:var(--fg);color:var(--bg)}
+.lchk{display:flex;gap:8px;align-items:center;font-size:.92rem}
+.lchk input{width:20px;height:20px;accent-color:var(--accent)}
+.lnote{font-size:.86rem;color:var(--muted)}
+
+[hidden]{display:none!important}
+.stack>.field,.sheet>.panel>.field{flex:none}
+body{background:var(--bg);color:var(--fg);font:16.5px/1.45 var(--body);
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));
+  padding-block:0 calc(84px + env(safe-area-inset-bottom,0px))}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:10;background:var(--bg)}
+main{max-width:720px;margin:0 auto}
+h1,h2,h3{font-family:var(--display);font-weight:700;text-wrap:balance;margin:0;letter-spacing:.01em}
+h1{font-size:1.85rem;line-height:1.05;text-transform:uppercase;letter-spacing:.04em}
+h2{font-size:1.25rem}
+h3{font-size:1.02rem}
+p{margin:0}
+.muted{color:var(--muted)}
+.eyebrow{font-size:.72rem;text-transform:uppercase;letter-spacing:.14em;color:var(--muted);font-weight:700}
+button,select,input{font:inherit;color:inherit}
+button{cursor:pointer}
+button:disabled{opacity:.45;cursor:default}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.num{font-family:var(--mono);font-variant-numeric:tabular-nums}
+.stack{display:flex;flex-direction:column;gap:14px}
+.row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+.between{justify-content:space-between}
+section.view{display:flex;flex-direction:column;gap:22px;padding-top:14px}
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:6px;padding:16px}
+.btn{border:1px solid var(--line);background:var(--surface);border-radius:4px;padding:9px 14px;min-height:42px}
+.btn.primary{background:var(--accent);color:var(--accent-ink);border-color:var(--accent);font-weight:700}
+.btn.ghost{background:transparent}
+.btn.sm{min-height:34px;padding:5px 10px;font-size:.9rem}
+.chip{display:inline-flex;align-items:center;gap:5px;border:1px solid var(--line);border-radius:3px;padding:1px 7px;font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--muted)}
+.chip.warn{border-color:var(--accent);color:var(--accent)}
+.chip.bad{border-color:var(--danger);color:var(--danger)}
+.chip.dead{background:var(--danger);border-color:var(--danger);color:var(--surface)}
+.chip.ok{border-color:var(--good);color:var(--good)}
+.ta{color:var(--a)} .tb{color:var(--b)}
+
+.masthead{display:flex;justify-content:space-between;align-items:flex-end;gap:4px 12px;padding-top:18px;flex-wrap:wrap}
+.masthead>div{min-width:0}
+.masthead h1 span{color:var(--accent)}
+.masthead p{font-size:.9rem;text-align:right}
+
+/* round bar */
+.roundbar{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;background:var(--bg);padding-block:10px;border-bottom:2px solid var(--fg)}
+.rounds{display:grid;grid-template-columns:repeat(4,1fr);gap:4px;margin-top:8px}
+.rounds div{height:8px;background:var(--sunk);clip-path:polygon(0 0,calc(100% - 6px) 0,100% 100%,0 100%)}
+.rounds div.past{background:var(--muted)}
+.rounds div.now{background:var(--accent)}
+.turnflag{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:12px 14px;border-radius:6px;border:2px solid var(--line);background:var(--surface)}
+.turnflag.pa{border-color:var(--a)} .turnflag.pb{border-color:var(--b)}
+.turnflag b{font-family:var(--display);font-size:1.2rem}
+
+/* score */
+.board{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.army{background:var(--surface);border:1px solid var(--line);border-top:4px solid var(--a);border-radius:6px;padding:12px;display:flex;flex-direction:column;gap:8px;min-width:0}
+.army.b{border-top-color:var(--b)}
+.army h3{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.big{font-family:var(--mono);font-size:2.2rem;font-weight:700;line-height:1}
+.bar{display:flex;gap:3px}
+.bar i{flex:1;height:6px;border-radius:1px;background:var(--sunk)}
+.bar i.done{background:var(--muted)}
+.obj{display:flex;flex-wrap:wrap;gap:8px}
+.marker{width:52px;height:52px;border-radius:50%;border:2px dashed var(--line);background:var(--surface);display:grid;place-items:center;font-family:var(--mono);font-weight:700;padding:0}
+.marker.oa{border:3px solid var(--a);color:var(--a);background:color-mix(in srgb,var(--a) 12%,var(--surface))}
+.marker.ob{border:3px solid var(--b);color:var(--b);background:color-mix(in srgb,var(--b) 12%,var(--surface))}
+
+/* units */
+.seg{display:grid;grid-template-columns:1fr 1fr;border:1px solid var(--line);border-radius:4px;overflow:hidden}
+.seg button{border:0;background:var(--surface);padding:8px 6px;min-height:40px;font-weight:700;font-size:.92rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.seg button[aria-pressed="true"]{background:var(--fg);color:var(--bg)}
+.seg.three{grid-template-columns:repeat(3,1fr)}
+.roster{display:flex;flex-direction:column;gap:8px}
+.unit{background:var(--surface);border:1px solid var(--line);border-left:4px solid var(--a);border-radius:6px;padding:12px;display:flex;flex-direction:column;gap:10px}
+.unit.b{border-left-color:var(--b)}
+.unit.spent{opacity:.6}
+.unit.gone{opacity:.45}
+.uhead{display:flex;justify-content:space-between;gap:8px;align-items:flex-start}
+.uhead h3{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.qd{font-family:var(--mono);font-size:.82rem;color:var(--muted)}
+.qd b{color:var(--fg)}
+.hp{display:grid;grid-template-columns:auto 1fr auto;gap:10px;align-items:center}
+.hpbar{height:10px;background:var(--sunk);border-radius:2px;overflow:hidden;position:relative}
+.hpbar i{position:absolute;inset:0 auto 0 0;background:var(--good)}
+.hpbar.half i{background:var(--accent)}
+.hpbar.zero i{background:var(--danger)}
+.hpbar::after{content:"";position:absolute;left:50%;top:0;bottom:0;width:1px;background:var(--fg);opacity:.35}
+.stepper{display:flex;gap:4px;align-items:center}
+.stepper button{width:32px;height:32px;border-radius:4px;border:1px solid var(--line);background:var(--bg);font-weight:700;padding:0}
+.stepper .num{min-width:3.4em;text-align:center;font-weight:700;font-size:.9rem}
+.toggles{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+.tg{border:1px solid var(--line);background:var(--bg);border-radius:4px;padding:4px 9px;min-height:32px;font-size:.84rem}
+.tg[aria-pressed="true"]{background:var(--fg);color:var(--bg);border-color:var(--fg)}
+.act{margin-left:auto}
+.kws{display:flex;flex-wrap:wrap;gap:4px}
+.kw{border:1px solid var(--line);background:var(--bg);border-radius:3px;padding:2px 7px;font-size:.76rem;font-weight:700;min-height:26px;color:var(--fg)}
+.kw:hover{border-color:var(--accent)}
+.group{display:flex;flex-direction:column;gap:8px}
+.group+.group{margin-top:10px}
+details.rule.dim{opacity:.55}
+details.rule summary>span:first-child{flex:1;min-width:0}
+details.rule .cnt{font-family:var(--mono);font-size:.78rem;font-weight:700;display:flex;gap:6px}
+.used{font-size:.92rem}
+details.ref{font-size:.9rem;border-top:1px dashed var(--line);padding-top:6px}
+details.ref summary{cursor:pointer;color:var(--accent);font-weight:700;font-size:.82rem;text-transform:uppercase;letter-spacing:.06em}
+details.ref p{margin-top:4px}
+
+/* cards */
+.callout{border-left:3px solid var(--accent);padding:8px 12px;background:var(--sunk);border-radius:0 4px 4px 0;font-size:.94rem}
+.winner{border:2px solid var(--accent);text-align:center}
+.log{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;max-height:220px;overflow:auto;font-size:.88rem}
+.log li{display:flex;gap:10px;padding:5px 0;border-bottom:1px solid var(--line)}
+.log .r{font-family:var(--mono);color:var(--muted);flex:none;width:2.4em}
+
+/* setup */
+.modes{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:8px}
+.mode{border:1px solid var(--line);background:var(--surface);border-radius:6px;padding:10px 12px;text-align:left;display:flex;flex-direction:column;gap:2px}
+.mode b{font-family:var(--display);font-size:1.05rem}
+.mode small{color:var(--muted);font-size:.82rem}
+.mode[aria-pressed="true"]{border-color:var(--accent);box-shadow:0 0 0 1px var(--accent) inset}
+.spec{display:grid;grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:1px;background:var(--line);border:1px solid var(--line);border-radius:6px;overflow:hidden}
+.spec div{background:var(--surface);padding:10px 12px;display:flex;flex-direction:column}
+.spec b{font-family:var(--mono);font-size:1.05rem}
+.spec span{font-size:.72rem;color:var(--muted);text-transform:uppercase;letter-spacing:.08em}
+.field{display:flex;flex-direction:column;gap:4px;min-width:0;flex:1 1 110px}
+.field label{font-size:.74rem;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;font-weight:700}
+.field input,.field select{border:1px solid var(--line);background:var(--bg);border-radius:4px;padding:8px 10px;min-height:42px;width:100%}
+.ulist{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:6px}
+.ulist li{display:flex;justify-content:space-between;align-items:center;gap:8px;border:1px solid var(--line);border-radius:4px;padding:6px 10px;background:var(--bg)}
+.ulist li span{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.checklist{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:8px}
+.checklist li{display:flex;gap:12px;align-items:flex-start;background:var(--surface);border:1px solid var(--line);border-radius:6px;padding:12px}
+.checklist input{width:22px;height:22px;flex:none;margin-top:2px;accent-color:var(--accent)}
+.checklist .n{font-family:var(--mono);color:var(--accent);font-weight:700}
+.checklist li.done{opacity:.6}
+.checklist li.done strong{text-decoration:line-through}
+.checklist strong{display:block}
+.checklist p{font-size:.92rem;color:var(--muted)}
+.check{display:flex;gap:8px;align-items:center;font-size:.93rem;min-height:30px}
+.check input{width:20px;height:20px;accent-color:var(--accent);flex:none}
+
+/* combat */
+.grid2{display:grid;grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:10px}
+.checks{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:2px 12px}
+.need{display:flex;justify-content:space-between;align-items:baseline;gap:10px;border-top:1px solid var(--line);padding-top:10px}
+.need b{font-family:var(--mono);font-size:1.6rem}
+.tray{display:flex;flex-wrap:wrap;gap:6px;padding:10px;background:var(--sunk);border-radius:6px;min-height:52px}
+.d6{width:38px;height:38px;border-radius:6px;border:2px solid var(--line);background:var(--surface);display:grid;place-items:center;font-family:var(--mono);font-weight:700;font-size:1.05rem;color:var(--muted)}
+.d6.ok{border-color:var(--accent);color:var(--fg);background:color-mix(in srgb,var(--accent) 16%,var(--surface))}
+.d6.save{border-color:var(--good);color:var(--good)}
+.d6.fail{border-color:var(--danger);color:var(--danger)}
+.d6.pop{animation:pop .3s ease-out}
+@keyframes pop{from{transform:scale(.4) rotate(-60deg);opacity:.2}to{transform:none;opacity:1}}
+.facts{display:grid;grid-template-columns:repeat(3,1fr);gap:1px;background:var(--line);border:1px solid var(--line);border-radius:6px;overflow:hidden}
+.facts div{background:var(--surface);padding:8px 10px;display:flex;flex-direction:column}
+.facts b{font-family:var(--mono);font-size:1.35rem}
+.facts span{font-size:.7rem;text-transform:uppercase;letter-spacing:.08em;color:var(--muted)}
+
+/* rules */
+.search{border:1px solid var(--line);background:var(--surface);border-radius:6px;padding:10px 14px;min-height:46px;width:100%}
+details.rule{background:var(--surface);border:1px solid var(--line);border-radius:6px}
+details.rule summary{padding:12px 14px;cursor:pointer;font-family:var(--display);font-weight:700;list-style:none;display:flex;justify-content:space-between;gap:10px}
+details.rule summary::-webkit-details-marker{display:none}
+details.rule summary::after{content:"+";font-family:var(--mono);color:var(--accent)}
+details.rule[open] summary::after{content:"–"}
+details.rule .body{padding:0 14px 14px;display:flex;flex-direction:column;gap:8px;font-size:.96rem}
+.body ul{margin:0;padding-left:1.2em;display:flex;flex-direction:column;gap:4px}
+.tbl{overflow-x:auto}
+table{border-collapse:collapse;width:100%;font-size:.93rem}
+th,td{text-align:left;padding:6px 8px;border-bottom:1px solid var(--line);vertical-align:top}
+th{font-size:.72rem;text-transform:uppercase;letter-spacing:.08em;color:var(--muted)}
+mark{background:color-mix(in srgb,var(--accent) 35%,transparent);color:inherit;border-radius:2px}
+
+nav.tabs{position:fixed;left:0;right:0;bottom:0;z-index:6;background:var(--surface);border-top:1px solid var(--line);
+  display:grid;grid-template-columns:repeat(5,1fr);
+  padding:6px max(8px,env(safe-area-inset-right,0px)) calc(6px + env(safe-area-inset-bottom,0px)) max(8px,env(safe-area-inset-left,0px))}
+nav.tabs a{display:flex;flex-direction:column;align-items:center;gap:2px;text-decoration:none;color:var(--muted);font-size:.66rem;font-weight:700;letter-spacing:.04em;text-transform:uppercase;padding:6px 0;border-radius:4px;min-width:0;overflow:hidden}
+.gapnote{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;border:2px solid var(--accent);border-radius:6px;padding:10px 12px;background:color-mix(in srgb,var(--accent) 10%,var(--surface))}
+.flow{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:8px}
+.flow div{border:1px solid var(--line);border-radius:6px;padding:10px 12px;background:var(--bg);display:flex;flex-direction:column;gap:2px}
+.flow b{font-family:var(--display)}
+.flow span{font-size:.9rem;color:var(--muted)}
+.forget{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:8px}
+.forget div{background:var(--surface);border:1px solid var(--line);border-radius:6px;padding:10px 12px;display:flex;flex-direction:column;gap:3px}
+.forget b{font-family:var(--display)}
+.forget span{font-size:.92rem;color:var(--muted)}
+.mu{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+@media (max-width:560px){.mu{grid-template-columns:1fr}}
+.mu>div{display:flex;flex-direction:column;gap:6px;min-width:0}
+.kwrow{display:grid;grid-template-columns:6.8em 1fr;gap:8px;text-align:left;border:1px solid var(--line);background:var(--surface);border-radius:6px;padding:8px 10px;min-height:0}
+.kwrow b{font-family:var(--display)}
+.kwrow span{font-size:.88rem;color:var(--muted)}
+textarea.notes{width:100%;min-height:120px;border:1px solid var(--line);background:var(--surface);border-radius:6px;padding:10px 12px;font:inherit;line-height:1.45;resize:vertical}
+.steps{margin:0;padding-left:1.3em;display:flex;flex-direction:column;gap:5px}
+details.rem{background:var(--surface);border:1px solid var(--line);border-radius:6px}
+details.rem>summary{list-style:none;cursor:pointer;display:flex;justify-content:space-between;align-items:center;gap:10px;padding:12px 16px;min-height:48px}
+details.rem>summary::-webkit-details-marker{display:none}
+details.rem .chev{width:10px;height:10px;border-right:2px solid var(--accent);border-bottom:2px solid var(--accent);transform:rotate(45deg);margin-top:-4px;transition:transform .15s}
+details.rem:not([open]) .chev{transform:rotate(-45deg);margin-top:0}
+details.rem:not([open]){background:var(--sunk)}
+details.rem:not([open]) h3{color:var(--muted)}
+.rembody{padding:0 16px 16px;display:flex;flex-direction:column;gap:12px}
+.steps li::marker{color:var(--accent);font-family:var(--mono)}
+nav.tabs a svg{width:22px;height:22px}
+nav.tabs a[aria-current="page"]{color:var(--accent);background:var(--sunk)}
+.sheet{position:fixed;inset:0;z-index:20;background:color-mix(in srgb,#000 50%,transparent);display:flex;align-items:flex-end;justify-content:center}
+.sheet>.panel{width:100%;max-width:520px;max-height:90vh;overflow:auto;border-radius:10px 10px 0 0;padding-bottom:calc(18px + env(safe-area-inset-bottom,0px));display:flex;flex-direction:column;gap:12px}
+.actions{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.actions button{display:flex;flex-direction:column;align-items:flex-start;gap:2px;text-align:left;padding:10px 12px;min-height:64px}
+.actions b{font-family:var(--display);font-size:1.05rem}
+.actions small{color:var(--muted);font-size:.84rem}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+@media (max-width:380px){.big{font-size:1.8rem}.actions{grid-template-columns:1fr}}
+</style>
+
+<style>.hublink{display:inline-flex;align-items:center;gap:4px;margin-top:max(12px,env(safe-area-inset-top,0px));font-size:.74rem;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);text-decoration:none;min-height:32px}.hublink:hover{color:var(--fg)}</style>
+</head>
+<body>
+<main>
+  <a class="hublink" href="../">&lsaquo; All games</a>
+  <header class="masthead">
+    <div>
+      <div class="eyebrow">Grimdark Future</div>
+      <h1>Firefight<span>/</span>Companion</h1>
+    </div>
+    <p class="muted" id="modeLine"></p>
+  </header>
+  <div id="gapBox"></div>
+
+  <!-- PLAY -->
+  <section class="view" id="v-play" hidden>
+    <div class="roundbar">
+      <div class="row between">
+        <div class="row" style="gap:8px"><span class="eyebrow">Round</span><span class="num" style="font-size:1.4rem;font-weight:700" id="roundNum">1</span><span class="muted">of 4</span></div>
+        <div class="row" style="gap:6px">
+          <button class="btn sm ghost" id="undoBtn" type="button">Undo</button>
+          <button class="btn sm primary" id="endBtn" type="button">End round</button>
+        </div>
+      </div>
+      <div class="rounds" id="roundStrip"></div>
+    </div>
+    <div class="pcols">
+    <div class="pcol pl">
+    <div style="order:1" id="winBox"></div>
+    <div style="order:2" id="turnFlag"></div>
+    <div style="order:3" class="board" id="board"></div>
+    <div style="order:4" class="panel stack">
+      <div class="row between"><h2>Objective markers</h2><span class="muted" style="font-size:.86rem">Tap to change who holds it</span></div>
+      <div class="obj" id="objectives"></div>
+      <p class="muted" style="font-size:.88rem">Seized at the end of each round by a unit within 3" with no enemy within 3". Stays held after the unit leaves. Shaken units can't seize or contest.</p>
+    </div>
+    <div style="order:6" class="stack">
+      <div class="row between"><h2>Battle log</h2><button class="btn sm ghost" id="newGameBtn" type="button">New game</button></div>
+      <ul class="log" id="log"></ul>
+    </div>
+    </div>
+    <div class="pcol pr">
+    <div style="order:5" class="stack">
+      <div class="row between"><h2>Units</h2><button class="btn sm ghost" id="addUnitPlay" type="button">Add unit</button></div>
+      <div class="seg" id="rosterTabs"></div>
+      <div class="roster" id="roster"></div>
+    </div>
+    </div>
+    </div>
+  </section>
+
+  <!-- SETUP -->
+  <section class="view" id="v-setup" hidden>
+    <div id="layoutBox" style="order:0"></div>
+    <div class="pcols">
+    <div class="pcol pl">
+    <div style="order:1" class="stack">
+      <h2>Game size</h2>
+      <div class="modes" id="modes"></div>
+      <div class="spec" id="spec"></div>
+    </div>
+    <div style="order:3" class="stack">
+      <div class="row between"><h2>Setting up</h2><span class="chip num" id="setupCount"></span></div>
+      <ol class="checklist" id="checklist"></ol>
+    </div>
+    <button style="order:4" class="btn primary" id="startBtn" type="button">Start round 1</button>
+    </div>
+    <div class="pcol pr">
+    <div style="order:2" class="stack">
+      <h2>Armies</h2>
+      <div class="stack" id="armyForms"></div>
+    </div>
+    </div>
+    </div>
+  </section>
+
+  <!-- COMBAT -->
+  <section class="view" id="v-combat" hidden>
+    <div class="stack">
+      <h2>Attack resolver</h2>
+      <div class="seg" id="cMode"></div>
+    </div>
+    <div class="panel stack">
+      <div class="grid2">
+        <div class="field"><label for="cAtt">Attacking unit</label><select id="cAtt"></select></div>
+        <div class="field"><label for="cTgt">Target unit</label><select id="cTgt"></select></div>
+      </div>
+      <div id="atkInfo" class="stack" style="gap:8px"></div>
+      <div class="grid2">
+        <div class="field"><label for="iAtk">Attacks</label><input id="iAtk" data-c="atk" type="number" inputmode="numeric" min="1"></div>
+        <div class="field"><label for="iQ">Quality</label><input id="iQ" data-c="q" type="number" inputmode="numeric" min="2" max="6"></div>
+        <div class="field"><label for="iAP">AP</label><input id="iAP" data-c="ap" type="number" inputmode="numeric" min="0"></div>
+        <div class="field"><label for="iBlast">Blast</label><input id="iBlast" data-c="blast" type="number" inputmode="numeric" min="0"></div>
+        <div class="field"><label for="iDeadly">Deadly</label><input id="iDeadly" data-c="deadly" type="number" inputmode="numeric" min="0"></div>
+        <div class="field"><label for="iD">Target Defense</label><input id="iD" data-c="d" type="number" inputmode="numeric" min="2" max="6"></div>
+        <div class="field"><label for="iModels">Target models</label><input id="iModels" data-c="models" type="number" inputmode="numeric" min="1"></div>
+        <div class="field"><label for="iMod">Other to-hit mod</label><input id="iMod" data-c="mod" type="number" inputmode="numeric"></div>
+      </div>
+      <div class="checks" id="cChecks"></div>
+      <div class="need"><span class="muted" id="needWhy"></span><span><span class="muted">hit on</span> <b id="needN">4+</b></span></div>
+      <button class="btn primary" id="rollHits" type="button">Roll to hit</button>
+      <div id="stage"></div>
+    </div>
+    <div class="panel stack">
+      <div class="row between"><h3>Quick dice</h3><span class="muted" style="font-size:.86rem">For morale, spells, Impact and dangerous terrain</span></div>
+      <div class="row">
+        <div class="field" style="flex:0 1 90px"><label for="qN">Dice</label><input id="qN" type="number" inputmode="numeric" value="1" min="1"></div>
+        <div class="field" style="flex:0 1 110px"><label for="qT">Success on</label><input id="qT" type="number" inputmode="numeric" value="4" min="2" max="6"></div>
+        <button class="btn" id="qRoll" type="button" style="align-self:flex-end">Roll</button>
+      </div>
+      <div class="tray" id="qTray"><span class="muted" style="align-self:center">Spells cast on 4+, Impact hits on 2+, dangerous terrain wounds on a 1.</span></div>
+    </div>
+  </section>
+
+  <!-- REMINDERS -->
+  <section class="view" id="v-reminders" hidden></section>
+
+  <!-- RULES -->
+  <section class="view" id="v-rules" hidden>
+    <div class="stack">
+      <h2>Rules reference</h2>
+      <input class="search" id="ruleSearch" type="search" placeholder="Search: fatigue, shaken, blast…" aria-label="Search rules">
+      <label class="check" id="hideWrap" hidden><input type="checkbox" id="hideUnused"> Hide rules not in this matchup</label>
+      <p class="muted" id="matchNote" style="font-size:.88rem"></p>
+      <p class="muted" id="ruleHint" hidden>No rules match that search.</p>
+    </div>
+    <div class="stack" id="rules"></div>
+    <p class="muted" style="font-size:.86rem">Summarised from One Page Rules' Grimdark Future v3.5 core rules with Firefight's skirmish changes. Army Forge shows each unit's own special rules; unit and weapon rules override the core rules.</p>
+  </section>
+</main>
+
+<nav class="tabs" aria-label="Sections">
+  <a href="#setup" data-v="setup"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="3" width="18" height="18" rx="1"/><path d="M3 9h18M3 15h18M9 3v18M15 3v18"/></svg>Setup</a>
+  <a href="#play" data-v="play"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="3"/><path d="M12 1v5M12 18v5M1 12h5M18 12h5"/></svg>Play</a>
+  <a href="#combat" data-v="combat"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="3" width="18" height="18" rx="3"/><circle cx="8" cy="8" r="1.3" fill="currentColor"/><circle cx="16" cy="8" r="1.3" fill="currentColor"/><circle cx="8" cy="16" r="1.3" fill="currentColor"/><circle cx="16" cy="16" r="1.3" fill="currentColor"/></svg>Attack</a>
+  <a href="#reminders" data-v="reminders"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M9 18h6M10 21h4"/><path d="M12 3a6 6 0 00-3.5 10.9c.6.5 1 1.2 1 2.1h5c0-.9.4-1.6 1-2.1A6 6 0 0012 3z"/></svg>Reminders</a>
+  <a href="#rules" data-v="rules"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 4h7a3 3 0 013 3v13a2 2 0 00-2-2H4zM20 4h-5a3 3 0 00-3 3"/><path d="M20 4v14h-6"/></svg>Rules</a>
+</nav>
+
+<div id="sheet"></div>
+
+<script>
+const MODES={
+  intro:{name:"First game",sub:"200 points · learn the rules",pts:200},
+  standard:{name:"Standard",sub:"300 points · full game",pts:300},
+  large:{name:"Large",sub:"500 points · bigger fight",pts:500}
+};
+const ACTIONS=[["hold","Hold",'0" · may shoot'],["advance","Advance",'6" · may shoot after'],["rush","Rush",'12" · no shooting'],["charge","Charge",'12" into melee']];
+const KEY="firefight-companion-v1";
+let uid=1;
+const unit=(name,o={})=>({id:uid++,name,q:o.q??4,d:o.d??4,models:o.models??1,tough:o.tough??1,hero:!!o.hero,cast:o.cast??0,tokens:0,
+  wounds:0,shaken:false,fatigued:false,act:false,lastAction:"",ambush:!!o.ambush,pts:o.pts??0,weapons:o.weapons??"",rules:o.rules??""});
+
+/* Reads Army Forge text exports (and lists saved by the Firefight Army Builder) */
+function parseList(text){
+  const lines=String(text).replace(/\r/g,"").split("\n");
+  let army="",limit=null;const units=[];let cur=null;
+  const af=/^(.+?)\s*\[(\d+)\]\s*Q(\d)\+\s*D(\d)\+\s*\|\s*(\d+)\s*pts?\b\s*(?:\|\s*(.*))?$/i;
+  const own=/^(?:\[\d+\]\s*)?(.+?)\s*\|\s*(\d+)\s*pts?\b\s*(?:\|\s*(.*))?$/i;
+  const mk=(name,pts,rest,models)=>{
+    const g=(re,d)=>{const m=rest.match(re);return m?+m[1]:d};
+    const toks=rest.split(/[|,]/).map(s=>s.trim()).filter(Boolean);
+    const isFlag=t=>/^(Q\d\+(\s*D\d\+)?|D\d\+|\d+\s*models?|Tough\(\d+\)|Hero|Caster\(\d+\)|Ambush)$/i.test(t);
+    return {name:name.trim(),pts,models:models??g(/(\d+)\s*models?/i,1),q:g(/Q(\d)\+/i,4),d:g(/D(\d)\+/i,4),
+      tough:g(/Tough\((\d+)\)/i,1),hero:/\bHero\b/i.test(rest),cast:g(/Caster\((\d+)\)/i,0),ambush:/\bAmbush\b/i.test(rest),
+      rules:toks.filter(t=>!isFlag(t)).join(", "),weapons:""};
+  };
+  /* "2x Assault Brothers [3] …" means two copies of the unit; the listed points are for one */
+  const mult=u=>{const m=u.name.match(/^(\d+)\s*x\s+(.+)$/i);if(m){u.count=+m[1];u.name=m[2].trim()}};
+  for(const raw of lines){
+    const l=raw.trim();let m;
+    if(!l){cur=null;continue}
+    if((m=l.match(/^army:\s*(.+)$/i))){army=m[1].trim();continue}
+    if((m=l.match(/^points:\s*\d+\s*\/\s*(\d+)/i))){limit=+m[1];continue}
+    if(/^(units:|faction:|firefight army list)/i.test(l))continue;
+    if((m=l.match(/^\+\+\s*(.+?)\s*\+\+$/))){const t=m[1];const p=t.match(/(\d+)\s*pts/i);if(p)limit=+p[1];army=army||t.replace(/\[.*?\]|\(.*?\)/g,"").trim();continue}
+    if((m=l.match(af))){cur=mk(m[1],+m[5],`Q${m[3]}+ D${m[4]}+ | `+(m[6]||""),+m[2]);units.push(cur);mult(cur);continue}
+    if((m=l.match(own))&&/\|/.test(l)){cur=mk(m[1],+m[2],m[3]||"");units.push(cur);mult(cur);continue}
+    if(cur){
+      if((m=l.match(/^weapons?:\s*(.*)$/i)))cur.weapons=m[1];
+      else if((m=l.match(/^rules?:\s*(.*)$/i)))cur.rules=[cur.rules,m[1]].filter(Boolean).join(", ");
+      else cur.weapons=[cur.weapons,l].filter(Boolean).join("; ");
+    }
+  }
+  return {army,limit,units:units.flatMap(u=>{const n=Math.min(10,u.count||1);delete u.count;return Array.from({length:n},()=>({...u}))})};
+}
+
+function blankState(mode="standard"){
+  return {mode,started:false,round:1,first:0,turn:0,finished:null,winner:null,view:0,checks:{},objectives:[-1,-1,-1,-1],
+    armies:[{name:"Army A",units:[]},{name:"Army B",units:[]}],log:[]};
+}
+function sampleState(){
+  const s=blankState();s.example=true;s.started=true;s.round=2;s.first=1;s.turn=0;
+  s.armies[0].name="Battle Brothers (example)";s.armies[1].name="Alien Hives (example)";
+  s.armies[0].units=[unit("Captain",{q:3,d:3,tough:3,hero:true,rules:"Fearless",weapons:'Heavy Pistol (12", A1, AP(1)); Energy Sword (A3, AP(1), Rending)'}),
+    unit("Assault Brothers",{q:3,d:4,models:3,rules:"Fearless",weapons:'Pistol (12", A1); CCW (A2)'}),
+    unit("Sniper",{q:3,d:4,rules:"Fearless, Scout",weapons:'Sniper Rifle (30", A1, AP(1), Reliable, Takedown)'}),
+    unit("Heavy Gunner",{q:3,d:4,tough:3,rules:"Fearless, Relentless",weapons:'Heavy Rifle (24", A3, AP(1))'})];
+  s.armies[1].units=[unit("Hive Lord",{q:3,d:3,tough:6,hero:true,rules:"Fear(1), Regeneration",weapons:'Bio-Talons (A4, AP(1))'}),
+    unit("Hormagaunts",{q:5,d:5,models:3,rules:"Fast, Furious",weapons:"Claws (A1)"}),
+    unit("Ravener",{q:4,d:4,tough:3,rules:"Strider",weapons:"Razor Claws (A3, Rending)"}),
+    unit("Psychic Beast",{q:4,d:4,tough:3,cast:1,weapons:'Psy-Blast (18", A2, Blast(3))'})];
+  const [c,ab,sn]=s.armies[0].units,[hl,hg,rv]=s.armies[1].units;
+  ab.wounds=1;sn.act=true;hl.wounds=2;hg.wounds=2;hg.shaken=true;rv.act=true;rv.fatigued=true;s.armies[1].units[3].tokens=1;
+  s.objectives=[0,-1,1,0];
+  s.log=[{r:2,t:"Example game loaded. Start your own from Setup."},{r:1,t:"Hormagaunts failed morale and are Shaken."}];
+  return s;
+}
+let S,history=[];
+try{S=JSON.parse(localStorage.getItem(KEY))}catch(e){}
+if(!S||!S.armies)S=sampleState();
+uid=1+Math.max(0,...S.armies.flatMap(a=>a.units.map(u=>u.id)));
+function save(){try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}}
+function snap(){history.push(JSON.stringify(S));if(history.length>60)history.shift()}
+function log(t){S.log.unshift({r:S.round,t});if(!S.example)S.lastPlayed=Date.now()}
+const gapDays=()=>S.lastPlayed?Math.floor((Date.now()-S.lastPlayed)/864e5):null;
+const gapText=d=>d<1?"today":d===1?"yesterday":d<14?`${d} days ago`:d<60?`${Math.round(d/7)} weeks ago`:`${Math.round(d/30)} months ago`;
+const $=s=>document.querySelector(s);
+const esc=s=>String(s??"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const d6=()=>1+Math.floor(Math.random()*6);
+const tag=i=>i===0?"a":"b";
+
+/* ---------- unit maths ---------- */
+const hpMax=u=>u.models*u.tough;
+const dead=u=>u.wounds>=hpMax(u);
+const modelsLeft=u=>Math.max(0,Math.ceil((hpMax(u)-u.wounds)/u.tough));
+function halfOrLess(u){if(dead(u))return false;return u.models>1?modelsLeft(u)<=u.models/2:(u.tough-u.wounds)<=u.tough/2}
+function find(id){for(const [ai,a] of S.armies.entries()){const u=a.units.find(x=>x.id===id);if(u)return {u,a,ai}}return null}
+const ready=a=>a.units.filter(u=>!dead(u)&&!u.act&&!(u.ambush&&S.round<2));
+const alive=a=>a.units.filter(u=>!dead(u));
+function score(i){return S.objectives.filter(o=>o===i).length}
+
+/* ---------- PLAY ---------- */
+function renderPlay(){
+  $("#roundNum").textContent=S.round;
+  $("#roundStrip").innerHTML=[1,2,3,4].map(r=>`<div class="${r<S.round?"past":r===S.round?"now":""}"></div>`).join("");
+  $("#undoBtn").disabled=!history.length;
+  $("#endBtn").disabled=S.winner!=null;
+  const rA=ready(S.armies[0]).length,rB=ready(S.armies[1]).length;
+  $("#endBtn").textContent=S.round>=4?"End game":"End round";
+  let flag;
+  if(S.winner!=null) flag="";
+  else if(!rA&&!rB) flag=`<div class="turnflag"><div><div class="eyebrow">All units activated</div><b>Resolve the end of round ${S.round}</b></div><button class="btn primary" type="button" data-endround="1">End round</button></div>`;
+  else{let t=S.turn;if(!ready(S.armies[t]).length)t=1-t;
+    flag=`<div class="turnflag p${tag(t)}"><div><div class="eyebrow">Next to activate</div><b class="t${tag(t)}">${esc(S.armies[t].name)}</b></div><span class="muted num">${ready(S.armies[t]).length} unit${ready(S.armies[t]).length===1?"":"s"} ready</span></div>`}
+  $("#turnFlag").innerHTML=flag;
+  $("#board").innerHTML=S.armies.map((a,i)=>{
+    const al=alive(a),total=a.units.length,act=al.filter(u=>u.act).length;
+    const broken=total&&al.length<=total/2;
+    return `<div class="army ${tag(i)}">
+      <h3 title="${esc(a.name)}">${esc(a.name)}</h3>
+      <div class="row between" style="align-items:baseline"><span class="eyebrow">Objectives</span><span class="big t${tag(i)}">${score(i)}</span></div>
+      <div class="eyebrow">Activated ${act} / ${al.length}${S.first===i?" · went first":""}</div>
+      <div class="bar">${al.map(u=>`<i class="${u.act?"done":""}"></i>`).join("")||"<i></i>"}</div>
+      <div class="muted" style="font-size:.84rem">${al.length} of ${total} units left${broken?' · <span class="chip bad">Half or fewer</span>':""}</div>
+    </div>`}).join("");
+  $("#objectives").innerHTML=S.objectives.map((o,i)=>`<button type="button" class="marker ${o===0?"oa":o===1?"ob":""}" data-obj="${i}" aria-label="Objective ${i+1}: ${o<0?"neutral":S.armies[o].name}">${i+1}</button>`).join("");
+  const w=S.winner;
+  $("#winBox").innerHTML=w==null?"":w===-1?`<div class="panel winner stack"><div class="eyebrow">Game over</div><h2>A draw</h2><p class="muted">Both armies hold ${score(0)} objectives.</p></div>`:
+    `<div class="panel winner stack"><div class="eyebrow">Victory</div><h2>${esc(S.armies[w].name)} wins</h2><p class="muted">${score(w)} objectives to ${score(1-w)} after round 4.</p></div>`;
+  renderRoster();
+  $("#log").innerHTML=S.log.map(l=>`<li><span class="r">R${l.r}</span><span>${esc(l.t)}</span></li>`).join("")||'<li class="muted">Nothing yet.</li>';
+}
+function renderRoster(){
+  $("#rosterTabs").innerHTML=S.armies.map((a,i)=>`<button type="button" data-rt="${i}" aria-pressed="${S.view===i}">${esc(a.name)}</button>`).join("");
+  const a=S.armies[S.view],t=tag(S.view);
+  $("#roster").innerHTML=a.units.map(u=>{
+    const max=hpMax(u),left=max-u.wounds,pct=Math.max(0,left/max*100),half=halfOrLess(u);
+    const chips=[];
+    if(dead(u))chips.push('<span class="chip dead">Destroyed</span>');
+    else{if(u.shaken)chips.push('<span class="chip bad">Shaken · stays idle</span>');
+      if(half)chips.push('<span class="chip warn">Half strength · morale</span>');
+      if(u.fatigued)chips.push('<span class="chip">Fatigued · melee hits on 6</span>');
+      if(u.ambush&&S.round<2)chips.push('<span class="chip">In ambush</span>');
+      if(u.hero)chips.push('<span class="chip">Hero</span>');
+      if(u.cast)chips.push(`<span class="chip ok">Caster(${u.cast}) · ${u.tokens} token${u.tokens===1?"":"s"}</span>`);}
+    return `<div class="unit ${t} ${dead(u)?"gone":u.act?"spent":""}">
+      <div class="uhead"><div style="min-width:0"><h3>${esc(u.name)}</h3>
+        <div class="qd">Quality <b>${u.q}+</b> · Defense <b>${u.d}+</b>${u.models>1?` · ${u.models} models`:""}${u.tough>1?` · Tough(${u.tough})`:""}</div></div>
+        <button class="btn sm ghost" data-edit="${u.id}" type="button">Edit</button></div>
+      ${chips.length?`<div class="toggles">${chips.join("")}</div>`:""}
+      ${kwOf(u).length&&!dead(u)?`<div class="kws">${kwOf(u).map(k=>`<button type="button" class="kw" data-kw="${k}">${k}</button>`).join("")}</div>`:""}
+      ${u.weapons||u.rules?`<details class="ref"><summary>Weapons &amp; rules</summary>${u.weapons?`<p>${esc(u.weapons)}</p>`:""}${u.rules?`<p class="muted">${esc(u.rules)}</p>`:""}</details>`:""}
+      <div class="hp"><span class="eyebrow">${u.models>1?`${modelsLeft(u)}/${u.models} left`:"Wounds"}</span>
+        <div class="hpbar ${left<=0?"zero":half?"half":""}"><i style="width:${pct}%"></i></div>
+        <div class="stepper"><button type="button" data-w="${u.id},-1" aria-label="Heal one wound">−</button><span class="num">${u.wounds}/${max}</span><button type="button" data-w="${u.id},1" aria-label="Add one wound">+</button></div></div>
+      ${dead(u)?"":`<div class="toggles">
+        <button type="button" class="tg" data-tg="${u.id},shaken" aria-pressed="${u.shaken}">Shaken</button>
+        <button type="button" class="tg" data-tg="${u.id},fatigued" aria-pressed="${u.fatigued}">Fatigued</button>
+        ${u.cast?`<button type="button" class="tg" data-tok="${u.id}">Spend token</button>`:""}
+        ${u.act?`<span class="chip act">${esc(u.lastAction||"Activated")}</span><button type="button" class="tg" data-unact="${u.id}">Undo</button>`:
+          `<button type="button" class="btn sm primary act" data-activate="${u.id}" ${u.ambush&&S.round<2?"disabled":""}>Activate</button>`}
+      </div>`}
+    </div>`}).join("")||'<p class="muted">No units yet. Add them here or in Setup.</p>';
+}
+function openActivate(id){
+  const {u,ai}=find(id);
+  sheet(`<div class="eyebrow">${esc(S.armies[ai].name)}</div><h2>Activate ${esc(u.name)}</h2>
+    ${u.shaken?`<p class="callout">This unit is Shaken. It must stay idle for the whole activation, then recovers.</p>
+      <button class="btn primary" id="idleBtn" type="button">Stay idle and recover</button>`:
+    `<p class="muted">Pick one action. Fast adds 2"/4", Slow removes 2"/4". Difficult terrain caps the move at 6".</p>
+    <div class="actions">${ACTIONS.map(([k,l,s])=>`<button class="btn" type="button" data-pick="${k}"><b>${l}</b><small>${s}</small></button>`).join("")}</div>
+    <p class="muted" style="font-size:.88rem">Charge: end in base contact; the target may move 3" to meet it. Strike, the target may strike back, the side that dealt fewer wounds tests morale. Charger and striker-back become Fatigued.</p>`}
+    <button class="btn ghost" id="cancelAct" type="button">Cancel</button>`);
+  $("#cancelAct").onclick=closeSheet;
+  if(u.shaken)$("#idleBtn").onclick=()=>finishAct(u,ai,"Idle (recovered)",()=>{u.shaken=false});
+  document.querySelectorAll("[data-pick]").forEach(b=>b.onclick=()=>{
+    const k=b.dataset.pick,label=ACTIONS.find(x=>x[0]===k)[1];
+    finishAct(u,ai,label,()=>{if(k==="charge")u.fatigued=true});
+    if(k==="hold"||k==="advance"||k==="charge"){C.att=String(u.id);C.mode=k==="charge"?"melee":"shoot";C.fat=false;prefill(true)}
+  });
+}
+function finishAct(u,ai,label,fx){
+  snap();fx();u.act=true;u.lastAction=label;
+  log(`${u.name}: ${label}.`);
+  const me=S.armies[ai],op=S.armies[1-ai];
+  if(!ready(me).length&&S.finished==null&&ready(op).length)S.finished=ai;
+  if(!ready(me).length&&!ready(op).length&&S.finished==null)S.finished=1-ai;
+  S.turn=ready(op).length?1-ai:ai;
+  save();closeSheet();render();
+}
+function openEndRound(){
+  const cands=S.armies.flatMap((a,ai)=>alive(a).filter(u=>halfOrLess(u)&&!u.shaken).map(u=>({u,a,ai})));
+  sheet(`<div class="eyebrow">Round ${S.round}</div><h2>End of round</h2>
+    <div class="stack" style="gap:8px"><span class="eyebrow">1 · Morale</span>
+    <p class="muted" style="font-size:.9rem">In Firefight, units at half strength or less test at the end of each round. Roll a Quality test; a fail makes the unit Shaken. Fearless: re-roll a fail, 4+ passes.</p>
+    ${cands.length?cands.map(({u,a,ai})=>`<div class="row between"><span><span class="t${tag(ai)}">■</span> ${esc(u.name)} <span class="muted">Q${u.q}+</span></span><span class="row" style="gap:6px"><span id="mr${u.id}" class="num"></span><button class="btn sm" data-mroll="${u.id}" type="button">Roll</button></span></div>`).join(""):'<p class="muted">No unit is at half strength.</p>'}
+    </div>
+    <div class="stack" style="gap:8px"><span class="eyebrow">2 · Objectives</span>
+    <p class="muted" style="font-size:.9rem">Update each marker on the Play screen before you continue: a unit within 3" with no enemy within 3" seizes it; both sides within 3" makes it neutral.</p>
+    <div class="obj">${S.objectives.map((o,i)=>`<button type="button" class="marker ${o===0?"oa":o===1?"ob":""}" data-obj="${i}">${i+1}</button>`).join("")}</div></div>
+    <div class="row"><button class="btn primary" id="erOk" type="button">${S.round>=4?"Final score":"Start round "+(S.round+1)}</button><button class="btn ghost" id="erNo" type="button">Back</button></div>`);
+  $("#erNo").onclick=closeSheet;
+  $("#erOk").onclick=endRound;
+}
+function endRound(){
+  snap();
+  if(S.round>=4){const a=score(0),b=score(1);S.winner=a>b?0:b>a?1:-1;log(S.winner<0?`Draw on ${a} objectives each.`:`${S.armies[S.winner].name} wins ${Math.max(a,b)}–${Math.min(a,b)} on objectives.`);save();closeSheet();render();return}
+  S.round++;
+  S.first=S.finished??S.first;S.turn=S.first;S.finished=null;
+  S.armies.forEach(a=>a.units.forEach(u=>{u.act=false;u.lastAction="";u.fatigued=false;if(u.cast)u.tokens=Math.min(6,u.tokens+u.cast)}));
+  log(`Round ${S.round} begins. ${S.armies[S.first].name} activates first.${S.round===2?" Ambush units may now deploy more than 9\" from enemies.":""}`);
+  save();closeSheet();render();window.scrollTo({top:0,behavior:"smooth"});
+}
+document.addEventListener("click",e=>{
+  const t=e.target.closest("button");if(!t)return;const d=t.dataset;
+  if(d.obj!=null){snap();const i=+d.obj;S.objectives[i]=S.objectives[i]===-1?0:S.objectives[i]===0?1:-1;save();
+    t.className="marker "+(S.objectives[i]===0?"oa":S.objectives[i]===1?"ob":"");if(!t.closest(".sheet"))render();else renderPlay()}
+  else if(d.rt!=null){S.view=+d.rt;save();renderRoster()}
+  else if(d.w){const[id,v]=d.w.split(",").map(Number);const f=find(id);snap();const was=dead(f.u);f.u.wounds=Math.max(0,Math.min(hpMax(f.u),f.u.wounds+v));
+    if(!was&&dead(f.u))log(`${f.u.name} destroyed.`);save();render()}
+  else if(d.tg){const[id,k]=d.tg.split(",");const f=find(+id);snap();f.u[k]=!f.u[k];if(k==="shaken"&&f.u.shaken)log(`${f.u.name} is Shaken.`);save();renderPlay()}
+  else if(d.tok){const f=find(+d.tok);if(f.u.tokens>0){snap();f.u.tokens--;save();renderRoster()}}
+  else if(d.activate){openActivate(+d.activate)}
+  else if(d.unact){const f=find(+d.unact);snap();f.u.act=false;f.u.lastAction="";S.turn=f.ai;if(S.finished===f.ai)S.finished=null;save();render()}
+  else if(d.edit){openUnit(+d.edit)}
+  else if(d.endround){openEndRound()}
+  else if(d.kw){openKw(d.kw)}
+  else if(d.mroll){const f=find(+d.mroll),r=d6(),pass=r===6||(r!==1&&r>=f.u.q);snap();
+    if(!pass){f.u.shaken=true;log(`${f.u.name} failed morale (${r}) and is Shaken.`)}else log(`${f.u.name} passed morale (${r}).`);save();
+    $("#mr"+f.u.id).innerHTML=`${r} <span class="chip ${pass?"ok":"bad"}">${pass?"Pass":"Shaken"}</span>`;t.disabled=true;renderPlay()}
+});
+function sheet(html){$("#sheet").innerHTML=`<div class="sheet" id="sh"><div class="panel">${html}</div></div>`;
+  $("#sh").addEventListener("click",e=>{if(e.target.id==="sh")closeSheet()})}
+function closeSheet(){$("#sheet").innerHTML=""}
+function openUnit(id,isNew){
+  const f=find(id),u=f.u;
+  sheet(`<h2>${isNew?"New unit":esc(u.name)}</h2>
+    <div class="field"><label for="uN">Unit name</label><input id="uN" value="${esc(u.name)}"></div>
+    <div class="grid2">
+      <div class="field"><label for="uQ">Quality</label><input id="uQ" type="number" inputmode="numeric" min="2" max="6" value="${u.q}"></div>
+      <div class="field"><label for="uD">Defense</label><input id="uD" type="number" inputmode="numeric" min="2" max="6" value="${u.d}"></div>
+      <div class="field"><label for="uM">Models</label><input id="uM" type="number" inputmode="numeric" min="1" value="${u.models}"></div>
+      <div class="field"><label for="uT">Tough (1 if none)</label><input id="uT" type="number" inputmode="numeric" min="1" value="${u.tough}"></div>
+      <div class="field"><label for="uC">Caster (0 if none)</label><input id="uC" type="number" inputmode="numeric" min="0" max="6" value="${u.cast}"></div>
+    </div>
+    <label class="check"><input type="checkbox" id="uH" ${u.hero?"checked":""}> Hero</label>
+    <label class="check"><input type="checkbox" id="uA" ${u.ambush?"checked":""}> Held in Ambush (arrives from round 2)</label>
+    <div class="row between"><div class="row"><button class="btn primary" id="uOk" type="button">Save</button><button class="btn ghost" id="uNo" type="button">Cancel</button></div>
+      <button class="btn ghost" id="uDel" type="button" style="color:var(--danger)">Remove</button></div>`);
+  const n=(v,lo,hi)=>Math.min(hi,Math.max(lo,Math.round(+v)||lo));
+  $("#uNo").onclick=()=>{if(isNew){f.a.units=f.a.units.filter(x=>x.id!==id);save();render()}closeSheet()};
+  $("#uDel").onclick=()=>{snap();f.a.units=f.a.units.filter(x=>x.id!==id);save();closeSheet();render()};
+  $("#uOk").onclick=()=>{snap();u.name=$("#uN").value.trim()||"Unit";u.q=n($("#uQ").value,2,6);u.d=n($("#uD").value,2,6);
+    u.models=n($("#uM").value,1,20);u.tough=n($("#uT").value,1,24);u.cast=n($("#uC").value,0,6);u.hero=$("#uH").checked;u.ambush=$("#uA").checked;
+    u.wounds=Math.min(u.wounds,hpMax(u));S.example=false;save();closeSheet();render()};
+}
+function addUnit(ai){const u=unit(`Unit ${S.armies[ai].units.length+1}`);S.armies[ai].units.push(u);save();render();openUnit(u.id,true)}
+$("#addUnitPlay").onclick=()=>addUnit(S.view);
+$("#endBtn").onclick=openEndRound;
+$("#undoBtn").onclick=()=>{if(!history.length)return;S=JSON.parse(history.pop());save();render()};
+$("#newGameBtn").onclick=()=>{
+  sheet(`<h2>Start a new game?</h2><p class="muted">Wounds, objectives and the log are cleared. Your armies and unit stats stay.</p>
+    <div class="row"><button class="btn primary" id="nOk" type="button">Clear and go to setup</button><button class="btn ghost" id="nNo" type="button">Keep playing</button></div>`);
+  $("#nNo").onclick=closeSheet;
+  $("#nOk").onclick=()=>{snap();
+    if(S.example)S=blankState(S.mode);
+    else{resetUnits();Object.assign(S,{started:false,round:1,winner:null,finished:null,log:[]})}
+    save();closeSheet();location.hash="setup";render()};
+};
+function resetUnits(){S.armies.forEach(a=>a.units.forEach(u=>Object.assign(u,{wounds:0,shaken:false,fatigued:false,act:false,lastAction:"",tokens:u.cast||0})))}
+
+/* ---------- SETUP ---------- */
+function setupSteps(){
+  const m=MODES[S.mode],n=S.objectives.length;
+  return [
+    ["Build armies",`Build each list in Army Forge at ${m.pts} points with 5 to 15 units, then use Import from Army Forge below.`],
+    ["Lay out the table",`A 4' × 4' table with 15 to 20 pieces of terrain, mixing cover, difficult and dangerous ground and some elevation. A smaller table works if the armies deploy at least 24" apart.`],
+    ["Roll off","The winner places the first objective, picks a deployment edge and activates first in round 1."],
+    ["Place objectives",`Place ${n} markers (D3+2), alternating, starting with the roll-off winner. Each must be outside the deployment zones and more than 9" from other markers.`],
+    ["Deploy",`The winner takes a table edge; the opponent gets the opposite edge. Alternate placing one unit each within 12" of your edge. Keep models within 1" of another model in the unit and within 6" of all of them.`],
+    ["Ambush and Scout",`Set Ambush units aside; they arrive from round 2 anywhere more than 9" from enemies. Scouts deploy after everything else, anywhere within 12" of the deployment zone.`],
+    ["Casters","Each Caster starts the game with its Caster(X) tokens. The app tops them up every round, to a maximum of 6."]];
+}
+function renderSetup(){renderLayoutBox();
+  $("#modes").innerHTML=Object.entries(MODES).map(([k,m])=>`<button class="mode" type="button" data-mode="${k}" aria-pressed="${k===S.mode}"><b>${m.name}</b><small>${m.sub}</small></button>`).join("");
+  const m=MODES[S.mode];
+  $("#spec").innerHTML=[[m.pts,"Points each"],["4' × 4'","Table"],["5–15","Units"],[S.objectives.length,"Objectives"],["4","Rounds"],['6"',"Coherency"]].map(([v,l])=>`<div><b>${v}</b><span>${l}</span></div>`).join("");
+  $("#armyForms").innerHTML=S.armies.map((a,i)=>{
+    const chips=checkArmy(a.units,m.pts);
+    return `<div class="panel stack" style="border-top:4px solid var(--${tag(i)})">
+    <div class="field"><label for="an${i}">Army name</label><input id="an${i}" data-an="${i}" value="${esc(a.name)}"></div>
+    ${a.units.length?`<ul class="ulist">${a.units.map(u=>`<li><span>${esc(u.name)} <span class="qd">Q${u.q}+ D${u.d}+${u.models>1?` ×${u.models}`:""}${u.tough>1?` T${u.tough}`:""}${u.pts?` · ${u.pts}pts`:""}</span></span><button class="btn sm ghost" data-edit="${u.id}" type="button">Edit</button></li>`).join("")}</ul>
+      <div class="row" style="gap:6px">${chips}</div>`:
+      `<p class="muted">No units yet. Import this army's list from Army Forge.</p>`}
+    <div class="row" style="gap:6px"><button class="btn primary" data-import="${i}" type="button">${a.units.length?"Re-import from Army Forge":"Import from Army Forge"}</button><button class="btn sm ghost" data-addunit="${i}" type="button">Add a unit by hand</button></div>
+  </div>`}).join("");
+  const steps=setupSteps();
+  $("#checklist").innerHTML=steps.map(([t,d],i)=>{const on=!!S.checks[i];return `<li class="${on?"done":""}"><input type="checkbox" id="ck${i}" data-ck="${i}" ${on?"checked":""}><label for="ck${i}"><strong><span class="n">${i+1}</span> ${t}</strong><p>${d}</p></label>${i===3?`<button class="btn sm" type="button" id="rollObj" style="flex:none">Roll D3+2</button>`:""}</li>`}).join("");
+  $("#setupCount").textContent=`${steps.filter((_,i)=>S.checks[i]).length} / ${steps.length}`;
+  $("#rollObj").onclick=()=>{snap();const n=Math.ceil(d6()/2)+2;S.objectives=Array(n).fill(-1);log(`Rolled ${n} objective markers.`);save();renderSetup()};
+  $("#startBtn").textContent=S.started&&!S.example?"Restart at round 1":"Start round 1";
+}
+document.addEventListener("click",e=>{const b=e.target.closest("[data-addunit]");if(b)addUnit(+b.dataset.addunit);
+  const im=e.target.closest("[data-import]");if(im)openImport(+im.dataset.import)});
+/* Points and unit-count checks against the chosen game size */
+function checkArmy(units,limit){
+  if(!units.length)return "";
+  const pts=units.reduce((s,u)=>s+(+u.pts||0),0),n=units.length,c=[];
+  if(pts)c.push(pts>limit?`<span class="chip bad">${pts} pts · ${pts-limit} over ${limit}</span>`:`<span class="chip ok">${pts} / ${limit} pts</span>`);
+  else c.push('<span class="chip">Points not listed</span>');
+  c.push(n<5||n>15?`<span class="chip warn">${n} units · Firefight expects 5–15</span>`:`<span class="chip ok">${n} units</span>`);
+  const big=pts?units.filter(u=>u.pts>limit*0.35).length:0;
+  if(big)c.push(`<span class="chip warn">${big} unit${big>1?"s":""} over 35% of ${limit}</span>`);
+  return c.join("");
+}
+function openImport(ai){
+  const a=S.armies[ai];
+  sheet(`<div class="eyebrow">${esc(a.name)}</div><h2>Import from Army Forge</h2>
+    <ol class="steps" style="font-size:.95rem">
+      <li>Open the list in Army Forge and use its share or export option to copy the list as text.</li>
+      <li>Paste it in the box below, or save it as a .txt file and choose it.</li>
+      <li>Check the preview, then import.</li>
+    </ol>
+    <div class="field"><label for="impText">Army Forge list</label><textarea id="impText" placeholder="++ Battle Brothers [GFF 300pts] ++&#10;&#10;Captain [1] Q3+ D3+ | 70pts | Hero, Tough(3), Fearless&#10;Heavy Pistol (12&quot;, A1, AP(1)), CCW (A3)" style="min-height:150px;border:1px solid var(--line);background:var(--bg);border-radius:4px;padding:8px 10px;font:13px/1.4 var(--mono);width:100%"></textarea></div>
+    <div class="field"><label for="impFile">Or choose a .txt file</label><input id="impFile" type="file" accept=".txt,text/plain"></div>
+    <div id="impPrev" class="stack" style="gap:8px;font-size:.92rem"></div>
+    <div class="row"><button class="btn primary" id="impOk" type="button" disabled>Import</button><button class="btn ghost" id="impNo" type="button">Cancel</button></div>`);
+  let parsed=null;
+  const preview=()=>{parsed=parseList($("#impText").value);const n=parsed.units.length;
+    const lim=parsed.limit||MODES[S.mode].pts;
+    $("#impPrev").innerHTML=n?`<div><b>${esc(parsed.army||"Unnamed army")}</b>${parsed.limit?` <span class="muted">· ${parsed.limit} pt list</span>`:""}</div>
+      <div class="row" style="gap:6px">${checkArmy(parsed.units,lim)}</div>
+      <ul class="ulist">${parsed.units.map(u=>`<li><span>${esc(u.name)} <span class="qd">Q${u.q}+ D${u.d}+${u.models>1?` ×${u.models}`:""}${u.tough>1?` T${u.tough}`:""}${u.hero?" Hero":""}</span></span><span class="num">${u.pts}</span></li>`).join("")}</ul>
+      ${parsed.units.some(u=>!u.rules&&!u.weapons)?'<p class="muted">Some units came through without weapons or rules. Check that the whole export was pasted.</p>':""}
+      ${a.units.length?`<p class="muted">This replaces ${esc(a.name)}'s ${a.units.length} current unit${a.units.length===1?"":"s"}.</p>`:""}`
+      :$("#impText").value.trim()?'<p class="muted">No units found. Each unit line should look like <span class="num">Name [models] Q3+ D4+ | 70pts | rules</span>. If your export looks different, paste it to Claude and the reader can be adjusted.</p>':"";
+    $("#impOk").disabled=!n;$("#impOk").textContent=n?`Import ${n} unit${n===1?"":"s"}`:"Import"};
+  $("#impFile").onchange=e=>{const f=e.target.files[0];if(!f)return;const r=new FileReader();r.onload=()=>{$("#impText").value=r.result;preview()};r.onerror=()=>{$("#impPrev").textContent="Couldn't read that file. Try pasting the text instead."};r.readAsText(f)};
+  $("#impText").oninput=preview;
+  $("#impNo").onclick=closeSheet;
+  $("#impOk").onclick=()=>{if(!parsed||!parsed.units.length)return;snap();
+    if(S.example){const m=S.mode,c=S.checks;S=blankState(m);S.checks=c}
+    const target=S.armies[ai];
+    if(parsed.army)target.name=parsed.army;
+    target.units=parsed.units.map(u=>unit(u.name,u));
+    if(parsed.limit){const m=Object.entries(MODES).find(([k,v])=>v.pts===parsed.limit);if(m)S.mode=m[0]}
+    log(`Imported ${target.units.length} units for ${target.name} from Army Forge.`);
+    save();closeSheet();render()};
+}
+document.addEventListener("change",e=>{if(e.target.dataset.ck!=null){S.checks[e.target.dataset.ck]=e.target.checked;save();renderSetup()}});
+document.addEventListener("input",e=>{if(e.target.dataset.an!=null){S.armies[+e.target.dataset.an].name=e.target.value||"Army";S.example=false;save()}});
+$("#modes").addEventListener("click",e=>{const b=e.target.closest("[data-mode]");if(!b)return;S.mode=b.dataset.mode;save();render()});
+$("#startBtn").onclick=()=>{
+  if(S.example){const m=S.mode,o=S.objectives;S=blankState(m);S.objectives=o.map(()=>-1)}
+  sheet(`<h2>Who won the roll-off?</h2><p class="muted">They activate first in round 1.</p>
+    <div class="stack">${S.armies.map((a,i)=>`<button class="btn" data-first="${i}" type="button">${esc(a.name)}</button>`).join("")}</div>`);
+  document.querySelectorAll("[data-first]").forEach(b=>b.onclick=()=>{
+    snap();resetUnits();const f=+b.dataset.first;
+    Object.assign(S,{started:true,round:1,first:f,turn:f,finished:null,winner:null,log:[],remClosed:{}});
+    S.objectives=S.objectives.map(()=>-1);
+    log(`${MODES[S.mode].name} game begins. ${S.armies[f].name} activates first.`);
+    save();closeSheet();location.hash="play";render()});
+};
+
+/* ---------- ATTACK ---------- */
+let C={mode:"shoot",att:"",tgt:"",atk:4,q:4,ap:0,blast:0,deadly:0,d:4,models:1,mod:0,cover:false,stealth:false,indirect:false,fat:false,thrust:false,
+  rending:false,bane:false,reliable:false,unstop:false,six:false,regen:false,fear:0};
+let R=null;
+function prefill(fromAct){
+  const a=C.att?find(+C.att):null,t=C.tgt?find(+C.tgt):null;
+  if(a){C.q=a.u.q;C.fat=C.mode==="melee"&&a.u.fatigued&&!fromAct}
+  if(t){C.d=t.u.d;C.models=Math.max(1,modelsLeft(t.u));const k=kwOf(t.u);C.regen=k.includes("Regeneration");C.stealth=C.mode==="shoot"&&k.includes("Stealth")}
+}
+const ATK_KW=["AP","Bane","Blast","Deadly","Indirect","Reliable","Rending","Surge","Takedown","Thrust","Unstoppable","Furious","Relentless","Impact","Limited"];
+function renderAtkInfo(){
+  const a=C.att?find(+C.att):null,t=C.tgt?find(+C.tgt):null;let h="";
+  if(a){const k=kwOf(a.u).filter(x=>ATK_KW.includes(x));
+    h+=`<div class="callout"><b>${esc(a.u.name)}</b>${a.u.weapons?`: ${esc(a.u.weapons)}`:""}${k.length?`<div class="kws" style="margin-top:6px">${k.map(x=>`<button type="button" class="kw" data-kw="${x}">${x}</button>`).join("")}</div><span class="muted" style="font-size:.86rem">Tick the ones on the weapon you're using.</span>`:""}</div>`}
+  if(t){const k=kwOf(t.u).filter(x=>["Regeneration","Stealth"].includes(x));if(k.length)h+=`<p class="muted" style="font-size:.88rem">${esc(t.u.name)} has ${k.join(" and ")}; already ticked below.</p>`}
+  $("#atkInfo").innerHTML=h;
+}
+function renderCombat(){
+  $("#cMode").innerHTML=[["shoot","Shooting"],["melee","Melee"]].map(([k,l])=>`<button type="button" data-cm="${k}" aria-pressed="${C.mode===k}">${l}</button>`).join("");
+  const opts=sel=>`<option value="">Custom values</option>`+S.armies.map(a=>`<optgroup label="${esc(a.name)}">${alive(a).map(u=>`<option value="${u.id}" ${String(u.id)===String(sel)?"selected":""}>${esc(u.name)}</option>`).join("")}</optgroup>`).join("");
+  $("#cAtt").innerHTML=opts(C.att);$("#cTgt").innerHTML=opts(C.tgt);
+  ["atk","q","ap","blast","deadly","d","models","mod"].forEach(k=>{const el=document.querySelector(`[data-c="${k}"]`);if(el)el.value=C[k]});
+  const ck=(k,l)=>`<label class="check"><input type="checkbox" data-c="${k}" ${C[k]?"checked":""}> ${l}</label>`;
+  $("#cChecks").innerHTML=(C.mode==="shoot"?
+      ck("cover","Target in cover (+1 Defense)")+ck("stealth","Stealth, shooting from over 9\" (−1)")+ck("indirect","Indirect after moving (−1)")+ck("six","Extra hit on 6s (Surge, Relentless over 9\")"):
+      ck("fat","Attacker Fatigued (hits only on 6)")+ck("thrust","Thrust while charging (+1, AP+1)")+ck("six","Extra hit on 6s (Surge, Furious when charging)"))+
+    ck("reliable","Reliable (Quality 2+)")+ck("rending","Rending (6s get AP+4)")+ck("bane","Bane (re-roll Defense 6s)")+ck("unstop","Unstoppable")+ck("regen","Target has Regeneration");
+  renderAtkInfo();updateNeed();renderStage();
+}
+function needs(){
+  let q=C.reliable?2:(+C.q||4),mod=(+C.mod||0);
+  if(C.mode==="shoot"){if(C.stealth)mod--;if(C.indirect)mod--}else if(C.thrust)mod++;
+  if(C.unstop&&mod<0)mod=0;
+  const ap=(+C.ap||0)+(C.mode==="melee"&&C.thrust?1:0);
+  return {q,mod,ap,only6:C.mode==="melee"&&C.fat};
+}
+function updateNeed(){
+  const n=needs();
+  const t=n.only6?6:Math.min(6,Math.max(2,n.q-n.mod));
+  $("#needN").textContent=t+"+";
+  $("#needWhy").textContent=n.only6?"Fatigued: only unmodified 6s hit":`Quality ${n.q}+${n.mod?` with ${n.mod>0?"+":""}${n.mod}`:""}${n.ap?` · AP(${n.ap})`:""}`;
+  $("#rollHits").textContent=`Roll ${+C.atk||0} to hit`;
+}
+$("#cMode").addEventListener("click",e=>{const b=e.target.closest("[data-cm]");if(!b)return;C.mode=b.dataset.cm;prefill();R=null;renderCombat()});
+$("#cAtt").addEventListener("change",e=>{C.att=e.target.value;prefill();R=null;renderCombat()});
+$("#cTgt").addEventListener("change",e=>{C.tgt=e.target.value;prefill();R=null;renderCombat()});
+document.addEventListener("input",e=>{const k=e.target.dataset.c;if(!k)return;C[k]=e.target.type==="checkbox"?e.target.checked:e.target.value;R=null;updateNeed();renderStage()});
+$("#rollHits").onclick=()=>{
+  const n=needs(),N=Math.max(0,Math.min(60,+C.atk||0));
+  const dice=Array.from({length:N},()=>{const r=d6();const ok=n.only6?r===6:(r===6||(r!==1&&r+n.mod>=n.q));return {r,ok}});
+  let hits=[];dice.forEach(d=>{if(!d.ok)return;const ap=n.ap+(C.rending&&d.r===6?4:0);hits.push({ap});if(C.six&&d.r===6)hits.push({ap:n.ap})});
+  const raw=hits.length;
+  if(+C.blast>1){const cap=Math.max(1,+C.models||1);const total=Math.min(raw*(+C.blast),Math.max(raw,cap));hits=Array.from({length:total},()=>({ap:n.ap}))}
+  R={dice,raw,hits,saves:null,regen:null,applied:false};renderStage();
+};
+function renderStage(){
+  const st=$("#stage");
+  if(!R){st.innerHTML="";return}
+  const dt=R.dice.map(d=>`<span class="d6 pop ${d.ok?"ok":""}">${d.r}</span>`).join("")||'<span class="muted">No dice.</span>';
+  let h=`<div class="tray">${dt}</div><div class="row between"><span><b class="num" style="font-size:1.3rem">${R.hits.length}</b> hit${R.hits.length===1?"":"s"}</span><span class="muted" style="font-size:.88rem">${+C.blast>1&&R.raw?`${R.raw} × Blast(${C.blast}), capped at ${C.models} model${+C.models===1?"":"s"}`:C.six?"6s counted twice":""}</span></div>`;
+  if(R.hits.length&&!R.saves)h+=`<button class="btn primary" id="rollDef" type="button">Roll ${R.hits.length} Defense</button>`;
+  if(R.saves){
+    const cover=C.mode==="shoot"&&C.cover&&!(+C.blast>1)?1:0;
+    h+=`<div class="tray">${R.saves.map(s=>`<span class="d6 pop ${s.save?"save":"fail"}" title="needs ${s.need}+">${s.r}</span>`).join("")}</div>`;
+    const fails=R.saves.filter(s=>!s.save).length,dm=Math.max(1,+C.deadly||1);
+    let wounds=fails*dm;
+    const canRegen=C.regen&&!C.bane&&!C.rending&&!C.unstop;
+    if(canRegen&&wounds&&!R.regen)R.regen=Array.from({length:wounds},()=>d6());
+    const ignored=R.regen?R.regen.filter(r=>r>=5).length:0;
+    const final=wounds-ignored;
+    h+=`<p class="muted" style="font-size:.88rem">Defense ${C.d}+${cover?", +1 for cover":""}${R.hits.some(x=>x.ap)?", reduced by AP":""}. A 6 always saves, a 1 always fails.${C.bane?" Bane re-rolled 6s.":""}${+C.blast>1&&C.cover?" Blast ignores cover.":""}</p>`;
+    if(R.regen)h+=`<div class="eyebrow">Regeneration (5+ ignores)</div><div class="tray">${R.regen.map(r=>`<span class="d6 ${r>=5?"save":"fail"}">${r}</span>`).join("")}</div>`;
+    else if(C.regen&&wounds)h+=`<p class="muted" style="font-size:.88rem">Regeneration is ignored by Bane, Rending and Unstoppable.</p>`;
+    h+=`<div class="facts"><div><b>${R.hits.length}</b><span>Hits</span></div><div><b>${fails}</b><span>Failed saves</span></div><div><b>${final}</b><span>Wounds</span></div></div>`;
+    if(dm>1)h+=`<p class="muted" style="font-size:.88rem">Deadly(${dm}): each wound goes on one model ×${dm}; extra wounds don't carry over to other models.</p>`;
+    if(C.mode==="melee")h+=`<p class="callout">Melee: compare total wounds dealt by each side (Fear adds to that count). The side that dealt fewer tests morale; if it fails at half strength or less it is destroyed, otherwise Shaken.</p>`;
+    const t=C.tgt?find(+C.tgt):null;
+    if(t&&!R.applied&&final)h+=`<button class="btn primary" id="applyBtn" type="button">Apply ${final} wound${final===1?"":"s"} to ${esc(t.u.name)}</button>`;
+    if(R.applied)h+=`<span class="chip ok">Applied to the roster</span>`;
+    R.final=final;
+  }
+  st.innerHTML=h;
+  const rd=$("#rollDef");if(rd)rd.onclick=()=>{
+    const cover=C.mode==="shoot"&&C.cover&&!(+C.blast>1)?1:0,def=+C.d||4;
+    R.saves=R.hits.map(x=>{let r=d6();if(C.bane&&r===6)r=d6();const need=Math.min(7,def+x.ap-cover);return {r,need,save:r===6||(r!==1&&r>=need)}});
+    renderStage()};
+  const ab=$("#applyBtn");if(ab)ab.onclick=()=>{const t=find(+C.tgt);snap();const was=dead(t.u);t.u.wounds=Math.min(hpMax(t.u),t.u.wounds+R.final);
+    const a=C.att?find(+C.att):null;
+    log(`${a?a.u.name:"Attack"} → ${t.u.name}: ${R.final} wound${R.final===1?"":"s"}${!was&&dead(t.u)?", destroyed":""}.`);
+    if(C.mode==="shoot"&&t.u.shaken&&!dead(t.u))log(`${t.u.name} was Shaken when hit.`);
+    R.applied=true;save();renderStage()};
+}
+$("#qRoll").onclick=()=>{const n=Math.max(1,Math.min(40,+$("#qN").value||1)),t=Math.min(6,Math.max(2,+$("#qT").value||4));
+  const r=Array.from({length:n},d6);const ok=r.filter(x=>x===6||(x!==1&&x>=t)).length;
+  $("#qTray").innerHTML=r.map(x=>`<span class="d6 pop ${x===6||(x!==1&&x>=t)?"ok":""}">${x}</span>`).join("")+`<span class="muted" style="align-self:center;margin-left:6px">${ok} success${ok===1?"":"es"}</span>`};
+
+/* ---------- RULES ---------- */
+/* Special rules, detected from each unit's rules and weapons text */
+const KW=[
+ ["AP","Weapon",/\bAP\s*\(/i,"Target gets −X to its Defense rolls against these hits."],
+ ["Bane","Weapon",/\b(Bane|Poison)\b/i,"Ignores Regeneration. The target re-rolls unmodified Defense rolls of 6."],
+ ["Blast","Weapon",/\bBlast\s*\(/i,"Ignores cover. Each hit becomes X hits, but never more than the number of models in the target unit."],
+ ["Deadly","Weapon",/\bDeadly\s*\(/i,"Each wound goes on one model and is multiplied by X. Extra wounds don't carry over to other models."],
+ ["Indirect","Weapon",/\bIndirect\b/i,"May target enemies out of line of sight and ignores cover from sight blockers. −1 to hit if the unit moved."],
+ ["Limited","Weapon",/\bLimited\b/i,"Can only be used once per game."],
+ ["Reliable","Weapon",/\bReliable\b/i,"Attacks with Quality 2+."],
+ ["Rending","Weapon",/\bRending\b/i,"Ignores Regeneration. Unmodified 6s to hit get AP(+4)."],
+ ["Surge","Weapon",/\bSurge\b/i,"Unmodified 6s to hit deal 1 extra hit."],
+ ["Takedown","Weapon",/\bTakedown\b/i,"May target any single model in a unit as if it were a unit of one. Resolved before other weapons."],
+ ["Thrust","Weapon",/\b(Thrust|Lance)\b/i,"When charging, +1 to hit and AP(+1) in melee."],
+ ["Unstoppable","Weapon",/\b(Unstoppable|Lock-On)\b/i,"Ignores Regeneration and all negative modifiers to its rolls."],
+ ["Ambush","Unit",/\bAmbush\b/i,"Kept off the table at deployment. From round 2, place it at the start of a round anywhere more than 9\" from enemies. Can't seize or contest objectives the round it arrives."],
+ ["Artillery","Unit",/\bArtillery\b/i,"Hold only. +1 to hit against targets over 9\" away; enemies shooting it from over 9\" get −2 to hit."],
+ ["Caster","Unit",/\bCaster\s*\(/i,"Gets X spell tokens each round, holding at most 6. Spend tokens equal to a spell's value and roll: 4+ casts. Other casters within 18\" may spend tokens for +1 or −1."],
+ ["Counter","Unit",/\bCounter\b/i,"Strikes first when charged. The charger loses one Impact attack per Counter model."],
+ ["Fast","Unit",/\bFast\b/i,"+2\" on Advance, +4\" on Rush and Charge."],
+ ["Fear","Unit",/\bFear\b/i,"Counts as dealing +X wounds when deciding who won a melee."],
+ ["Fearless","Unit",/\bFearless\b/i,"After failing a morale test, roll a die: 4+ passes it instead."],
+ ["Flying","Unit",/\bFlying\b/i,"Moves over units and terrain and ignores terrain effects while moving."],
+ ["Furious","Unit",/\bFurious\b/i,"When charging, unmodified 6s to hit in melee deal 1 extra hit."],
+ ["Hero","Unit",/\bHero\b/i,"Can join a unit and takes its morale tests. Always takes wounds last."],
+ ["Immobile","Unit",/\bImmobile\b/i,"Can only use Hold."],
+ ["Impact","Unit",/\bImpact\b/i,"After charging, unless Fatigued, roll X dice: each 2+ is a hit."],
+ ["Regeneration","Unit",/\bRegeneration\b/i,"Roll a die for each wound taken: 5+ ignores it. Bane, Rending and Unstoppable switch it off."],
+ ["Relentless","Unit",/\bRelentless\b/i,"Shooting at targets over 9\" away, unmodified 6s to hit deal 1 extra hit."],
+ ["Scout","Unit",/\bScout\b/i,"Deploys after all other units, anywhere within 12\" of its deployment zone."],
+ ["Slow","Unit",/\bSlow\b/i,"−2\" on Advance, −4\" on Rush and Charge."],
+ ["Stealth","Unit",/\bStealth\b/i,"Enemies shooting it from over 9\" away get −1 to hit."],
+ ["Strider","Unit",/\bStrider\b/i,"Ignores difficult terrain."],
+ ["Tough","Unit",/\bTough\s*\(/i,"Each model needs X wounds to kill. Wounds go on the most-wounded Tough model first."]
+];
+const KWD=Object.fromEntries(KW.map(k=>[k[0],k]));
+function kwOf(u){const t=`${u.rules||""} ${u.weapons||""}`;const f={Ambush:u.ambush,Caster:u.cast>0,Hero:u.hero,Tough:u.tough>1};
+  return KW.filter(([n,,re])=>f[n]||re.test(t)).map(k=>k[0])}
+function matchup(){const m={};S.armies.forEach((a,ai)=>a.units.forEach(u=>kwOf(u).forEach(k=>{(m[k]||(m[k]=[[],[]]))[ai].push(u.name)})));return m}
+const uniqCount=names=>{const c={};names.forEach(n=>c[n]=(c[n]||0)+1);return Object.entries(c).map(([n,k])=>k>1?`${n} ×${k}`:n)};
+function openKw(n){
+  const k=KWD[n];if(!k)return;const m=matchup()[n];
+  sheet(`<div class="eyebrow">${k[1]} rule</div><h2>${n}</h2><p>${k[3]}</p>
+    ${m?`<div class="stack" style="gap:4px">${m.map((names,ai)=>names.length?`<p><b class="t${tag(ai)}">${esc(S.armies[ai].name)}</b>: ${esc(uniqCount(names).join(", "))}</p>`:"").join("")}</div>`:""}
+    <button class="btn" id="kwClose" type="button">Close</button>`);
+  $("#kwClose").onclick=closeSheet;
+}
+const CORE=[
+ ["Round structure",`<ul><li>The game lasts 4 rounds.</li><li>Players alternate activating one unit at a time. If one side runs out, the other activates the rest.</li><li>The roll-off winner goes first in round 1. After that, whoever finished activating first in the previous round goes first.</li><li>End of round: morale tests for units at half strength or less, then seize objectives.</li></ul>`],
+ ["Actions",`<div class="tbl"><table><tr><th>Action</th><th>Move</th><th>Notes</th></tr><tr><td>Hold</td><td class="num">0"</td><td>May shoot.</td></tr><tr><td>Advance</td><td class="num">6"</td><td>May shoot after moving.</td></tr><tr><td>Rush</td><td class="num">12"</td><td>No shooting.</td></tr><tr><td>Charge</td><td class="num">12"</td><td>Move into melee.</td></tr></table></div><p>Fast: +2" Advance, +4" Rush and Charge. Slow: −2" and −4".</p>`],
+ ["Movement and coherency",`<ul><li>Every model stays within 1" of another model in its unit and within 6" of all of them.</li><li>Units may only come within 1" of enemies when charging.</li><li>Models on different levels of elevated terrain may keep 3" coherency if they can't fit.</li></ul>`],
+ ["Quality tests",`<p>Roll a d6; meet or beat Quality to succeed. An unmodified 6 always succeeds and a 1 always fails, whatever the modifiers.</p>`],
+ ["Shooting",`<ul><li>Models in range and line of sight fire all ranged weapons.</li><li>Roll one Quality test per attack; each success is a hit.</li><li>The target rolls one die per hit, needing its Defense or higher. Each fail is a wound.</li><li><b>Cover</b>: if the target unit's models are in or behind cover, +1 to Defense rolls against shooting.</li></ul>`],
+ ["Melee",`<ul><li>Chargers move into base contact or as close as possible. The target may move up to 3" to meet them.</li><li>Models within 2" strike with all melee weapons, resolved like shooting.</li><li>The target may strike back.</li><li>The side that dealt fewer wounds loses and tests morale.</li><li>If one unit is destroyed, the winner may move 3". Otherwise the charger moves back to 1" apart if possible.</li><li><b>Fatigue</b>: after charging or striking back, a unit only hits on unmodified 6s in melee for the rest of the round.</li></ul>`],
+ ["Wounds and Tough",`<ul><li>Each wound removes one model.</li><li>Tough(X): a model dies after X wounds. Wounds go on the most-wounded Tough model first.</li><li>Heroes always take wounds last.</li></ul>`],
+ ["Morale and Shaken",`<ul><li>Test: a Quality test.</li><li>In Firefight, units at half or less of their size (or Tough, for single models) test at the end of each round. A melee loser tests after the fight.</li><li><b>Shaken</b>: the unit must stay idle, strikes back as Fatigued, always fails morale, and can't seize or contest objectives. Spending a full activation idle removes it.</li><li>A melee loser that fails at half strength or less is destroyed instead.</li></ul>`],
+ ["Objectives",`<ul><li>Place D3+2 markers, alternating, outside deployment zones and more than 9" apart.</li><li>At the end of each round, a unit within 3" with no enemy within 3" seizes a marker. It stays held after the unit leaves.</li><li>Units from both sides within 3" make it neutral. Shaken units can't seize or contest.</li><li>After round 4, the player holding the most markers wins.</li></ul>`],
+ ["Terrain",`<ul><li><b>Cover</b>: +1 Defense against shooting.</li><li><b>Difficult</b>: a unit moving through it moves no more than 6" that activation.</li><li><b>Dangerous</b>: moving through or activating in it, roll one die per model (or per point of Tough). Each 1 is a wound.</li><li><b>Climbing and jumping</b>: Firefight lets models jump small gaps and drop short heights as part of a move; bigger jumps need tests, and pushed or fallen models take hits. Check the Firefight rulebook for the distances.</li></ul>`],
+ ["Deployment",`<ul><li>The roll-off winner picks a table edge; the opponent takes the opposite one.</li><li>Alternate placing one unit each within 12" of your edge.</li><li><b>Ambush</b>: set aside; from round 2, place anywhere more than 9" from enemies at the start of a round. Can't seize or contest objectives on the round it arrives.</li><li><b>Scout</b>: deploy after everything else, anywhere within 12" of your deployment zone.</li></ul>`],
+ ["Casters and spells",`<ul><li>Caster(X) gains X tokens at the start of each round, holding at most 6.</li><li>Spend tokens equal to a spell's value to try it, once per spell per activation. Roll a die: 4+ succeeds on a target in line of sight.</li><li>Other casters within 18" can spend tokens to add +1 or −1 to the roll, one per token.</li></ul>`]
+];
+const CORE_NEEDS={"Casters and spells":"Caster"};
+function renderRules(q=""){
+  q=q.trim().toLowerCase();
+  const re=q?new RegExp("("+q.replace(/[.*+?^${}()|[\]\\]/g,"\\$&")+")","gi"):null;
+  const hl=h=>re?h.replace(/>([^<]+)</g,(m,t)=>">"+t.replace(re,"<mark>$1</mark>")+"<"):h;
+  const hit=(t,h)=>!q||(t+" "+h.replace(/<[^>]+>/g," ")).toLowerCase().includes(q);
+  const m=matchup(),known=Object.keys(m).length>0,hide=!!S.hideUnused&&!q;
+  const item=(t,h,{dim,badge=""}={})=>`<details class="rule ${dim?"dim":""}" ${q?"open":""}><summary><span>${t}</span>${badge}</summary><div class="body">${hl("<div>"+h+"</div>")}</div></details>`;
+  const kwBody=n=>{const k=KWD[n],u=m[n];return `<p class="eyebrow">${k[1]} rule</p><p>${k[3]}</p>`+(u?`<p class="used">${u.map((names,ai)=>names.length?`<b class="t${tag(ai)}">${esc(S.armies[ai].name)}</b>: ${esc(uniqCount(names).join(", "))}`:"").filter(Boolean).join("<br>")}</p>`:"")};
+  const badge=n=>{const u=m[n];return u?`<span class="cnt">${u.map((x,ai)=>x.length?`<span class="t${tag(ai)}">${ai?"B":"A"}${x.length}</span>`:"").join(" ")}</span>`:""};
+  const group=(title,items,note="")=>items.length?`<div class="group"><div class="row between"><h3>${title}</h3><span class="muted num" style="font-size:.82rem">${items.length}</span></div>${note}${items.join("")}</div>`:"";
+  const coreUsed=CORE.filter(([t])=>!CORE_NEEDS[t]||!known||m[CORE_NEEDS[t]]),coreUnused=known?CORE.filter(([t])=>CORE_NEEDS[t]&&!m[CORE_NEEDS[t]]):[];
+  const kwUsed=KW.filter(k=>m[k[0]]),kwUnused=KW.filter(k=>!m[k[0]]);
+  let html="",count=0;
+  const C1=coreUsed.filter(([t,h])=>hit(t,h)).map(([t,h])=>item(t,h));
+  if(known){
+    const A=kwUsed.filter(k=>hit(k[0],kwBody(k[0]))).map(k=>item(k[0],kwBody(k[0]),{badge:badge(k[0])}));
+    const U=[...coreUnused.filter(([t,h])=>hit(t,h)).map(([t,h])=>item(t,h,{dim:true})),...kwUnused.filter(k=>hit(k[0],k[3])).map(k=>item(k[0],kwBody(k[0]),{dim:true}))];
+    html=group("In this matchup",A,'<p class="muted" style="font-size:.88rem">Special rules found on your two armies. A and B show how many units carry each one.</p>')+group("Core rules",C1)+(hide?"":group("Not in this matchup",U));
+    count=A.length+C1.length+(hide?0:U.length);
+  } else {
+    const K=KW.filter(k=>hit(k[0],k[3])).map(k=>item(k[0],kwBody(k[0])));
+    html=group("Core rules",C1)+group("Special rules",K);count=C1.length+K.length;
+  }
+  $("#rules").innerHTML=html;
+  $("#ruleHint").hidden=count>0;
+  $("#hideWrap").hidden=!known;
+  $("#hideUnused").checked=!!S.hideUnused;
+  $("#matchNote").textContent=known?`Built from the rules on ${S.armies[0].name} and ${S.armies[1].name}. Units typed in by hand without rules text may be missing keywords.`:"Import both army lists with their rules to see which special rules this matchup uses.";
+}
+$("#ruleSearch").addEventListener("input",e=>renderRules(e.target.value));
+$("#hideUnused").addEventListener("change",e=>{S.hideUnused=e.target.checked;save();renderRules($("#ruleSearch").value)});
+
+/* ---------- REMINDERS ---------- */
+const FORGET=[
+ ["Fatigue","After charging or striking back, a unit only hits on unmodified 6s in melee for the rest of the round."],
+ ["Morale at round end","Units at half strength or less test at the end of the round. A melee loser tests straight after the fight."],
+ ["Shaken means idle","A Shaken unit spends its next activation doing nothing, then recovers. It can't seize or contest objectives."],
+ ["Objectives","Only seized at the end of a round, by a unit within 3\" with no enemy within 3\". They stay yours when you leave."],
+ ["Who goes first","Next round, whoever finished all their activations first goes first."],
+ ["Advance vs Rush","Advance 6\" and still shoot. Rush 12\" with no shooting. Charge 12\" into melee."],
+ ["6s and 1s","An unmodified 6 always succeeds and a 1 always fails, whatever the modifiers."],
+ ["Cover","+1 Defense against shooting when the target is in or behind cover. Blast ignores it."],
+ ["Melee winner","The side that dealt more wounds wins. Fear adds to that count."],
+ ["Coherency","Each model within 1\" of another in its unit and within 6\" of all of them."]
+];
+function renderReminders(){
+  const m=matchup(),known=Object.keys(m).length>0,d=gapDays();
+  const used=ai=>KW.filter(k=>m[k[0]]&&m[k[0]][ai].length);
+  const army=ai=>{const a=S.armies[ai],k=used(ai);
+    return `<div><h3 class="t${tag(ai)}">${esc(a.name)}</h3>${k.length?k.map(x=>`<button type="button" class="kwrow" data-kw="${x[0]}"><b>${x[0]}</b><span>${x[3]}</span></button>`).join(""):`<p class="muted" style="font-size:.9rem">${a.units.length?"No special rules found on these units.":"No units yet."}</p>`}</div>`};
+  const closed=S.remClosed||{};
+  const sec=(id,title,body,link="")=>`<details class="rem" data-sec="${id}" ${closed[id]?"":"open"}><summary><h3>${title}</h3><span class="chev" aria-hidden="true"></span></summary><div class="rembody">${link}${body}</div></details>`;
+  const anyClosed=Object.values(closed).some(Boolean);
+  $("#v-reminders").innerHTML=`
+    <div class="stack">
+      <div class="row between"><h2>Getting back into it</h2><button class="btn sm ghost" id="remAll" type="button">${anyClosed?"Expand all":"Collapse all"}</button></div>
+      <p class="muted">${d!=null?`Your last game was ${gapText(d)}. `:""}Read this top to bottom before you set up. Tap a heading to fold away what you've done; everything opens again when you start a new game.</p>
+    </div>
+    ${sec("setup","Setting up",`
+      <ol class="steps">
+        <li>4' × 4' table, 15–20 pieces of terrain.</li>
+        <li>Roll off. The winner places the first objective, picks an edge and goes first.</li>
+        <li>D3+2 objectives, alternating, outside deployment zones and more than 9" apart.</li>
+        <li>Alternate deploying one unit at a time within 12" of your edge.</li>
+        <li>Hold Ambush units back; Scouts deploy last, within 12" of their zone.</li>
+      </ol>`,'<a class="btn sm" href="#setup" style="align-self:flex-start">Open setup</a>')}
+    ${sec("round","A round",`
+      <div class="flow">
+        <div><b>1 · Activate</b><span>Take turns activating one unit each. Pick one action.</span></div>
+        <div><b>Hold</b><span>Stay put and shoot.</span></div>
+        <div><b>Advance</b><span>Move 6", then shoot.</span></div>
+        <div><b>Rush</b><span>Move 12". No shooting.</span></div>
+        <div><b>Charge</b><span>Move 12" into melee. You become Fatigued.</span></div>
+        <div><b>2 · End of round</b><span>Morale tests, then seize objectives. Four rounds in all.</span></div>
+      </div>
+      <p class="muted" style="font-size:.9rem">Attacks: roll Quality to hit, the target rolls Defense per hit, each fail is a wound. The Attack tab does the maths.</p>`)}
+    ${sec("forget","Easy to forget",`<div class="forget">${FORGET.map(([t,s])=>`<div><b>${t}</b><span>${s}</span></div>`).join("")}</div>`)}
+    ${sec("matchup","Your matchup",known?`<p class="muted" style="font-size:.9rem">The special rules on each army, so you know what to watch for. Tap one to see who has it.</p><div class="mu">${army(0)}${army(1)}</div>`:
+        `<p class="muted">Import both army lists in Setup to see the special rules this matchup uses.</p>`,known?'<a class="btn sm ghost" href="#rules" style="align-self:flex-start">All rules</a>':"")}
+    ${sec("notes","Our notes",`<p class="muted" style="font-size:.9rem">House rules, rulings you agreed on, things you got wrong last time. Saved on this device.</p>
+      <textarea class="notes" id="notes" aria-label="Our notes" placeholder="e.g. We play dangerous terrain as 1 wound per model. Remember Fatigue after striking back!">${esc(S.notes||"")}</textarea>`)}`;
+  $("#notes").addEventListener("input",e=>{S.notes=e.target.value;save()});
+  document.querySelectorAll("details.rem").forEach(el=>el.addEventListener("toggle",()=>{
+    S.remClosed=S.remClosed||{};S.remClosed[el.dataset.sec]=!el.open;save();
+    $("#remAll").textContent=Object.values(S.remClosed).some(Boolean)?"Expand all":"Collapse all"}));
+  $("#remAll").onclick=()=>{const close=!Object.values(S.remClosed||{}).some(Boolean);
+    S.remClosed={};document.querySelectorAll("details.rem").forEach(el=>{S.remClosed[el.dataset.sec]=close});save();renderReminders()};
+}
+function renderGap(v){
+  const d=gapDays();
+  $("#gapBox").innerHTML=d!=null&&d>=14&&v!=="reminders"?`<div class="gapnote"><span>Your last game was ${gapText(d)}. Need a refresher?</span><a class="btn sm primary" href="#reminders">Open reminders</a></div>`:"";
+}
+
+/* ---------- SCREEN LAYOUT (per device) ---------- */
+const LKEY=KEY+"-layout",MQ=matchMedia("(min-width: 900px) and (orientation: landscape)");
+let LAY={mode:"auto",awake:false},WAKE=null;
+try{Object.assign(LAY,JSON.parse(localStorage.getItem(LKEY))||{})}catch(e){}
+function saveLay(){try{localStorage.setItem(LKEY,JSON.stringify(LAY))}catch(e){}}
+function applyLayout(){const t=LAY.mode==="tablet"||(LAY.mode==="auto"&&MQ.matches);document.documentElement.classList.toggle("tab",t);return t}
+async function keepAwake(){
+  if(!LAY.awake||document.visibilityState!=="visible"||WAKE||!("wakeLock" in navigator))return;
+  try{WAKE=await navigator.wakeLock.request("screen");WAKE.addEventListener("release",()=>{WAKE=null})}catch(e){WAKE=null}
+}
+document.addEventListener("visibilitychange",keepAwake);
+const onMQ=()=>{applyLayout();renderLayoutBox()};
+if(MQ.addEventListener)MQ.addEventListener("change",onMQ);else MQ.addListener(onMQ);
+function renderLayoutBox(){
+  const box=document.getElementById("layoutBox");if(!box)return;const t=document.documentElement.classList.contains("tab");
+  box.innerHTML=`<div class="layoutbar"><span class="eyebrow">Screen layout</span>
+    <div class="lseg" role="group" aria-label="Screen layout">${[["auto","Auto"],["phone","Phone"],["tablet","Tablet"]].map(([k,l])=>`<button type="button" data-lay="${k}" aria-pressed="${LAY.mode===k}">${l}</button>`).join("")}</div>
+    <span class="lnote">${LAY.mode==="auto"?`Auto uses the tablet layout on wide landscape screens. Now: ${t?"tablet":"phone"}.`:t?"Side rail and two columns.":"One column, tabs along the bottom."}</span>
+    <label class="lchk"><input type="checkbox" id="lAwake" ${LAY.awake?"checked":""}> Keep the screen awake${"wakeLock" in navigator?"":" (not supported here)"}</label></div>`;
+  box.querySelectorAll("[data-lay]").forEach(b=>b.onclick=()=>{LAY.mode=b.dataset.lay;saveLay();applyLayout();renderLayoutBox()});
+  document.getElementById("lAwake").onchange=async e=>{LAY.awake=e.target.checked;saveLay();if(LAY.awake)await keepAwake();else if(WAKE){WAKE.release().catch(()=>{});WAKE=null}renderLayoutBox()};
+}
+applyLayout();keepAwake();
+
+/* ---------- ROUTER ---------- */
+function view(){const h=location.hash.slice(1);if(["setup","play","combat","reminders","rules"].includes(h))return h;
+  const d=gapDays();return d!=null&&d>=14?"reminders":S.started?"play":"setup"}
+function render(){
+  const v=view(),m=MODES[S.mode];
+  document.querySelectorAll("section.view").forEach(s=>s.hidden=s.id!=="v-"+v);
+  document.querySelectorAll("nav.tabs a").forEach(a=>{if(a.dataset.v===v)a.setAttribute("aria-current","page");else a.removeAttribute("aria-current")});
+  $("#modeLine").textContent=`${m.name} · ${m.pts} pts`;
+  if(v==="play")renderPlay();if(v==="setup")renderSetup();if(v==="combat")renderCombat();
+  if(v==="reminders")renderReminders();if(v==="rules")renderRules($("#ruleSearch").value);
+  renderGap(v);
+}
+window.addEventListener("hashchange",()=>{render();window.scrollTo(0,0)});
+render();
+</script>
+<script>if("serviceWorker" in navigator&&location.protocol!=="file:")addEventListener("load",()=>navigator.serviceWorker.register("../sw.js",{scope:"../"}).catch(()=>{}));</script>
+</body>
+</html>

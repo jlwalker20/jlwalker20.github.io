@@ -1,0 +1,1744 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#1a1d1f">
+<link rel="manifest" href="../manifest.webmanifest">
+<link rel="icon" href="../icons/icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="../icons/icon-192.png">
+<title>Oak &amp; Iron Solo</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IM+Fell+English+SC&family=Libre+Franklin:ital,wght@0,400;0,500;0,700;1,400&family=IBM+Plex+Mono:wght@500;600&display=swap">
+<style>
+/* Layout: a captain's log on sea-chart paper. Sticky turn bar on top, fleet tiles in the middle, tab bar fixed at the bottom */
+:root{
+  --bg:#e7edf0; --surface:#f6f9fa; --sunk:#d9e2e7; --fg:#13283a; --muted:#52677a; --line:#c3d0d8;
+  --accent:#a8402a; --accent-ink:#ffffff; --brass:#8a6a1f; --sea:#1d6a80; --danger:#b3261e; --good:#2c7a4b;
+  --display:"IM Fell English SC","Caslon",Georgia,serif;
+  --body:"Libre Franklin","Franklin Gothic","Segoe UI",system-ui,sans-serif;
+  --mono:"IBM Plex Mono",ui-monospace,Menlo,monospace;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#0c1720; --surface:#14232f; --sunk:#09121a; --fg:#e3eaef; --muted:#93a8b8; --line:#253949;
+  --accent:#ee8466; --accent-ink:#1b0d08; --brass:#d8b45e; --sea:#5dbbd2; --danger:#f2766c; --good:#6fd29a; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0c1720; --surface:#14232f; --sunk:#09121a; --fg:#e3eaef; --muted:#93a8b8; --line:#253949;
+  --accent:#ee8466; --accent-ink:#1b0d08; --brass:#d8b45e; --sea:#5dbbd2; --danger:#f2766c; --good:#6fd29a; color-scheme:dark}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+/* layout: phone by default; .tab = tablet landscape */
+.pcols,.pcol{display:contents}
+html.tab body{padding-left:calc(96px + max(20px,env(safe-area-inset-left,0px)));padding-right:max(24px,env(safe-area-inset-right,0px));padding-bottom:32px}
+html.tab main{max-width:1440px}
+html.tab nav.tabs{top:0;bottom:0;right:auto;width:96px;grid-template-columns:1fr;grid-auto-rows:min-content;align-content:start;gap:4px;border-top:0;border-right:1px solid var(--line);
+  padding:calc(16px + env(safe-area-inset-top,0px)) 8px calc(16px + env(safe-area-inset-bottom,0px)) calc(8px + env(safe-area-inset-left,0px))}
+html.tab nav.tabs a{font-size:.68rem;padding:10px 0;gap:4px}
+html.tab nav.tabs a svg{width:26px;height:26px}
+html.tab .pcols{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.15fr);gap:24px;align-items:start}
+html.tab .pcol{display:flex;flex-direction:column;gap:22px;min-width:0}
+html.tab #v-setup .pcols{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}
+html.tab .log{max-height:340px}
+html.tab #v-combat{max-width:980px}
+html.tab #v-combat .grid2{grid-template-columns:repeat(4,minmax(0,1fr))}
+html.tab #rules{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px 16px;align-items:start}
+html.tab #rules .group{display:contents}
+html.tab #rules .group>.row,html.tab #rules .group>p{grid-column:1/-1}
+html.tab #v-reminders{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px;align-items:start}
+html.tab #v-reminders>.stack:first-child{grid-column:1/-1}
+html.tab .deck{grid-auto-columns:320px}
+html.tab .sheet{align-items:center}
+html.tab .sheet>.panel{border-radius:12px;max-width:680px;max-height:86vh;padding-bottom:18px}
+.layoutbar{display:flex;flex-wrap:wrap;align-items:center;gap:10px 16px;padding:10px 12px;border:1px solid var(--line);border-radius:8px;background:var(--surface)}
+.layoutbar .seg{min-width:260px;flex:1 1 260px;max-width:420px;grid-template-columns:repeat(3,1fr)}
+
+/* ship status cards */
+.deck{display:grid;grid-auto-flow:column;grid-auto-columns:min(86%,340px);gap:12px;overflow-x:auto;scroll-snap-type:x mandatory;overscroll-behavior-x:contain;padding:2px 2px 10px;scrollbar-width:thin;-webkit-overflow-scrolling:touch}
+.deck:focus-visible{outline:2px solid var(--accent);outline-offset:4px}
+.scard{scroll-snap-align:start;background:var(--surface);border:1px solid var(--line);border-radius:10px;overflow:hidden;display:flex;flex-direction:column;min-width:0;box-shadow:0 1px 0 var(--line)}
+.scard.out{opacity:.6}
+.sch{display:flex;gap:10px;align-items:center;padding:10px 12px;background:var(--sea);color:var(--surface)}
+.sch h3{display:flex;gap:6px;align-items:center;font-size:1.2rem;min-width:0}
+.sch h3 span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.sch .flag{color:var(--surface)}
+.sch .cls{font-size:.82rem;opacity:.9;display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.sch .pts{flex:none;width:42px;height:42px;border-radius:50%;border:2px solid var(--surface);display:grid;place-items:center;font-family:var(--mono);font-weight:600}
+.sch .edit{color:var(--surface);border-color:color-mix(in srgb,var(--surface) 60%,transparent);flex:none}
+.sbody{padding:12px;display:flex;flex-direction:column;gap:10px}
+.sgrid{display:grid;grid-template-columns:repeat(3,1fr);gap:1px;background:var(--line);border:1px solid var(--line);border-radius:6px;overflow:hidden}
+.sc{background:var(--bg);padding:6px 8px;display:flex;flex-direction:column;align-items:center;text-align:center}
+.sl{font-size:.66rem;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);font-weight:700}
+.sv{font-family:var(--mono);font-size:1.5rem;font-weight:600;line-height:1.15}
+.snow{font-family:var(--mono);font-size:.72rem;font-weight:600;min-height:1em;white-space:pre}
+.snow.down{color:var(--danger)} .snow.up{color:var(--good)}
+.sailseg{display:grid;grid-template-columns:repeat(4,1fr);border:1px solid var(--line);border-radius:6px;overflow:hidden}
+.sailseg button{border:0;background:var(--bg);padding:6px 2px;min-height:36px;font-size:.8rem;font-weight:600}
+.sailseg button[aria-pressed="true"]{background:var(--sea);color:var(--surface)}
+.trk{display:flex;flex-direction:column;gap:4px}
+.trk .pips button{height:28px}
+.srules{margin:0;display:flex;flex-direction:column;gap:6px;border-top:1px dashed var(--line);padding-top:8px;font-size:.9rem}
+
+.srules dt{font-size:.68rem;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);font-weight:700;padding-top:2px}
+.srules dd{margin:0;min-width:0}
+.dots{display:flex;justify-content:center;gap:2px}
+.dots button{width:24px;height:24px;border:0;background:none;padding:0;display:grid;place-items:center}
+.dots button::before{content:"";width:8px;height:8px;border-radius:50%;background:var(--line)}
+.dots button[aria-current="true"]::before{background:var(--sea);width:18px;border-radius:4px}
+.squadname{font-size:1.25rem}
+.tdanger{color:var(--danger)}
+.chip.ok{border-color:var(--good);color:var(--good)}
+/* solo: enemy captain */
+.aipanel{border:2px solid var(--accent);border-radius:10px;overflow:hidden;background:var(--surface)}
+.aih{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:10px 14px;background:var(--accent);color:var(--accent-ink)}
+.aih .eyebrow{color:var(--accent-ink);opacity:.85}
+.aih h3{font-size:1.3rem}
+.aih .chip{border-color:var(--accent-ink);color:var(--accent-ink)}
+.aibody{padding:14px;display:flex;flex-direction:column;gap:12px}
+.aplan{font-family:var(--display);font-size:1.15rem}
+.aord{border:1px solid var(--line);border-radius:8px;padding:10px 12px;background:var(--bg);display:flex;flex-direction:column;gap:6px}
+.aord.done{opacity:.6}
+.aord p{margin:0;font-size:.95rem}
+.aship{font-family:var(--display);font-weight:400;font-size:1.1rem}
+.awhy{font-size:.85rem;color:var(--muted);font-style:italic}
+.photo{display:grid;grid-template-columns:96px 1fr;gap:12px;align-items:center}
+.photo img,.nophoto{width:96px;height:72px;object-fit:cover;border-radius:6px;border:1px solid var(--line)}
+.nophoto{display:grid;place-items:center;font-size:.75rem;color:var(--muted);background:var(--sunk)}
+.skt{display:flex;flex-wrap:wrap;gap:4px;align-items:center}
+.die.mini{width:30px;height:30px;border-radius:6px}
+.die.mini svg{width:18px;height:18px}
+.skt b{margin-left:6px}.skt b.ok{color:var(--good)}
+.cards{display:grid;grid-template-columns:88px 1fr;gap:14px;align-items:center}
+.icard{width:88px;height:120px;border-radius:8px;border:2px solid var(--brass);background:var(--bg);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;padding:6px;text-align:center}
+.icard.down{background:repeating-linear-gradient(45deg,var(--sea) 0 6px,color-mix(in srgb,var(--sea) 70%,var(--bg)) 6px 12px);border-color:var(--sea)}
+.icard.down .it{background:var(--surface);padding:2px 6px;border-radius:4px}
+.icard .iv{font-size:2rem;font-weight:600}
+.icard .it{font-size:.75rem;line-height:1.2}
+.mu2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+@media (max-width:520px){.mu2{grid-template-columns:1fr}}
+.persl{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:6px}
+.hrow{display:grid;grid-template-columns:72px 1fr auto;gap:6px}
+.hrow input{border:1px solid var(--line);background:var(--bg);border-radius:6px;padding:8px 10px;min-height:40px;width:100%;min-width:0}
+.sqlab{display:block}
+
+.seg.three{grid-template-columns:repeat(3,1fr)}
+.pick{display:grid;grid-template-columns:1fr auto;gap:10px;align-items:center;text-align:left;border:1px solid var(--line);background:var(--surface);border-radius:6px;padding:8px 12px;min-height:52px;width:100%}
+.pick b{display:block;font-family:var(--display);font-weight:400;font-size:1.08rem}
+.pick .stats{display:block}
+.pick .pp{display:grid;place-items:center;width:38px;height:38px;border-radius:50%;background:var(--fg);color:var(--bg);font-weight:600}
+.pick:disabled{opacity:.5}
+.upg{display:grid;grid-template-columns:auto 1fr;gap:10px;align-items:start;border:1px solid var(--line);border-radius:6px;padding:8px 10px;background:var(--bg);font-size:.92rem;cursor:pointer}
+.upg input{width:20px;height:20px;margin-top:2px;accent-color:var(--accent)}
+.rl{font-size:.9rem}
+.rl span{color:var(--muted)}
+.srules>div{display:grid;grid-template-columns:6.6em 1fr;gap:8px}
+.srules .rl{display:block;margin-bottom:4px}
+
+
+.stack>.field,.sheet>.panel>.field{flex:none}
+.gapnote{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;border:2px solid var(--accent);border-radius:8px;padding:10px 12px;margin-top:12px;background:color-mix(in srgb,var(--accent) 10%,var(--surface))}
+.steps{margin:0;padding-left:1.3em;display:flex;flex-direction:column;gap:6px}
+.steps li::marker{color:var(--accent);font-family:var(--mono)}
+.flow{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:8px}
+.flow div{border:1px solid var(--line);border-radius:8px;padding:10px 12px;background:var(--bg);display:flex;flex-direction:column;gap:2px}
+.flow b{font-family:var(--display);font-weight:400;font-size:1.05rem}
+.flow span{font-size:.9rem;color:var(--muted)}
+.forget{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:8px}
+.forget div{background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:10px 12px;display:flex;flex-direction:column;gap:3px}
+.forget b{font-family:var(--display);font-weight:400;font-size:1.05rem}
+.forget span{font-size:.92rem;color:var(--muted)}
+details.rem{background:var(--surface);border:1px solid var(--line);border-radius:8px}
+details.rem>summary{list-style:none;cursor:pointer;display:flex;justify-content:space-between;align-items:center;gap:10px;padding:12px 16px;min-height:48px}
+details.rem>summary::-webkit-details-marker{display:none}
+details.rem .chev{width:10px;height:10px;flex:none;border-right:2px solid var(--accent);border-bottom:2px solid var(--accent);transform:rotate(45deg);margin-top:-4px;transition:transform .15s}
+details.rem:not([open]) .chev{transform:rotate(-45deg);margin-top:0}
+details.rem:not([open]){background:var(--sunk)}
+details.rem:not([open]) h3{color:var(--muted)}
+.rembody{padding:0 16px 16px;display:flex;flex-direction:column;gap:12px}
+textarea.notes{width:100%;min-height:120px;border:1px solid var(--line);background:var(--bg);border-radius:8px;padding:10px 12px;font:inherit;line-height:1.45;resize:vertical}
+
+body{background:var(--bg);color:var(--fg);font:16px/1.45 var(--body);
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));
+  padding-block:0 calc(84px + env(safe-area-inset-bottom,0px))}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:10;background:var(--bg)}
+main{max-width:720px;margin:0 auto}
+h1,h2,h3{font-family:var(--display);font-weight:400;text-wrap:balance;margin:0}
+h1{font-size:2rem;line-height:1.05}
+h2{font-size:1.4rem}
+h3{font-size:1.12rem}
+p{margin:0}
+.muted{color:var(--muted)}
+.eyebrow{font-size:.72rem;text-transform:uppercase;letter-spacing:.14em;color:var(--muted);font-weight:700}
+button,select,input{font:inherit;color:inherit}
+button{cursor:pointer}
+button:disabled{opacity:.45;cursor:default}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.num{font-family:var(--mono);font-variant-numeric:tabular-nums}
+.stack{display:flex;flex-direction:column;gap:14px}
+.row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+.between{justify-content:space-between}
+section.view{display:flex;flex-direction:column;gap:22px;padding-top:14px}
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:16px}
+.btn{border:1px solid var(--line);background:var(--surface);border-radius:6px;padding:9px 14px;min-height:42px}
+.btn.primary{background:var(--accent);color:var(--accent-ink);border-color:var(--accent);font-weight:700}
+.btn.ghost{background:transparent}
+.btn.sm{min-height:34px;padding:5px 10px;font-size:.88rem}
+.chip{display:inline-flex;align-items:center;gap:5px;border:1px solid var(--line);border-radius:4px;padding:1px 7px;font-size:.74rem;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--muted)}
+.chip.warn{border-color:var(--brass);color:var(--brass)}
+.chip.bad{border-color:var(--danger);color:var(--danger)}
+.chip.dead{background:var(--danger);border-color:var(--danger);color:var(--surface)}
+
+.masthead{display:flex;justify-content:space-between;align-items:flex-end;gap:12px;padding-top:18px}
+.masthead p{font-size:.9rem;text-align:right}
+
+/* turn bar */
+.turnbar{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;background:var(--bg);padding-block:10px;border-bottom:1px solid var(--line)}
+.bells{display:flex;gap:3px;align-items:center}
+.bells i{width:10px;height:10px;border-radius:50%;border:1.5px solid var(--line)}
+.bells i.past{background:var(--sea);border-color:var(--sea)}
+.bells i.now{background:var(--accent);border-color:var(--accent)}
+.phases{display:grid;grid-template-columns:repeat(5,1fr);gap:3px;margin-top:8px}
+.phase{text-align:center;font-size:.66rem;text-transform:uppercase;letter-spacing:.05em;padding:6px 1px;border-radius:4px;background:var(--sunk);color:var(--muted);font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.phase.on{background:var(--accent);color:var(--accent-ink)}
+.phase.done{color:var(--fg)}
+
+/* squadrons */
+.board{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.squad{background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:12px;display:flex;flex-direction:column;gap:10px;min-width:0}
+.squad.init{border-color:var(--brass);box-shadow:0 0 0 1px var(--brass) inset}
+.squad h3{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.strike{display:flex;align-items:baseline;gap:6px}
+.strike .big{font-family:var(--mono);font-size:2.2rem;font-weight:600;line-height:1}
+.strike.danger .big{color:var(--danger)}
+.gauge{height:6px;background:var(--sunk);border-radius:3px;overflow:hidden}
+.gauge i{display:block;height:100%;background:var(--sea);transition:width .3s}
+.gauge.danger i{background:var(--danger)}
+.mini{display:flex;justify-content:space-between;align-items:center;gap:6px;border-top:1px dashed var(--line);padding-top:8px;font-size:.86rem}
+.stepper{display:flex;gap:4px;align-items:center}
+.stepper button{width:30px;height:30px;border-radius:6px;border:1px solid var(--line);background:var(--bg);font-weight:700;padding:0}
+.stepper .num{min-width:1.6em;text-align:center;font-weight:600}
+.coin{display:inline-grid;place-items:center;width:22px;height:22px;border-radius:50%;background:var(--brass);color:var(--surface);font-family:var(--mono);font-size:.75rem;font-weight:700}
+.token{background:none;border:0;padding:2px;font-size:.68rem;text-transform:uppercase;letter-spacing:.1em;color:var(--brass);font-weight:700;white-space:nowrap}
+
+/* fleet */
+.seg{display:grid;grid-template-columns:1fr 1fr;border:1px solid var(--line);border-radius:6px;overflow:hidden}
+.seg button{border:0;background:var(--surface);padding:8px 6px;min-height:40px;font-weight:700;font-size:.9rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.seg button[aria-pressed="true"]{background:var(--fg);color:var(--bg)}
+.seg.four{grid-template-columns:repeat(4,1fr)}
+.seg.four button{font-size:.8rem}
+.fleet{display:flex;flex-direction:column;gap:10px}
+.ship{background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:12px;display:flex;flex-direction:column;gap:10px}
+.ship.out{opacity:.62}
+.ship-head{display:flex;justify-content:space-between;gap:8px;align-items:flex-start}
+.ship-head h3{display:flex;align-items:center;gap:6px;min-width:0}
+.ship-head h3 span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.flag{width:16px;height:16px;flex:none;color:var(--accent)}
+.stats{font-family:var(--mono);font-size:.78rem;color:var(--muted)}
+.track{display:grid;grid-template-columns:5.2em 1fr;align-items:center;gap:8px}
+.track .lbl{font-size:.72rem;text-transform:uppercase;letter-spacing:.08em;font-weight:700;color:var(--muted)}
+.pips{display:grid;grid-template-columns:repeat(7,1fr);gap:4px}
+.pips button{height:30px;border:1.5px solid var(--line);background:var(--bg);border-radius:4px;padding:0;font-family:var(--mono);font-size:.7rem;color:var(--muted)}
+.pips.dmg button.on{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+.pips.fat button.on{background:var(--sea);border-color:var(--sea);color:var(--surface)}
+.pips button:last-child{border-style:double;border-width:3px}
+.toggles{display:flex;flex-wrap:wrap;gap:6px}
+.tg{border:1px solid var(--line);background:var(--bg);border-radius:6px;padding:4px 9px;min-height:32px;font-size:.82rem}
+.tg[aria-pressed="true"]{background:var(--fg);color:var(--bg);border-color:var(--fg)}
+.tg.sail{border-color:var(--sea);color:var(--sea);font-weight:700}
+
+/* phase card */
+.phasecard ol{margin:8px 0 0;padding-left:1.3em;display:flex;flex-direction:column;gap:6px}
+.phasecard li::marker{color:var(--accent);font-family:var(--mono)}
+.callout{border-left:3px solid var(--sea);padding:8px 12px;background:var(--sunk);border-radius:0 6px 6px 0;font-size:.93rem}
+.winner{border:2px solid var(--brass);text-align:center}
+.inline-form{display:flex;flex-wrap:wrap;gap:10px;align-items:flex-end;margin-top:12px}
+
+/* log */
+.log{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;max-height:220px;overflow:auto;font-size:.88rem}
+.log li{display:flex;gap:10px;padding:5px 0;border-bottom:1px solid var(--line)}
+.log .r{font-family:var(--mono);color:var(--muted);flex:none;width:2.4em}
+
+/* setup */
+.modes{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:8px}
+.mode{border:1px solid var(--line);background:var(--surface);border-radius:8px;padding:10px 12px;text-align:left;display:flex;flex-direction:column;gap:2px}
+.mode b{font-family:var(--display);font-weight:400;font-size:1.15rem}
+.mode small{color:var(--muted);font-size:.8rem}
+.mode[aria-pressed="true"]{border-color:var(--accent);box-shadow:0 0 0 1px var(--accent) inset}
+.spec{display:grid;grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:1px;background:var(--line);border:1px solid var(--line);border-radius:8px;overflow:hidden}
+.spec div{background:var(--surface);padding:10px 12px;display:flex;flex-direction:column}
+.spec b{font-family:var(--mono);font-size:1.05rem}
+.spec span{font-size:.72rem;color:var(--muted);text-transform:uppercase;letter-spacing:.08em}
+.field{display:flex;flex-direction:column;gap:4px;min-width:0;flex:1 1 120px}
+.field label{font-size:.74rem;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;font-weight:700}
+.field input,.field select{border:1px solid var(--line);background:var(--bg);border-radius:6px;padding:8px 10px;min-height:42px;width:100%}
+.shiplist{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:6px}
+.shiplist li{display:flex;justify-content:space-between;align-items:center;gap:8px;border:1px solid var(--line);border-radius:6px;padding:6px 10px;background:var(--bg)}
+.shiplist li span{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.checklist{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:8px}
+.checklist li{display:flex;gap:12px;align-items:flex-start;background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:12px}
+.checklist input{width:22px;height:22px;flex:none;margin-top:2px;accent-color:var(--accent)}
+.checklist .n{font-family:var(--mono);color:var(--accent);font-weight:600}
+.checklist li.done{opacity:.6}
+.checklist li.done strong{text-decoration:line-through}
+.checklist strong{display:block}
+.checklist p{font-size:.92rem;color:var(--muted)}
+
+/* combat */
+.grid2{display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:10px}
+.check{display:flex;gap:8px;align-items:center;font-size:.92rem}
+.check input{width:20px;height:20px;accent-color:var(--accent)}
+.pool{display:flex;align-items:baseline;justify-content:space-between;gap:10px;border-top:1px solid var(--line);padding-top:12px}
+.pool b{font-family:var(--mono);font-size:1.8rem}
+.tray{display:flex;flex-wrap:wrap;gap:8px;min-height:56px;padding:10px;background:var(--sunk);border-radius:8px}
+.die{width:48px;height:48px;border-radius:9px;border:2px solid var(--line);background:var(--surface);display:grid;place-items:center;padding:0;position:relative;color:var(--muted)}
+.die svg{width:28px;height:28px}
+.die.hit{border-color:var(--accent);color:var(--accent);background:color-mix(in srgb,var(--accent) 10%,var(--surface))}
+.die.rr::after{content:"";position:absolute;top:3px;right:3px;width:6px;height:6px;border-radius:50%;background:var(--sea)}
+.die.pop{animation:pop .35s ease-out}
+@keyframes pop{from{transform:rotate(-90deg) scale(.5);opacity:.3}to{transform:none;opacity:1}}
+.legend{display:flex;flex-wrap:wrap;gap:10px;font-size:.82rem;color:var(--muted)}
+.legend span{display:inline-flex;align-items:center;gap:4px}
+.legend svg{width:18px;height:18px}
+.legend .hit{color:var(--accent);font-weight:700}
+.result{display:flex;flex-direction:column;gap:6px}
+.result .verdict{font-family:var(--display);font-size:1.5rem}
+.facts{display:grid;grid-template-columns:repeat(3,1fr);gap:1px;background:var(--line);border:1px solid var(--line);border-radius:8px;overflow:hidden}
+.facts div{background:var(--surface);padding:8px 10px;display:flex;flex-direction:column}
+.facts b{font-family:var(--mono);font-size:1.3rem}
+.facts span{font-size:.7rem;text-transform:uppercase;letter-spacing:.08em;color:var(--muted)}
+.crit{border:1px dashed var(--brass);border-radius:8px;padding:10px 12px;display:flex;flex-direction:column;gap:8px}
+
+/* rules */
+.search{border:1px solid var(--line);background:var(--surface);border-radius:8px;padding:10px 14px;min-height:46px;width:100%}
+details.rule{background:var(--surface);border:1px solid var(--line);border-radius:8px}
+details.rule summary{padding:12px 14px;cursor:pointer;font-family:var(--display);font-size:1.12rem;list-style:none;display:flex;justify-content:space-between;gap:10px}
+details.rule summary::-webkit-details-marker{display:none}
+details.rule summary::after{content:"+";font-family:var(--mono);color:var(--accent)}
+details.rule[open] summary::after{content:"–"}
+details.rule .body{padding:0 14px 14px;display:flex;flex-direction:column;gap:8px;font-size:.95rem}
+.body ul{margin:0;padding-left:1.2em;display:flex;flex-direction:column;gap:4px}
+.tbl{overflow-x:auto}
+table{border-collapse:collapse;width:100%;font-size:.92rem}
+th,td{text-align:left;padding:6px 8px;border-bottom:1px solid var(--line);vertical-align:top}
+th{font-size:.72rem;text-transform:uppercase;letter-spacing:.08em;color:var(--muted)}
+mark{background:color-mix(in srgb,var(--brass) 35%,transparent);color:inherit;border-radius:2px}
+
+nav.tabs{position:fixed;left:0;right:0;bottom:0;z-index:6;background:var(--surface);border-top:1px solid var(--line);
+  display:grid;grid-template-columns:repeat(6,1fr);
+  padding:6px max(8px,env(safe-area-inset-right,0px)) calc(6px + env(safe-area-inset-bottom,0px)) max(8px,env(safe-area-inset-left,0px))}
+nav.tabs a{display:flex;flex-direction:column;align-items:center;gap:2px;text-decoration:none;color:var(--muted);font-size:.6rem;font-weight:700;letter-spacing:.02em;min-width:0;overflow:hidden;text-transform:uppercase;padding:6px 0;border-radius:6px}
+nav.tabs a svg{width:22px;height:22px}
+nav.tabs a[aria-current="page"]{color:var(--accent);background:var(--sunk)}
+.sheet{position:fixed;inset:0;z-index:20;background:color-mix(in srgb,#000 45%,transparent);display:flex;align-items:flex-end;justify-content:center}
+.sheet>.panel{width:100%;max-width:520px;max-height:90vh;overflow:auto;border-radius:12px 12px 0 0;padding-bottom:calc(18px + env(safe-area-inset-bottom,0px));display:flex;flex-direction:column;gap:12px}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+@media (max-width:380px){.strike .big{font-size:1.8rem}.phase{font-size:.6rem}}
+</style>
+
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <symbol id="f-skull" viewBox="0 0 24 24"><path fill="currentColor" d="M12 2C7 2 4 5.5 4 10c0 2.6 1.2 4.4 3 5.5V19a1 1 0 001 1h1.5v-2h1.5v2h2v-2h1.5v2H16a1 1 0 001-1v-3.5c1.8-1.1 3-2.9 3-5.5 0-4.5-3-8-8-8zm-3.5 7.5a2 2 0 110 4 2 2 0 010-4zm7 0a2 2 0 110 4 2 2 0 010-4zM12 14l1.2 2h-2.4z"/></symbol>
+  <symbol id="f-cannon" viewBox="0 0 24 24"><g fill="currentColor"><rect x="3" y="8" width="15" height="5" rx="2" transform="rotate(-12 10 10)"/><rect x="17" y="6.2" width="3" height="5" rx="1" transform="rotate(-12 18 9)"/><circle cx="8" cy="16.5" r="3.5"/></g><circle cx="8" cy="16.5" r="1.2" fill="var(--surface)"/></symbol>
+  <symbol id="f-musket" viewBox="0 0 24 24"><g fill="currentColor"><rect x="2" y="10" width="15" height="2.2" rx="1" transform="rotate(-28 9 11)"/><path d="M15 9.5l5.5-1.5 1 3.5-6 2.5-1.5-1.5z" transform="rotate(-28 18 11)"/></g></symbol>
+  <symbol id="f-pistol" viewBox="0 0 24 24"><path fill="currentColor" d="M3 8h14l2 2v2H9l-1 1-2 6H3l2-6V8z"/><circle cx="15" cy="15" r="2" fill="none" stroke="currentColor" stroke-width="1.6"/></symbol>
+  <symbol id="f-sword" viewBox="0 0 24 24"><path fill="currentColor" d="M19.5 2.5L21.5 4.5 10 16l-2-2zM6.5 13l4.5 4.5-1.4 1.4-1.6-1.6-3 3-1.4-1.4 3-3-1.5-1.5z"/></symbol>
+  <symbol id="f-sail" viewBox="0 0 24 24"><path fill="currentColor" d="M11 2v15H5zM13 4c4 3 6 7 6 12h-6z"/><path fill="currentColor" d="M3 18.5h18l-2.5 3.5h-13z"/></symbol>
+  <symbol id="i-flag" viewBox="0 0 24 24"><path fill="currentColor" d="M5 2h2v20H5zM8 3h12l-3 4.5 3 4.5H8z"/></symbol>
+</svg>
+
+<style>.hublink{display:inline-flex;align-items:center;gap:4px;margin-top:max(12px,env(safe-area-inset-top,0px));font-size:.74rem;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);text-decoration:none;min-height:32px}.hublink:hover{color:var(--fg)}</style>
+</head>
+<body>
+<main>
+  <a class="hublink" href="../">&lsaquo; All games</a>
+  <header class="masthead">
+    <div>
+      <div class="eyebrow">Solo companion</div>
+      <h1>Oak &amp; Iron</h1>
+    </div>
+    <p class="muted" id="modeLine"></p>
+  </header>
+  <div id="gapBox"></div>
+
+  <!-- PLAY -->
+  <section class="view" id="v-play" hidden>
+    <div class="turnbar">
+      <div class="row between">
+        <div class="row" style="gap:10px"><span class="eyebrow">Turn</span><span class="num" style="font-size:1.4rem;font-weight:600" id="turnNum">1</span><div class="bells" id="bells" aria-hidden="true"></div></div>
+        <div class="row" style="gap:6px">
+          <button class="btn sm ghost" id="undoBtn" type="button">Undo</button>
+          <button class="btn sm primary" id="nextBtn" type="button">Next phase</button>
+        </div>
+      </div>
+      <div class="phases" id="phaseStrip"></div>
+    </div>
+
+    <div class="pcols">
+    <div class="pcol pl">
+    <div id="winBox" style="order:1"></div>
+    <div class="board" id="board" style="order:2"></div>
+    <div class="panel phasecard" id="phaseCard" style="order:3"></div>
+    <div class="stack" style="order:6">
+      <div class="row between"><h2>Ship's log</h2><button class="btn sm ghost" id="newGameBtn" type="button">New game</button></div>
+      <ul class="log" id="log"></ul>
+    </div>
+    </div>
+    <div class="pcol pr">
+    <div id="aiBox" style="order:4"></div>
+    <div class="stack" style="order:5">
+      <div class="row between"><h2>Fleet</h2><span class="muted" style="font-size:.85rem">Tap a box to set damage or fatigue</span></div>
+      <div class="seg" id="fleetTabs"></div>
+      <div class="fleet" id="fleet"></div>
+    </div>
+    </div>
+    </div>
+  </section>
+
+  <!-- SETUP -->
+  <section class="view" id="v-setup" hidden>
+    <div id="layoutBox" style="order:0"></div>
+    <div class="pcols">
+    <div class="pcol pl">
+    <div id="scnBox" style="order:1"></div>
+    <div class="stack" style="order:5">
+      <div class="row between"><h2>Setting the battle</h2><span class="chip num" id="setupCount"></span></div>
+      <ol class="checklist" id="checklist"></ol>
+    </div>
+    <button class="btn primary" id="startBtn" type="button" style="order:6">Begin turn 1</button>
+    </div>
+    <div class="pcol pr">
+    <div class="stack" id="sizeBox" style="order:2">
+      <h2>Game size</h2>
+      <div class="modes" id="modes"></div>
+      <div class="spec" id="spec"></div>
+      <p class="muted" id="modeNote"></p>
+    </div>
+    <div class="stack" style="order:3">
+      <h2>Squadrons</h2>
+      <div class="stack" id="squadForms"></div>
+    </div>
+    <div class="stack" id="aiSetup" style="order:4"></div>
+    </div>
+    </div>
+  </section>
+
+  <!-- COMBAT -->
+  <section class="view" id="v-combat" hidden>
+    <div class="stack">
+      <h2>Gunnery &amp; tests</h2>
+      <div class="seg four" id="cMode"></div>
+    </div>
+    <div class="panel stack">
+      <div class="grid2">
+        <div class="field"><label for="cAtt" id="cAttLbl">Firing ship</label><select id="cAtt"></select></div>
+        <div class="field" id="wTgt"><label for="cTgt">Target</label><select id="cTgt"></select></div>
+      </div>
+      <div class="grid2" id="cInputs"></div>
+      <div class="row" id="cChecks"></div>
+      <div class="pool"><span class="muted" id="poolWhy"></span><span><b id="poolN">0</b> <span class="muted">dice</span></span></div>
+      <div class="legend" id="legend"></div>
+      <button class="btn primary" id="rollBtn" type="button">Roll</button>
+      <div class="tray" id="tray"><span class="muted" style="align-self:center">Dice appear here. Tap a missed die to spend a Skill re-roll.</span></div>
+      <div class="row" id="rerollRow" hidden>
+        <span class="muted" id="skillLeft"></span>
+        <button class="btn sm" id="fortuneBtn" type="button">Spend Fortune: re-roll all</button>
+      </div>
+      <div id="result"></div>
+    </div>
+  </section>
+
+  <!-- SHIPS -->
+  <section class="view" id="v-ships" hidden></section>
+
+  <!-- REMINDERS -->
+  <section class="view" id="v-reminders" hidden></section>
+
+  <!-- RULES -->
+  <section class="view" id="v-rules" hidden>
+    <div class="stack">
+      <h2>Rules reference</h2>
+      <input class="search" id="ruleSearch" type="search" placeholder="Search: broadside, shaken, strike…" aria-label="Search rules">
+      <p class="muted" id="ruleHint" hidden>No rules match that search.</p>
+    </div>
+    <div class="stack" id="rules"></div>
+    <p class="muted" style="font-size:.86rem">Summarised from Firelock Games' Oak &amp; Iron rulebook. Card text and scenario cards can change these rules. Range bands are measured with the range ruler.</p>
+  </section>
+</main>
+
+<nav class="tabs" aria-label="Sections">
+  <a href="#setup" data-v="setup"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="9"/><path d="M12 3v18M3 12h18M12 7l2 5-2 5-2-5z"/></svg>Setup</a>
+  <a href="#play" data-v="play"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 3v14M12 4c3 2 5 6 5 10h-5M11 6c-2.5 2-4 5-4 8h4"/><path d="M3 18c2 2 4 2 6 0s4-2 6 0 4 2 6 0"/></svg>Play</a>
+  <a href="#ships" data-v="ships"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="5" width="12" height="15" rx="2"/><path d="M9 3h10a2 2 0 012 2v13"/></svg>Ships</a>
+  <a href="#combat" data-v="combat"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="3" width="18" height="18" rx="4"/><circle cx="8" cy="8" r="1.3" fill="currentColor"/><circle cx="16" cy="16" r="1.3" fill="currentColor"/><circle cx="12" cy="12" r="1.3" fill="currentColor"/></svg>Gunnery</a>
+  <a href="#reminders" data-v="reminders"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M9 18h6M10 21h4"/><path d="M12 3a6 6 0 00-3.5 10.9c.6.5 1 1.2 1 2.1h5c0-.9.4-1.6 1-2.1A6 6 0 0012 3z"/></svg>Reminders</a>
+  <a href="#rules" data-v="rules"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 4h7a3 3 0 013 3v13a2 2 0 00-2-2H4zM20 4h-5a3 3 0 00-3 3"/><path d="M20 4v14h-6"/></svg>Rules</a>
+</nav>
+
+<div id="sheet"></div>
+
+<script>
+const MODES={
+  quick:{name:"Quickstart",sub:"2 ships each · first game",table:"Sea mat",points:"—",ships:"2 each",quick:true,
+    note:"Uses the four core-box ships and preset initiative hands. No objectives, terrain or scenario cards: fight until one side strikes."},
+  patrol:{name:"Patrol",sub:"50 points · 2–4 ships",table:"3' × 3'",points:50,ships:"2–4",note:"Ships of the Line are not allowed."},
+  skirmish:{name:"Skirmish",sub:"100 points · 3–8 ships",table:"3' × 3'",points:100,ships:"3–8",note:""},
+  engagement:{name:"Engagement",sub:"200 points · 4–10 ships",table:"3' × 4'",points:200,ships:"4–10",note:"On a rectangular table the long edges are the deployment edges."}
+};
+const PHASES=["Initiative","Movement","Shooting","Close combat","End"];
+const SAILS=["Full Sail","Battle Sail","Minimal Sail","Anchored"];
+const FACES=["skull","cannon","musket","pistol","sword","sail"];
+const KEY="oak-iron-solo-v1";
+let uid=1;
+const ship=(name,flag=false,st={})=>({id:uid++,name,flag,fort:st.fort??null,crew:st.crew??null,bs:st.bs??null,skill:st.skill??0,
+  cls:st.cls??"",pts:st.pts??null,spdW:st.spdW??null,spdL:st.spdL??null,rules:st.rules??"",upgrades:st.upgrades??"",captain:st.captain??"",xcrew:!!st.xcrew,
+  dmg:0,fat:0,sail:1,rp:false,rs:false,aground:false,ent:false,sunk:false,cap:false});
+const maxF=s=>s.xcrew?10:(s.baseF||7);
+const maxD=s=>s.stout?10:(s.baseD||7);
+
+/* Ship roster, transcribed from the printed ship cards (front: stats and rules; back: upgrade effects) */
+const UPG={
+  crew:["Additional Crew","Shaken at 10 Fatigue instead of 7. Add 1 die to Close Combat attacks."],
+  guns:["Additional Guns","Broadside +1."],
+  heavy:["Heavy Guns","Gains the Weight of Fire special rule."],
+  stout:["Stout","Crippled at 10 damage instead of 7."],
+  swift:["Swift","Sailing Large speed +1."],
+  weath:["Weatherly","Windward speed +1."],
+  sweeps:["Sweeps","May take the Row action: an extra move at speed 1."]
+};
+const RULETEXT={
+  "Yare":"May make an additional turn at the beginning or end of its movement.",
+  "Small":"+1 Fortitude when targeted by a ship at Cannon Shot.",
+  "Fore & Aft Rig":"May make a Change Heading Seamanship Action while In the Wind's Eye.",
+  "Fast":"May increase its Speed by 1 when Sailing Large.",
+  "High Freeboard":"Broadside or Partial Fire attacks against it must score at least 2 hits to cause Fatigue.",
+  "Very High Freeboard":"Broadside or Partial Fire attacks against it must score at least 3 hits to cause Fatigue.",
+  "Shallow Draft":"Rolls 1 die when testing to run aground.",
+  "Improved Sweeps":"May spend a crew action to move at speed 1. Free if at Minimal Sail, Anchored or Sailing Large.",
+  "Leaky Hull":"Repair Crew Actions need a successful Skill Test to remove Damage.",
+  "Unique":"Only one of these ships may be in a squadron or fleet.",
+  "Weight of Fire":"A Broadside at Musket Shot or closer reduces the target's Fortitude by 1 for that attack.",
+  "Tough":"When this ship becomes Crippled, take a Skill Test. If passed, it stays at 6 damage and takes 1 Fatigue instead.",
+  "Pirate Flagship":"If this ship's Admiral is Edward “Blackbeard” Teach, ships in this squadron within Pistol Shot of it remove 2 Fatigue when they Rally.",
+  "Ghost Ship":"Ignores all terrain except islands and land masses; sailing through one of those removes it from the game. When an event card is played it may return from any table edge. Ranged attacks against it count as if it were in a Fog Bank.",
+  "Letters from the Dead":"An enemy ship that begins its activation within Musket Shot of this ship gains 1 Fatigue.",
+  "The Heart":"Your Flagship must carry “The Heart” upgrade to take this ship, and this ship must carry the Davy Jones captain card."
+};
+const R_=(id,name,cls,pts,fort,bs,crew,w,l,rules,up,o={})=>({id,name,cls,pts,fort,bs,crew,w,l,rules,up,grp:o.grp||cls,nat:o.nat||"",f:o.f||7,d:o.d||7,rt:o.rt||{},noSkill:!!o.noSkill,note:o.note||""});
+const ROSTER=[
+  R_("sloop","Sloop","Unrated",7,1,3,1,3,3,["Yare","Small","Fore & Aft Rig"],{crew:2,guns:2,sweeps:1,swift:1}),
+  R_("corvette","Corvette","Unrated",7,1,3,1,2,3,["Yare","Small","Fast"],{crew:2,guns:2,sweeps:1,swift:1}),
+  R_("brigantine","Brigantine","Unrated",8,1,4,1,2,3,["Yare","Small","Fore & Aft Rig"],{crew:2,guns:2,sweeps:1,swift:1,weath:2}),
+  R_("petite","Petite Frégate","Unrated",13,2,4,2,2,3,["Yare","Fast"],{crew:4,guns:2,sweeps:1,weath:2}),
+  R_("fluyt","Fluyt","Unrated",13,2,4,2,2,3,["High Freeboard","Shallow Draft"],{crew:2,guns:2,stout:4}),
+  R_("lgalleon","Light Galleon","Unrated",17,3,5,2,1,3,["High Freeboard"],{crew:6,guns:2,stout:6,weath:2}),
+  R_("galleon","Galleon","Unrated",31,4,9,4,1,2,["Very High Freeboard"],{weath:2,guns:2,heavy:9,stout:6,crew:8}),
+  R_("6th","6th Rate","Frigate",13,2,5,2,2,3,["Fast"],{crew:4,guns:2,stout:4,swift:1,weath:2}),
+  R_("galleyfrig","Galley Frigate","Frigate",14,2,5,2,2,3,["Fast","Improved Sweeps"],{guns:2,weath:2,swift:1,crew:4}),
+  R_("5th","5th Rate","Frigate",16,2,6,2,2,3,["Fast","High Freeboard"],{crew:4,guns:2,stout:4,swift:1,weath:2}),
+  R_("4th","4th Rate","Ship of the Line",23,3,8,3,2,3,["High Freeboard"],{crew:6,guns:2,stout:6,swift:1,weath:2}),
+  R_("3rd","3rd Rate","Ship of the Line",33,3,9,4,2,3,["Weight of Fire","Very High Freeboard"],{crew:6,guns:2,stout:6,swift:1}),
+  R_("2nd","2nd Rate","Ship of the Line",40,4,10,4,1,2,["Weight of Fire","Very High Freeboard"],{crew:8,guns:2,stout:8,swift:1,weath:2}),
+  R_("1st","1st Rate","Ship of the Line",43,4,11,5,1,2,["Weight of Fire","Very High Freeboard"],{crew:8,guns:2,stout:8,swift:1,weath:2}),
+  /* Special, event and unique ships */
+  R_("revenge","Revenge","Unrated",10,1,5,2,3,3,["Yare","Small","Fore & Aft Rig","Fast","Unique"],{},{grp:"special",nat:"Pirate",f:10,
+    rt:{"Fore & Aft Rig":"When In the Wind's Eye, the Skill Test for Change Heading passes automatically."}}),
+  R_("qar","Queen Anne's Revenge","Unrated",16,2,6,3,3,3,["Fast","Pirate Flagship","Unique"],{},{grp:"special",nat:"Pirate"}),
+  R_("adventure","“Adventure” Galley Frigate","Frigate",18,2,6,2,3,4,["Fast","Improved Sweeps","Leaky Hull","Unique"],{},{grp:"special",nat:"England · Pirate"}),
+  R_("pearl","Dark Pearl","Unrated",23,3,5,3,3,4,["Fast","High Freeboard"],{sweeps:1,weath:2,guns:2,stout:6,crew:6},{grp:"special",nat:"Pirate",
+    note:"Upgrade costs are from the front of the card. The back lists Stout at +4 and Additional Crew at +2."}),
+  R_("anne","HMS “Anne”","3rd Rate Ship of the Line",34,3,9,4,2,3,["Weight of Fire","Very High Freeboard","Tough","Unique"],{},{grp:"special",nat:"England"}),
+  R_("dutchman","Flying Dutchman","Fluyt",35,4,4,4,3,3,["Fast","Ghost Ship","Letters from the Dead","The Heart"],{},{grp:"special",nat:"Ghost ship",f:10,d:10,noSkill:true}),
+  R_("sanjose","Galleon of the 4th Order “San José”","Ship of the Line",40,4,9,5,2,3,["Very High Freeboard","Unique"],{},{grp:"special",nat:"Spain",d:10})
+];
+const CARD=Object.fromEntries(ROSTER.map(c=>[c.id,c]));
+const SKILLCOST=[0,2,4];
+/* Final stats for a card with the chosen upgrades and skill */
+function cardStats(c,ups=[],skill=0){
+  const has=k=>ups.includes(k)&&c.up[k]!=null;
+  return {fort:c.fort,bs:c.bs+(has("guns")?1:0),crew:c.crew,spdW:c.w+(has("weath")?1:0),spdL:c.l+(has("swift")?1:0),skill,
+    xcrew:has("crew"),stout:has("stout"),baseF:c.f,baseD:c.d,
+    rules:[...c.rules,...(has("heavy")&&!c.rules.includes("Weight of Fire")?["Weight of Fire"]:[])].join(", "),
+    upgrades:ups.filter(k=>c.up[k]!=null).map(k=>UPG[k][0]).join(", "),
+    pts:c.pts+ups.reduce((t,k)=>t+(c.up[k]||0),0)+SKILLCOST[skill]};
+}
+function fromCard(id,o={}){
+  const c=CARD[id],ups=o.ups||[],skill=o.skill||0;
+  const s=ship(o.name||c.name,!!o.flag,{cls:c.cls});
+  Object.assign(s,cardStats(c,ups,skill),{card:id,ups:[...ups],cls:c.cls,captain:o.captain||""});
+  return s;
+}
+const hasRule=(s,r)=>new RegExp("\\b"+r.replace(/[&]/g,"\\$&")+"\\b","i").test(s?.rules||"");
+const freeboard=s=>hasRule(s,"Very High Freeboard")?3:hasRule(s,"High Freeboard")?2:1;
+const ruleDict=s=>({...RULETEXT,...(s&&s.card&&CARD[s.card]?CARD[s.card].rt:{})});
+function rulesHtml(text,dict){
+  return (text||"").split(/\s*,\s*/).filter(Boolean).map(n=>{const k=Object.keys(dict).find(x=>x.toLowerCase()===n.toLowerCase());
+    return `<div class="rl"><b>${esc(n)}</b>${k?` <span>${esc(dict[k])}</span>`:""}</div>`}).join("");
+}
+const UPGTEXT=Object.fromEntries(Object.values(UPG));
+
+/* ---------- SOLO: scenarios and enemy captains ----------
+   These solo scenarios were written for this app from the ship cards and core rules.
+   They are not official Firelock Games scenarios. */
+const PERS={
+  aggressive:{name:"Boarding captain",desc:"Closes fast, fires at short range and boards whenever it can.",
+    prompt:"You are bold and aggressive. Close the distance quickly, fire at Pistol or Musket Shot, and Board enemies whenever you can reach them. Finish off damaged or Shaken ships.",
+    sail:"Full Sail until within Musket Shot of an enemy, then Battle Sail",
+    move:"Head straight for the nearest enemy ship without entering the Wind's Eye. If the move ends within Yard Arm of an enemy, attempt to Board.",
+    target:"the closest enemy"},
+  gunline:{name:"Line-of-battle admiral",desc:"Keeps formation, fights at Musket Shot and rakes when it can.",
+    prompt:"You are a disciplined line-of-battle admiral. Keep your ships within Musket Shot of your Flagship, turn to present loaded broadsides, prefer Musket Shot range, rake when you can, and only board enemies that are Shaken.",
+    sail:"Battle Sail",
+    move:"Stay within Musket Shot of the Flagship and turn so a loaded broadside faces the nearest enemy, keeping between Musket and Cannon Shot.",
+    target:"the most damaged enemy in range"},
+  raider:{name:"Raider",desc:"Goes for the weakest or most valuable ships and avoids a fair fight.",
+    prompt:"You are a raider. Go after the weakest or most valuable targets (merchant ships first), avoid the strongest enemy ship, and pull Crippled ships away from the fight.",
+    sail:"Full Sail",
+    move:"Make for the weakest enemy ship, merchants first, keeping away from the strongest enemy. A Crippled ship sails away from the enemy instead.",
+    target:"merchant ships first, then the weakest enemy"},
+  cautious:{name:"Cautious commodore",desc:"Fights at long range and keeps its ships healthy.",
+    prompt:"You are cautious. Fight at Cannon Shot, keep your ships healthy with Rally and Repair, and only close in on enemies that are already Crippled or Shaken.",
+    sail:"Battle Sail",
+    move:"Hold at about Cannon Shot from the nearest enemy, keeping a loaded broadside toward it.",
+    target:"the closest enemy"},
+  ghost:{name:"Ghost-ship hunter",desc:"Stays close to spread Letters from the Dead and preys on tired crews.",
+    prompt:"You command a cursed ghost ship. Stay within Musket Shot of as many enemies as possible to spread Letters from the Dead, pick on the most Fatigued enemy, and board Shaken ships.",
+    sail:"Battle Sail",
+    move:"Sail to within Musket Shot of the most Fatigued enemy, staying close to as many enemy ships as possible.",
+    target:"the most Fatigued enemy"}
+};
+const SCN={
+  duel:{name:"Frigate Duel",level:"Beginner",size:"patrol",table:"3' × 3'",turns:8,attacker:0,
+    blurb:"One frigate each in open water. A short first game for learning how the enemy captain thinks.",
+    you:{name:"HMS Swallow",admiral:0,ships:[{c:"6th",skill:1,flag:1,name:"Swallow"}]},
+    ai:{name:"Le Faucon",admiral:0,pers:"aggressive",deploy:"within Musket Shot of the corner diagonally opposite yours",
+      ships:[{c:"petite",ups:["guns"],flag:1,name:"Faucon"}]},
+    setup:[["Lay out the sea","An open 3' × 3' table. Add one small island near the centre if you like, nothing else."],
+      ["Set the wind","Put the wind arrow on one edge. That is the weather edge. Always photograph the table with it at the top."],
+      ["Deploy your frigate","Place Swallow within Musket Shot of a corner on the weather edge, at Battle Sail."],
+      ["Deal the enemy's hand","Deal the enemy 5 initiative cards and enter their values below. Choose your own hand as usual."],
+      ["Start, then deploy the enemy","Begin turn 1, photograph the table and tap Deploy the enemy on the Play tab."]],
+    special:[],
+    victory:"Make the enemy strike. If neither ship has struck after turn 8, the side with fewer Strike Points wins; a tie goes to the enemy."},
+  pirates:{name:"Pirate Hunt",level:"Intermediate",size:"skirmish",table:"3' × 3'",turns:10,attacker:0,aiCC:1,
+    blurb:"A navy squadron corners a pirate flotilla among the islands. The pirates want to board.",
+    you:{name:"Caribbean Squadron",admiral:1,ships:[{c:"5th",skill:1,flag:1,name:"Diligence"},{c:"6th",name:"Swift"},{c:"corvette",name:"Hound"},{c:"brigantine",name:"Speedwell"}]},
+    ai:{name:"Brethren of the Coast",admiral:1,pers:"aggressive",deploy:"among the islands on the half of the table away from your ships, more than Cannon Shot from any of your ships",
+      ships:[{c:"revenge",flag:1,name:"Revenge"},{c:"brigantine",ups:["sweeps"],name:"Black Dog"},{c:"sloop",ups:["crew"],name:"Kestrel"},{c:"corvette",name:"Night Heron"}]},
+    setup:[["Lay out the sea","A 3' × 3' table with 3 or 4 islands and a shoal, mostly in the half farthest from you."],
+      ["Set the wind","Put the wind arrow on a side edge, so neither fleet starts with the wind at its back. Photograph with that edge at the top."],
+      ["Deploy your squadron","Your ships go within Musket Shot of your table edge."],
+      ["Deal the enemy's hand","Deal the enemy 6 initiative cards (5 + Admiral 1) and enter their values below."],
+      ["Start, then deploy the enemy","Begin turn 1, photograph the table and tap Deploy the enemy on the Play tab."]],
+    special:["Pirate crews: every enemy ship adds 1 die to Close Combat. The Gunnery tab adds it for you."],
+    victory:"Make the pirates strike. After turn 10, fewer Strike Points wins; a tie goes to the pirates."},
+  convoy:{name:"Convoy Escort",level:"Intermediate",size:"skirmish",table:"3' × 4'",turns:8,attacker:1,escapeSP:2,
+    blurb:"Two merchantmen must cross the table while raiders try to take them. Every merchant that gets away counts against the raiders.",
+    you:{name:"Convoy",admiral:0,ships:[{c:"6th",skill:1,flag:1,name:"Escort"},{c:"corvette",name:"Messenger"},{c:"fluyt",name:"Goede Hoop",merchant:1},{c:"fluyt",name:"Zeemeeuw",merchant:1}]},
+    ai:{name:"Raiders",admiral:1,pers:"raider",deploy:"within Musket Shot of the long edge opposite the weather edge, in the half of the table nearer the exit edge",
+      ships:[{c:"galleyfrig",skill:1,flag:1,name:"Corsair"},{c:"petite",name:"Vautour"},{c:"brigantine",name:"Shark"},{c:"corvette",name:"Wasp"}]},
+    setup:[["Lay out the sea","A 3' × 4' table with a few islands. One short edge is the entry edge, the other is the exit edge."],
+      ["Set the wind","Put the wind arrow on a long edge. Photograph with that edge at the top."],
+      ["Deploy the convoy","All your ships within Musket Shot of the entry edge."],
+      ["Deal the enemy's hand","Deal the enemy 6 initiative cards (5 + Admiral 1) and enter their values below."],
+      ["Start, then deploy the enemy","Begin turn 1, photograph the table and tap Deploy the enemy on the Play tab."]],
+    special:["A Fluyt that touches the exit edge escapes. Take it off the table and tap Escaped on its card in the Ships tab.",
+      "Each merchant that escapes adds 2 Strike Points to the raiders, pushing them toward withdrawal.",
+      "Merchant ships may not Board."],
+    victory:"You win at once if both merchants escape. Otherwise make the raiders strike. After turn 8, fewer Strike Points wins; a tie goes to you."},
+  ghost:{name:"The Flying Dutchman",level:"Hard",size:"skirmish",table:"3' × 3'",turns:10,attacker:1,
+    blurb:"A ghost ship rises out of the fog. Put her under before your crews lose their nerve.",
+    you:{name:"Relief Squadron",admiral:1,ships:[{c:"5th",skill:1,flag:1,name:"Resolution"},{c:"lgalleon",name:"Santa Clara"},{c:"6th",name:"Lark"}]},
+    ai:{name:"The Flying Dutchman",admiral:2,pers:"ghost",deploy:"inside or next to a fog bank, more than Cannon Shot from your ships",
+      ships:[{c:"dutchman",flag:1,name:"Flying Dutchman"}]},
+    setup:[["Lay out the sea","A 3' × 3' table with 2 fog banks near the centre and one island."],
+      ["Set the wind","Put the wind arrow on any edge. Photograph with that edge at the top."],
+      ["Deploy your squadron","Your ships within Musket Shot of the weather edge."],
+      ["Deal the enemy's hand","Deal the Dutchman 7 initiative cards (5 + Admiral 2) and enter their values below."],
+      ["Start, then deploy the enemy","Begin turn 1, photograph the table and tap Deploy the enemy on the Play tab."]],
+    special:["The Heart and the Davy Jones card are not needed in this scenario.",
+      "Letters from the Dead: each of your ships that begins its activation within Musket Shot of the Dutchman gains 1 Fatigue.",
+      "Ghost Ship: if she sails through an island she leaves the game, and returns from any table edge when an event card is played."],
+    victory:"The Dutchman strikes only when Out of Action. Make her strike before your squadron does. After turn 10, fewer Strike Points wins; a tie goes to you."},
+  line:{name:"Line of Battle",level:"Hard",size:"engagement",table:"3' × 4'",turns:10,attacker:0,
+    blurb:"Two battle lines meet. A full 100-point fleet action against a disciplined admiral.",
+    you:{name:"Red Squadron",admiral:1,ships:[{c:"4th",skill:1,ups:["guns"],flag:1,name:"Monmouth"},{c:"5th",ups:["guns"],name:"Pearl"},{c:"6th",name:"Lyme"},{c:"6th",name:"Seaford"},{c:"galleyfrig",name:"Charles"},{c:"corvette",name:"Kingfisher"}]},
+    ai:{name:"Escadre Bleue",admiral:1,pers:"gunline",deploy:"within Musket Shot of the long edge opposite yours",
+      ships:[{c:"4th",skill:1,ups:["guns","stout"],flag:1,name:"Magnanime"},{c:"5th",ups:["guns"],name:"Sirène"},{c:"6th",ups:["guns"],name:"Mutine"},{c:"galleyfrig",name:"Hermione"},{c:"corvette",name:"Furet"},{c:"sloop",name:"Mouche"}]},
+    setup:[["Lay out the sea","A 3' × 4' table with 2 or 3 islands and a shoal, kept away from the long edges."],
+      ["Set the wind","Put the wind arrow on a short edge. Photograph with that edge at the top."],
+      ["Deploy your fleet","Your ships within Musket Shot of one long edge."],
+      ["Deal the enemy's hand","Deal the enemy 6 initiative cards (5 + Admiral 1) and enter their values below."],
+      ["Start, then deploy the enemy","Begin turn 1, photograph the table and tap Deploy the enemy on the Play tab."]],
+    special:[],
+    victory:"Make the enemy fleet strike. After turn 10, fewer Strike Points wins; a tie goes to the enemy."},
+  custom:{name:"Custom battle",level:"Your rules",size:"skirmish",table:"",turns:10,attacker:0,custom:true,
+    blurb:"Pick a game size, build both squadrons from the roster and choose how the enemy fights.",
+    ai:{deploy:"along its own table edge, opposite yours, more than Cannon Shot from your ships"},
+    special:[],victory:"Standard rules: make the enemy strike. After turn 10, fewer Strike Points wins."}
+};
+function newSolo(id,keep){
+  const sc=SCN[id];
+  const s=blankState(keep&&sc.custom?keep.mode:sc.size);
+  const mk=d=>{const sh=fromCard(d.c,{ups:d.ups||[],skill:d.skill||0,flag:!!d.flag,name:d.name});if(d.merchant)sh.merchant=true;return sh};
+  s.squads=[
+    {name:sc.you?sc.you.name:"Your squadron",admiral:sc.you?sc.you.admiral:0,fortune:3,obj:0,ships:sc.you?sc.you.ships.map(mk):[]},
+    {name:sc.ai&&sc.ai.name?sc.ai.name:"Enemy squadron",admiral:sc.ai&&sc.ai.admiral!=null?sc.ai.admiral:0,fortune:3,obj:0,ships:sc.ai&&sc.ai.ships?sc.ai.ships.map(mk):[]}];
+  s.attacker=sc.attacker||0;
+  s.solo={scn:id,pers:(sc.ai&&sc.ai.pers)||(keep&&keep.pers)||"gunline",hand:[],next:null,nextFor:null,rev:null,tier:keep?keep.tier||"default":"default",deployed:false,orders:null};
+  return s;
+}
+const turnLimit=()=>(S&&S.solo&&SCN[S.solo.scn]&&SCN[S.solo.scn].turns)||10;
+const SC=()=>S&&S.solo?SCN[S.solo.scn]:null;
+
+function blankState(mode="quick"){
+  const q=MODES[mode].quick;
+  return {mode,started:false,turn:1,phase:0,initiative:0,attacker:0,winner:null,checks:{},view:0,
+    squads:[
+      {name:q?"Player A":"Squadron A",admiral:0,fortune:3,obj:0,ships:q?[fromCard("corvette"),fromCard("fluyt",{flag:true})]:[]},
+      {name:q?"Player B":"Squadron B",admiral:0,fortune:3,obj:0,ships:q?[fromCard("sloop"),fromCard("petite",{flag:true})]:[]}],
+    log:[]};
+}
+function sampleState(){
+  const s=blankState("quick");
+  s.example=true;s.started=true;s.turn=3;s.phase=2;s.initiative=1;
+  s.squads[0].name="Player A (example)";s.squads[1].name="Player B (example)";
+  const [cv,fl]=s.squads[0].ships,[sl,pf]=s.squads[1].ships;
+  cv.dmg=3;cv.fat=2;cv.rs=true;fl.fat=1;sl.dmg=7;sl.fat=4;sl.sail=2;pf.dmg=2;pf.fat=3;pf.rp=true;
+  s.squads[1].fortune=2;
+  s.log=[{r:3,t:"Example game loaded. Start your own from Setup."},{r:2,t:"Sloop Crippled by a Corvette broadside."},{r:2,t:"Player B spent a Fortune Point."}];
+  return s;
+}
+let S,history=[];
+try{S=JSON.parse(localStorage.getItem(KEY))}catch(e){}
+if(!S||!S.squads||!S.solo)S=newSolo("duel");
+uid=1+Math.max(0,...S.squads.flatMap(q=>q.ships.map(s=>s.id)));
+function save(){try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}}
+function snap(){history.push(JSON.stringify(S));if(history.length>60)history.shift()}
+function log(t){S.log.unshift({r:S.turn,t});if(!S.example)S.lastPlayed=Date.now()}
+const $=s=>document.querySelector(s);
+const esc=s=>String(s??"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const icon=f=>`<svg><use href="#f-${f}"/></svg>`;
+
+/* ---------- ship status ---------- */
+const crippled=s=>s.dmg>=maxD(s), shaken=s=>s.fat>=maxF(s), ooa=s=>crippled(s)&&shaken(s);
+function strike(q){let n=q.obj||0;if(SC()&&SC().escapeSP&&q===S.squads[1])n+=SC().escapeSP*S.squads[0].ships.filter(x=>x.esc).length;q.ships.forEach(s=>{if(s.sunk||s.cap||ooa(s))n+=2;else if(crippled(s))n+=1});return n}
+function afloat(q){return q.ships.filter(s=>!s.sunk&&!s.cap&&!s.aground&&!ooa(s)).length}
+function addDamage(s,n){for(let i=0;i<n;i++){if(s.dmg<maxD(s))s.dmg++;else s.fat=Math.min(maxF(s),s.fat+1)}}
+function addFat(s,n){s.fat=Math.min(maxF(s),s.fat+n)}
+/* Current values after sail setting, damage and fatigue */
+function speedNow(s,base){
+  if(base==null)return null;
+  if(s.sail===3||s.aground||s.ent||ooa(s)||s.sunk||s.cap)return 0;
+  let v=base+(s.sail===0?1:s.sail===2?-1:0);
+  if(crippled(s))v=Math.min(v,2);
+  return Math.max(0,Math.min(5,v));
+}
+const bsNow=s=>s.bs==null?null:Math.max(s.bs-s.fat,Math.min(s.bs,s.crew??0));
+const partialNow=s=>s.crew==null?null:Math.max(1,s.crew-s.fat);
+const closeNow=s=>s.crew==null?null:Math.max(1,3+s.crew-s.fat)+(s.xcrew?1:0);
+function findShip(id){for(const [qi,q] of S.squads.entries()){const s=q.ships.find(x=>x.id===id);if(s)return {s,q,qi}}return null}
+
+/* ---------- PLAY ---------- */
+function phaseCard(){
+  const ini=S.squads[S.initiative].name, oth=S.squads[1-S.initiative].name;
+  const [a,b]=S.squads.map(q=>afloat(q)||q.ships.length);
+  const dbl=a>=2*b?S.squads[0].name:b>=2*a?S.squads[1].name:null;
+  return [
+    {t:"Initiative phase",s:[
+      S.turn===1?"Reveal the initiative cards chosen during deployment.":"Reveal the initiative card each player chose last turn.",
+      "Higher value takes initiative and goes first in every phase this turn.",
+      "Tie: draw and resolve an event card, then the higher Admiral wins. Still tied: Challenge Test between Flagships.",
+      "Each player places a new card face down for next turn.",
+      "Resolve any “Immediately” effects."],
+      tip:"Revealed cards stay face up until the end phase.",form:true},
+    {t:"Movement phase",s:[
+      `${esc(ini)} activates first; then alternate one ship at a time.`,
+      "Find the point of sail and speed: printed speed adjusted by sail setting (Full +1, Minimal −1, Anchored 0). Max speed 5.",
+      "Up to two actions per activation, each action type once per turn. Adjust Speed and Change Heading come before the move; Change Sail Setting, Reload, Rally, Repair, Board and others after.",
+      "Move the full distance with the matching tool. One turn, at the start or end.",
+      "Place a Wake marker behind the ship.",
+      ...(dbl?[`${esc(dbl)} has at least twice as many ships, so it activates two ships in a row.`]:[])],
+      tip:"In the Wind's Eye (bow within 45° of the weather edge) a ship can't move forward; it may only turn with the speed 1 tool."},
+    {t:"Shooting phase",s:[
+      `${esc(ini)} shoots first; then alternate ships. Remove each ship's Wake marker after it acts.`,
+      "Each ship makes one Broadside per side, a Partial Fire, or nothing.",
+      "Broadside: target within Cannon Shot, in the broadside path and line of sight, with no reload marker on that side.",
+      "Partial Fire: any edge with line of sight, up to Musket Shot, ignores reload markers.",
+      "After a broadside, place a reload marker on that side (the Gunnery tab does this)."],
+      tip:"Use the Gunnery tab to roll the symbol dice and apply damage straight to the fleet."},
+    {t:"Close combat phase",s:[
+      "Entangled ships and Landing Parties fight, alternating from the initiative player.",
+      "Dice: 3 + Crew − Fatigue, plus bonuses. Pick a single target.",
+      "Bow or stern contact: 1 Fatigue per skull. Side contact: 1 Fatigue per skull, pistol or sword."],
+      tip:"Close combat causes Fatigue, not damage. A ship at 7 Fatigue is Shaken and can be captured in the end phase."},
+    {t:"End phase",s:[
+      "Capture or destroy Shaken ships that are Entangled with an enemy.",
+      "Check for withdrawal: a squadron strikes if its Strike Points exceed its ships still in the fight. The app checks this when you tap the button.",
+      "Roll a die for each Out of Action ship: a sail or skull sinks it.",
+      "Lost Admiral: spend a Fortune Point for a free Transfer Flag, or name a new Flagship with Admiral 0.",
+      "Return face-up initiative cards to hand."],
+      tip:S.turn>=turnLimit()?"This is the last turn: after the checks, the squadron with fewer Strike Points wins. A tie goes to the defender.":"Strike Points don't carry over. They are recounted every end phase.",sink:true}
+  ][S.phase];
+}
+function renderPlay(){
+  $("#turnNum").textContent=S.turn;
+  $("#bells").innerHTML=Array.from({length:turnLimit()},(_,i)=>`<i class="${i+1<S.turn?"past":i+1===S.turn?"now":""}"></i>`).join("");
+  $("#phaseStrip").innerHTML=PHASES.map((p,i)=>`<div class="phase ${i===S.phase?"on":i<S.phase?"done":""}">${p}</div>`).join("");
+  $("#nextBtn").textContent=S.phase===4?(S.turn>=turnLimit()?"Final reckoning":"Check withdrawal"):"Next phase";
+  $("#nextBtn").disabled=S.winner!=null;
+  $("#undoBtn").disabled=!history.length;
+  $("#board").innerHTML=S.squads.map((q,i)=>{
+    const sp=strike(q),af=afloat(q),risk=sp>af;
+    return `<div class="squad ${S.initiative===i?"init":""}">
+      <div class="row between" style="gap:4px;flex-wrap:nowrap"><h3 title="${esc(q.name)}">${esc(q.name)}</h3>
+        <button class="token" data-ini="${i}" aria-label="Give initiative to ${esc(q.name)}">${S.initiative===i?"◆ Initiative":"◇"}</button></div>
+      <div class="eyebrow">${S.attacker===i?"Attacker":"Defender"} · Strike points</div>
+      <div class="strike ${risk?"danger":""}"><span class="big">${sp}</span><span class="muted">vs ${af} ship${af===1?"":"s"} fighting</span></div>
+      <div class="gauge ${risk?"danger":""}"><i style="width:${Math.min(100,af?sp/(af+1)*100:100)}%"></i></div>
+      ${risk?'<span class="chip bad">Will strike at end phase</span>':""}
+      <div class="mini"><span>Objective SP</span><div class="stepper"><button data-obj="${i},-1" aria-label="Remove objective strike point">−</button><span class="num">${q.obj||0}</span><button data-obj="${i},1" aria-label="Add objective strike point">+</button></div></div>
+      <div class="mini"><span class="row" style="gap:6px"><span class="coin">F</span>Fortune</span><div class="stepper"><button data-fort="${i},-1" aria-label="Spend fortune">−</button><span class="num">${q.fortune}</span><button data-fort="${i},1" aria-label="Gain fortune">+</button></div></div>
+    </div>`}).join("");
+  const p=phaseCard();
+  let extra="";
+  if(p.form) extra=`<div class="inline-form">
+      ${S.squads.map((q,i)=>`<div class="field" style="flex:1 1 110px"><label for="iv${i}">${esc(q.name)} card</label><input id="iv${i}" type="number" inputmode="numeric" placeholder="Value"></div>`).join("")}
+      <button class="btn" id="ivBtn" type="button">Decide initiative</button></div><div id="ivOut" style="margin-top:8px"></div>`;
+  if(p.sink){const o=S.squads.flatMap((q,qi)=>q.ships.filter(s=>ooa(s)&&!s.sunk).map(s=>({s,q})));
+    extra=o.length?`<div class="stack" style="margin-top:12px;gap:8px"><span class="eyebrow">Sinking rolls</span>${o.map(({s,q})=>`<div class="row between"><span>${esc(s.name)} <span class="muted">(${esc(q.name)})</span></span><button class="btn sm" data-sinkroll="${s.id}">Roll</button></div>`).join("")}</div>`:"";}
+  $("#phaseCard").innerHTML=`<div class="eyebrow">Turn ${S.turn} · now</div><h2>${p.t}</h2><ol>${p.s.map(x=>`<li>${x}</li>`).join("")}</ol><p class="callout" style="margin-top:12px">${p.tip}</p>${extra}`;
+  if(p.form) $("#ivBtn").onclick=decideInit;
+  renderAI();
+  const w=S.winner;
+  $("#winBox").innerHTML=w!=null?`<div class="panel winner stack"><div class="eyebrow">Victory</div><h2>${esc(S.squads[w].name)} holds the sea</h2><p class="muted">${esc(S.squads[1-w].name)} strikes its colours. Strike points ${strike(S.squads[w])} to ${strike(S.squads[1-w])} after turn ${S.turn}.</p></div>`:"";
+  renderFleet();
+  $("#log").innerHTML=S.log.map(l=>`<li><span class="r">T${l.r}</span><span>${esc(l.t)}</span></li>`).join("")||'<li class="muted">Nothing yet.</li>';
+}
+function renderFleet(){
+  $("#fleetTabs").innerHTML=S.squads.map((q,i)=>`<button type="button" data-ft="${i}" aria-pressed="${S.view===i}">${esc(q.name)}</button>`).join("");
+  const q=S.squads[S.view];
+  $("#fleet").innerHTML=q.ships.map(s=>{
+    const chips=[];
+    if(s.sunk)chips.push('<span class="chip dead">Sunk</span>');
+    else if(s.cap)chips.push('<span class="chip dead">Captured</span>');
+    else if(ooa(s))chips.push('<span class="chip dead">Out of action</span>');
+    else{if(crippled(s))chips.push('<span class="chip bad">Crippled · max speed 2</span>');if(shaken(s))chips.push('<span class="chip bad">Shaken · Rally only</span>')}
+    if(s.fort==null)chips.push('<span class="chip warn">Set stats</span>');
+    const pips=(k,v)=>`<div class="pips ${k}" style="grid-template-columns:repeat(${k==="fat"?maxF(s):maxD(s)},1fr)">${Array.from({length:k==="fat"?maxF(s):maxD(s)},(_,i)=>`<button type="button" class="${i<v?"on":""}" data-pip="${s.id},${k},${i+1}" aria-label="${k==="dmg"?"Damage":"Fatigue"} ${i+1}">${i+1}</button>`).join("")}</div>`;
+    return `<div class="ship ${s.sunk||s.cap||ooa(s)?"out":""}">
+      <div class="ship-head"><div style="min-width:0"><h3>${s.flag?'<svg class="flag" aria-label="Flagship"><use href="#i-flag"/></svg>':""}<span>${esc(s.name)}</span></h3>
+        <div class="stats">${s.fort==null?"Fortitude, Crew and Broadside not set":`Fort ${s.fort} · Crew ${s.crew} · Broadside ${s.bs} · Skill ${s.skill||0}`}</div></div>
+        <button class="btn sm ghost" data-edit="${s.id}" type="button">Edit</button></div>
+      ${chips.length?`<div class="toggles">${chips.join("")}</div>`:""}
+      <div class="track"><span class="lbl">Damage</span>${pips("dmg",s.dmg)}</div>
+      <div class="track"><span class="lbl">Fatigue</span>${pips("fat",s.fat)}</div>
+      <div class="toggles">
+        <button type="button" class="tg sail" data-sail="${s.id}" aria-label="Sail setting, tap to change">${SAILS[s.sail]}</button>
+        <button type="button" class="tg" data-tg="${s.id},rp" aria-pressed="${s.rp}">Reload port</button>
+        <button type="button" class="tg" data-tg="${s.id},rs" aria-pressed="${s.rs}">Reload stbd</button>
+        <button type="button" class="tg" data-tg="${s.id},ent" aria-pressed="${s.ent}">Entangled</button>
+        <button type="button" class="tg" data-tg="${s.id},aground" aria-pressed="${s.aground}">Aground</button>${escBtn(s)}
+      </div></div>`}).join("")||'<p class="muted">No ships. Add them in Setup.</p>';
+}
+function decideInit(){
+  const v=[+$("#iv0").value,+$("#iv1").value];
+  if($("#iv0").value===""||$("#iv1").value===""){$("#ivOut").innerHTML='<p class="muted">Enter both card values.</p>';return}
+  if(v[0]!==v[1]){snap();S.initiative=v[0]>v[1]?0:1;log(`${S.squads[S.initiative].name} takes initiative (${v[0]} vs ${v[1]}).`);save();render();return}
+  const ad=S.squads.map(q=>q.admiral||0);
+  if(ad[0]!==ad[1]){$("#ivOut").innerHTML=`<p class="callout">Tied at ${v[0]}. Draw and resolve an event card first. Then the higher Admiral wins: <b>${esc(S.squads[ad[0]>ad[1]?0:1].name)}</b>.</p><button class="btn sm" style="margin-top:8px" data-ini="${ad[0]>ad[1]?0:1}" type="button">Confirm</button>`;return}
+  $("#ivOut").innerHTML=`<p class="callout">Tied cards and Admirals. Draw an event card, then each Flagship makes a Challenge Test: roll 5 dice, most skulls and sails wins, ties to higher Skill.</p><div class="row" style="margin-top:8px">${S.squads.map((q,i)=>`<button class="btn sm" data-ini="${i}" type="button">${esc(q.name)} won</button>`).join("")}</div>`;
+}
+function nextPhase(){
+  if(S.winner!=null)return;
+  snap();
+  if(S.phase===4){
+    const sp=S.squads.map(strike),af=S.squads.map(afloat);
+    const out=[sp[0]>af[0],sp[1]>af[1]];
+    if(out[0]&&out[1]){
+      if(sp[0]!==sp[1]){S.winner=sp[0]<sp[1]?0:1;log(`Both squadrons break. ${S.squads[S.winner].name} wins on fewer Strike Points.`);save();render();return}
+      log("Both squadrons break with equal Strike Points. Play on.");
+    } else if(out[0]||out[1]){S.winner=out[0]?1:0;log(`${S.squads[1-S.winner].name} strikes its colours. ${S.squads[S.winner].name} wins.`);save();render();return}
+    const sw=scnWin();if(sw){S.winner=sw.w;log(sw.t);save();render();return}
+    if(S.turn>=turnLimit()){
+      S.winner=sp[0]<sp[1]?0:sp[1]<sp[0]?1:S.attacker===0?1:0;
+      log(`Turn ${S.turn} ends. ${S.squads[S.winner].name} wins${sp[0]===sp[1]?" as defender on a tie":" on fewer Strike Points"}.`);save();render();return}
+    S.turn++;S.phase=0;S.squads.forEach(q=>q.obj=0);if(S.solo){S.solo.rev=null;S.solo.orders=null}aiMsg="";
+    log(`Turn ${S.turn} begins. Strike points ${sp[0]} – ${sp[1]}.`);
+  } else {S.phase++;aiMsg="";
+    if(S.phase===2){} log(`${PHASES[S.phase]} phase.`)}
+  save();render();window.scrollTo({top:0,behavior:"smooth"});
+}
+document.addEventListener("click",e=>{
+  const t=e.target.closest("button");if(!t)return;const d=t.dataset;
+  if(d.ini!=null){snap();S.initiative=+d.ini;log(`${S.squads[+d.ini].name} holds initiative.`);save();render()}
+  else if(d.obj){const[i,v]=d.obj.split(",").map(Number);snap();S.squads[i].obj=Math.max(0,(S.squads[i].obj||0)+v);save();render()}
+  else if(d.fort){const[i,v]=d.fort.split(",").map(Number);snap();const q=S.squads[i];q.fortune=Math.max(0,q.fortune+v);if(v<0)log(`${q.name} spent a Fortune Point.`);save();render()}
+  else if(d.ft!=null){S.view=+d.ft;save();renderFleet()}
+  else if(d.pip){const[id,k,n]=d.pip.split(",");const f=findShip(+id);snap();const cur=f.s[k];f.s[k]=cur===+n?+n-1:+n;
+    const lim=k==="dmg"?maxD(f.s):maxF(f.s);
+    if(f.s[k]===lim&&cur<lim)log(`${f.s.name} is ${k==="dmg"?"Crippled":"Shaken"}.`);save();render()}
+  else if(d.sail){const f=findShip(+d.sail);snap();f.s.sail=(f.s.sail+1)%4;save();render()}
+  else if(d.setsail){const[id,v]=d.setsail.split(",").map(Number);const f=findShip(id);if(f.s.sail!==v){snap();f.s.sail=v;log(`${f.s.name} to ${SAILS[v]}.`);save();render()}}
+  else if(d.tg){const[id,k]=d.tg.split(",");const f=findShip(+id);snap();f.s[k]=!f.s[k];save();render()}
+  else if(d.dot){const[qi,i]=d.dot.split(",").map(Number);const deck=document.querySelector(`.deck[data-q="${qi}"]`);const c=deck&&deck.children[i];
+    if(c)deck.scrollTo({left:c.offsetLeft-deck.offsetLeft,behavior:matchMedia("(prefers-reduced-motion: reduce)").matches?"auto":"smooth"})}
+  else if(d.edit){const f=findShip(+d.edit);if(f&&f.s.card&&CARD[f.s.card])openConfig(S.squads.indexOf(f.q),f.s.card,f.s.id);else openShip(+d.edit)}
+  else if(d.sinkroll){const f=findShip(+d.sinkroll);const r=FACES[Math.floor(Math.random()*6)];snap();
+    if(r==="sail"||r==="skull"){f.s.sunk=true;log(`${f.s.name} rolled ${r} and sinks.`)}else log(`${f.s.name} rolled ${r} and stays afloat.`);
+    save();render()}
+});
+function sheet(html){$("#sheet").innerHTML=`<div class="sheet" id="sh"><div class="panel">${html}</div></div>`;
+  $("#sh").addEventListener("click",e=>{if(e.target.id==="sh")closeSheet()})}
+function closeSheet(){$("#sheet").innerHTML=""}
+function openShip(id,isNew){
+  const f=findShip(id),s=f.s;
+  sheet(`<h2>${isNew?"New ship":esc(s.name)}</h2>
+    <div class="row">
+      <div class="field" style="flex:2 1 160px"><label for="eN">Ship name</label><input id="eN" value="${esc(s.name)}"></div>
+      <div class="field" style="flex:2 1 140px"><label for="eK">Type and class</label><input id="eK" value="${esc(s.cls||"")}" placeholder="e.g. Light Frigate"></div>
+      <div class="field" style="flex:1 1 80px"><label for="eP">Points</label><input id="eP" type="number" inputmode="numeric" value="${s.pts??""}"></div>
+    </div>
+    <div class="grid2">
+      <div class="field"><label for="eW">Speed windward</label><input id="eW" type="number" inputmode="numeric" value="${s.spdW??""}"></div>
+      <div class="field"><label for="eL">Speed large</label><input id="eL" type="number" inputmode="numeric" value="${s.spdL??""}"></div>
+      <div class="field"><label for="eF">Fortitude</label><input id="eF" type="number" inputmode="numeric" value="${s.fort??""}"></div>
+      <div class="field"><label for="eB">Broadside</label><input id="eB" type="number" inputmode="numeric" value="${s.bs??""}"></div>
+      <div class="field"><label for="eC">Crew</label><input id="eC" type="number" inputmode="numeric" value="${s.crew??""}"></div>
+      <div class="field"><label for="eS">Skill (0–2)</label><input id="eS" type="number" inputmode="numeric" min="0" max="2" value="${s.skill||0}"></div>
+    </div>
+    <div class="field"><label for="eR">Special rules</label><input id="eR" value="${esc(s.rules||"")}" placeholder="e.g. Sweeps, High Freeboard"></div>
+    <div class="field"><label for="eU">Upgrades</label><input id="eU" value="${esc(s.upgrades||"")}" placeholder="e.g. Swift, Marines"></div>
+    <div class="field"><label for="eA">Captain or Commander</label><input id="eA" value="${esc(s.captain||"")}"></div>
+    <p class="muted" style="font-size:.88rem">Copy these from the printed ship card. Speeds are the Battle Sail values. Skill is the number of single-die re-rolls bought.</p>
+    <label class="check"><input type="checkbox" id="eX" ${s.xcrew?"checked":""}> Additional Crew upgrade (Fatigue track goes to 10)</label>
+    <label class="check"><input type="checkbox" id="eFlag" ${s.flag?"checked":""}> Flagship (carries the Admiral)</label>
+    <label class="check"><input type="checkbox" id="eSunk" ${s.sunk?"checked":""}> Sunk</label>
+    <label class="check"><input type="checkbox" id="eCap" ${s.cap?"checked":""}> Captured by the enemy</label>
+    <div class="row between"><div class="row"><button class="btn primary" id="eOk" type="button">Save</button><button class="btn ghost" id="eNo" type="button">Cancel</button></div>
+      <button class="btn ghost" id="eDel" type="button" style="color:var(--danger)">Remove ship</button></div>`);
+  const num=v=>v===""?null:Math.max(0,+v);
+  $("#eNo").onclick=()=>{if(isNew){f.q.ships=f.q.ships.filter(x=>x.id!==id);save();render()}closeSheet()};
+  $("#eDel").onclick=()=>{snap();f.q.ships=f.q.ships.filter(x=>x.id!==id);log(`${s.name} removed from ${f.q.name}.`);save();closeSheet();render()};
+  $("#eOk").onclick=()=>{snap();s.name=$("#eN").value.trim()||"Ship";s.fort=num($("#eF").value);s.crew=num($("#eC").value);s.bs=num($("#eB").value);
+    s.skill=Math.min(2,num($("#eS").value)||0);s.sunk=$("#eSunk").checked;s.cap=$("#eCap").checked;
+    s.cls=$("#eK").value.trim();s.pts=num($("#eP").value);s.spdW=num($("#eW").value);s.spdL=num($("#eL").value);
+    s.rules=$("#eR").value.trim();s.upgrades=$("#eU").value.trim();s.captain=$("#eA").value.trim();s.xcrew=$("#eX").checked;s.fat=Math.min(s.fat,maxF(s));
+    if($("#eFlag").checked){f.q.ships.forEach(x=>x.flag=false);s.flag=true}else s.flag=false;
+    if(S.example)S.example=false;save();closeSheet();render()};
+}
+$("#nextBtn").onclick=nextPhase;
+$("#undoBtn").onclick=()=>{if(!history.length)return;S=JSON.parse(history.pop());save();render()};
+$("#newGameBtn").onclick=()=>{
+  sheet(`<h2>Start a new game?</h2><p class="muted">Damage, fatigue, Fortune and the log are cleared. Your squadrons and ship stats stay.</p>
+    <div class="row"><button class="btn primary" id="nOk" type="button">Clear and go to setup</button><button class="btn ghost" id="nNo" type="button">Keep playing</button></div>`);
+  $("#nNo").onclick=closeSheet;
+  $("#nOk").onclick=()=>{snap();
+    if(S.example){S=blankState("quick")}
+    else{S.squads.forEach(q=>{q.fortune=3;q.obj=0;q.ships.forEach(s=>Object.assign(s,{dmg:0,fat:0,sail:1,rp:false,rs:false,aground:false,ent:false,sunk:false,cap:false}))});
+      Object.assign(S,{started:false,turn:1,phase:0,winner:null,log:[]})}
+    save();closeSheet();location.hash="setup";render()};
+};
+
+/* ---------- SETUP ---------- */
+function setupSteps(){
+  const m=MODES[S.mode];
+  if(SC()&&!SC().custom)return SC().setup;
+  if(SC())return [["Build both squadrons",`Up to ${m.points} points each from the roster: yours first, then the enemy's.`],
+    ["Lay out the sea",`A ${m.table} table with a few islands or shoals.`],
+    ["Set the wind","Put the wind arrow on an edge. Always photograph the table with that edge at the top."],
+    ["Deploy your squadron","Within Musket Shot of your table edge."],
+    ["Deal the enemy's hand","Deal the enemy 5 + its Admiral value in initiative cards and enter them below."],
+    ["Start, then deploy the enemy","Begin turn 1, photograph the table and tap Deploy the enemy on the Play tab."]];
+  if(m.quick)return [
+    ["Lay out the sea mat","Put the sea mat between you. Decide who is Player A and Player B."],
+    ["Hand out initiative cards","Player A: Down!, Careful Aim, Rolling Broadsides, Effective Fire, Adjust Position. Player B: Fire as She Bears, Take Courage, Fleet Maneuver, Reload, Favorable Wind."],
+    ["Take your ships","Player A: Corvette and Fluyt. Player B: Sloop and Petite Fregate. The Fluyt and Petite Fregate are Flagships and share the Untested Admiral card."],
+    ["Take tokens","Each player takes 2 Wake tokens and 4 Reload tokens. Keep the dice, status tokens and movement tools between you."],
+    ["Deploy","Place each Flagship at Pistol Shot directly downwind of your other ship. Keep the squadrons just outside Cannon Shot of each other."],
+    ["Set the wind","Place the wind arrow so the table edge behind each ship's stern is the weather edge."],
+    ["Choose first initiative cards","Each player places one initiative card face down. Fight until one side strikes."]];
+  return [
+    ["Build squadrons",`Up to ${m.points} points and ${m.ships} ships, all matching your faction's nationality or unaligned. One Flagship carries the Admiral. Each ship may take 1 Captain and up to 2 upgrades.${S.mode==="patrol"?" No Ships of the Line.":""}`],
+    ["Build initiative hands","Hand size is 5 + your Admiral value. No more than 2 cards of the same value, no duplicate titles, and at least 3 cards that aren't discarded after use."],
+    ["Mark the table",`Use at least a ${m.table} table. Two opposite edges are the deployment edges. Place the wind token on an edge between the players.`],
+    ["Draw scenario cards","Draw 1 Objective card and 3 each of Setting, Deployment, and Advantage & Conditions."],
+    ["Choose attacker","The higher Flagship Admiral chooses attacker or defender. Tie: Challenge Test. Record it below."],
+    ["Pick scenario cards","Starting with the attacker, alternate picking one card from each category. Discard the rest."],
+    ["Place terrain","Place objective terrain first, then other terrain at least Musket Shot from other terrain. You may adjust terrain in your own deployment zone by up to Musket Shot."],
+    ["Deploy squadrons","No ship may start within Cannon Shot of an enemy ship."],
+    ["Fortune and first initiative","Each player starts with 3 Fortune Points. Place your first initiative card face down."]];
+}
+function renderSetup(){
+  $("#modes").innerHTML=Object.entries(MODES).filter(([k,m])=>!m.quick).map(([k,m])=>`<button class="mode" type="button" data-mode="${k}" aria-pressed="${k===S.mode}"><b>${m.name}</b><small>${m.sub}</small></button>`).join("");
+  const m=MODES[S.mode];
+  $("#spec").innerHTML=[[m.table,"Table"],[m.points,"Points"],[m.ships,"Ships each"],["3","Fortune each"],["10","Turn limit"]].map(([v,l])=>`<div><b>${v}</b><span>${l}</span></div>`).join("");
+  $("#modeNote").textContent=m.note;
+  $("#squadForms").innerHTML=S.squads.map((q,i)=>`<div class="panel stack">
+    <div class="row">
+      <div class="field" style="flex:2 1 160px"><label for="qn${i}">Squadron name</label><input id="qn${i}" data-qn="${i}" value="${esc(q.name)}"></div>
+      <div class="field" style="flex:1 1 90px"><label for="qa${i}">Admiral value</label><input id="qa${i}" data-qa="${i}" type="number" inputmode="numeric" min="0" max="3" value="${q.admiral||0}"></div>
+    </div>
+    <label class="check"><input type="radio" name="att" data-att="${i}" ${S.attacker===i?"checked":""}> Attacker</label>
+    <ul class="shiplist">${q.ships.map(s=>`<li><span>${s.flag?"⚑ ":""}${esc(s.name)} <span class="stats">${s.fort==null?"stats not set":`${s.pts!=null?s.pts+" pts · ":""}F${s.fort} C${s.crew} B${s.bs}${s.ups&&s.ups.length?" · "+s.ups.length+" upg":""}`}</span></span><button class="btn sm ghost" data-edit="${s.id}" type="button">Edit</button></li>`).join("")}</ul>
+    ${q.ships.length?`<div class="row" style="gap:6px">${typeof m.points==="number"?(squadPts(q)>m.points?`<span class="chip bad">${squadPts(q)} pts · ${squadPts(q)-m.points} over ${m.points}</span>`:`<span class="chip ok">${squadPts(q)} / ${m.points} pts</span>`):`<span class="chip">${squadPts(q)} pts</span>`}<span class="chip">${q.ships.length} ship${q.ships.length===1?"":"s"}</span>${!q.ships.some(s=>s.flag)?'<span class="chip warn">No Flagship</span>':""}</div>`:'<p class="muted">No ships yet.</p>'}
+    <button class="btn primary" data-addship="${i}" type="button">Add ship</button>
+  </div>`).join("");
+  const steps=setupSteps();
+  $("#checklist").innerHTML=steps.map(([t,d],i)=>{const on=!!S.checks[S.mode+i];return `<li class="${on?"done":""}"><input type="checkbox" id="ck${i}" data-ck="${i}" ${on?"checked":""}><label for="ck${i}"><strong><span class="n">${i+1}</span> ${t}</strong><p>${d}</p></label></li>`}).join("");
+  $("#setupCount").textContent=`${steps.filter((_,i)=>S.checks[S.mode+i]).length} / ${steps.length}`;
+  $("#startBtn").textContent=S.started&&!S.example?"Restart at turn 1":"Begin turn 1";
+  renderScn();renderLayoutBox();
+  document.querySelectorAll("#squadForms .panel").forEach((p,i)=>{if(!p.querySelector(".sqlab"))p.insertAdjacentHTML("afterbegin",`<span class="eyebrow sqlab">${i?"Enemy squadron · played by the app":"Your squadron"}</span>`)});
+}
+document.addEventListener("click",e=>{const b=e.target.closest("[data-addship]");if(b)openRoster(+b.dataset.addship)});
+function squadPts(q){return q.ships.reduce((t,s)=>t+(+s.pts||0),0)}
+function openRoster(qi){
+  const q=S.squads[qi],m=MODES[S.mode],noSotL=S.mode==="patrol",used=squadPts(q);
+  sheet(`<div class="eyebrow">${esc(q.name)}</div><h2>Add a ship</h2>
+    ${typeof m.points==="number"?`<p class="muted">${used} of ${m.points} points used. Prices shown are the base card cost.</p>`:""}
+    ${[["Unrated","Unrated"],["Frigate","Frigates"],["Ship of the Line","Ships of the Line"],["special","Special, event and unique ships"]].map(([g,label])=>`<div class="stack" style="gap:6px"><span class="eyebrow">${label}</span>${g==="special"?'<p class="muted" style="font-size:.86rem">Named ships with their own rules. Most are Unique, and some need a particular Admiral, Captain or upgrade.</p>':""}${ROSTER.filter(c=>c.grp===g).map(c=>{
+      const why=noSotL&&/Ship of the Line/.test(c.cls)?"Not allowed in Patrol games":c.rules.includes("Unique")&&q.ships.some(x=>x.card===c.id)?"Unique: already in this squadron":"";
+      return `<button type="button" class="pick" data-card="${c.id}" ${why?"disabled":""}><span style="min-width:0"><b>${esc(c.name)}</b>
+        ${g==="special"?`<span class="stats">${esc(c.cls)}${c.nat?" · "+esc(c.nat):""}</span>`:""}
+        <span class="stats">Fort ${c.fort} · Broadside ${c.bs} · Crew ${c.crew} · Speed ${c.w}/${c.l}</span>${why?`<span class="stats tdanger">${why}</span>`:""}</span><span class="pp num">${c.pts}</span></button>`}).join("")}</div>`).join("")}
+    <div class="row"><button class="btn ghost" id="rcCustom" type="button">Custom ship (enter stats by hand)</button><button class="btn" id="rcNo" type="button">Cancel</button></div>`);
+  document.querySelectorAll("[data-card]").forEach(b=>b.onclick=()=>openConfig(qi,b.dataset.card));
+  $("#rcNo").onclick=closeSheet;
+  $("#rcCustom").onclick=()=>{const s=ship(`Ship ${q.ships.length+1}`,!q.ships.length);q.ships.push(s);save();render();openShip(s.id,true)};
+}
+function openConfig(qi,cardId,shipId){
+  const q=S.squads[qi],c=CARD[cardId],ex=shipId?q.ships.find(x=>x.id===shipId):null;
+  let ups=ex?[...(ex.ups||[])]:[],skill=ex?ex.skill||0:0;
+  const dupes=q.ships.filter(x=>x.card===cardId&&x!==ex).length;
+  const defName=ex?ex.name:(dupes?`${c.name} ${dupes+1}`:c.name);
+  sheet(`<div class="eyebrow">${esc(q.name)} · ${esc(c.cls)}</div><h2>${esc(c.name)}</h2>
+    <div class="row"><div class="field" style="flex:2 1 160px"><label for="cfN">Ship name</label><input id="cfN" value="${esc(defName)}"></div>
+      <div class="field" style="flex:2 1 160px"><label for="cfA">Captain or Commander</label><input id="cfA" value="${esc(ex?.captain||"")}"></div></div>
+    <div class="field"><label for="cfM">Table marker (how to spot it in a photo)</label><input id="cfM" value="${esc(ex?.mark||"")}" placeholder="e.g. ID token 3, red flag"></div>
+    <div id="cfStats"></div>
+    ${c.note?`<p class="callout" style="font-size:.9rem">${esc(c.note)}</p>`:""}
+    <div class="stack" style="gap:6px" ${c.noSkill?"hidden":""}><span class="eyebrow">Skill</span><div class="seg three" id="cfSkill">${[0,1,2].map(k=>`<button type="button" data-sk="${k}">Skill ${k}${k?` · +${SKILLCOST[k]}`:""}</button>`).join("")}</div></div>
+    ${Object.keys(c.up).length?`<div class="stack" style="gap:6px"><span class="eyebrow">Upgrades</span>${Object.entries(c.up).map(([k,cost])=>`<label class="upg"><input type="checkbox" data-up="${k}" ${ups.includes(k)?"checked":""}><span><b>${UPG[k][0]}</b> <span class="num">+${cost}</span><br><span class="muted">${UPG[k][1]}</span></span></label>`).join("")}</div>`:'<p class="muted">This ship has no upgrade options.</p>'}
+    <div class="stack" style="gap:6px"><span class="eyebrow">Special rules</span>${rulesHtml(c.rules.join(", "),{...RULETEXT,...c.rt})}</div>
+    <label class="check"><input type="checkbox" id="cfFlag" ${(ex?ex.flag:!q.ships.some(x=>x.flag))?"checked":""}> Flagship (carries the Admiral)</label>
+    ${ex?`<label class="check"><input type="checkbox" id="cfSunk" ${ex.sunk?"checked":""}> Sunk</label><label class="check"><input type="checkbox" id="cfCap" ${ex.cap?"checked":""}> Captured by the enemy</label>`:""}
+    <div class="row between"><div class="row"><button class="btn primary" id="cfOk" type="button">${ex?"Save":"Add to squadron"}</button><button class="btn ghost" id="cfNo" type="button">${ex?"Cancel":"Back"}</button></div>
+      ${ex?'<button class="btn ghost" id="cfDel" type="button" style="color:var(--danger)">Remove ship</button>':""}</div>`);
+  const upd=()=>{const st=cardStats(c,ups,skill),m=MODES[S.mode];
+    const tot=q.ships.filter(x=>x!==ex).reduce((t,x)=>t+(+x.pts||0),0)+st.pts;
+    $("#cfStats").innerHTML=`<div class="sgrid">${[["Points",st.pts],["Windward",st.spdW],["Large",st.spdL],["Fortitude",st.fort],["Broadside",st.bs],["Crew",st.crew]].map(([l,v])=>`<div class="sc"><span class="sl">${l}</span><b class="sv">${v}</b></div>`).join("")}</div>
+      <p class="muted" style="font-size:.9rem;margin-top:6px">Fatigue track ${st.xcrew?10:c.f} · Damage track ${st.stout?10:c.d}${typeof m.points==="number"?` · Squadron <b class="${tot>m.points?"tdanger":""}">${tot} / ${m.points} pts</b>`:""}</p>`;
+    document.querySelectorAll("#cfSkill button").forEach(b=>b.setAttribute("aria-pressed",String(+b.dataset.sk===skill)))};
+  upd();
+  document.querySelectorAll("[data-up]").forEach(cb=>cb.onchange=()=>{ups=cb.checked?[...ups,cb.dataset.up]:ups.filter(x=>x!==cb.dataset.up);upd()});
+  document.querySelectorAll("[data-sk]").forEach(b=>b.onclick=()=>{skill=+b.dataset.sk;upd()});
+  $("#cfNo").onclick=()=>ex?closeSheet():openRoster(qi);
+  if(ex)$("#cfDel").onclick=()=>{snap();q.ships=q.ships.filter(x=>x!==ex);log(`${ex.name} removed from ${q.name}.`);save();closeSheet();render()};
+  $("#cfOk").onclick=()=>{snap();
+    const sh=ex||fromCard(cardId);
+    Object.assign(sh,cardStats(c,ups,skill),{card:cardId,ups:[...ups],cls:c.cls,name:$("#cfN").value.trim()||c.name,captain:$("#cfA").value.trim(),mark:$("#cfM").value.trim()});
+    sh.dmg=Math.min(sh.dmg,maxD(sh));sh.fat=Math.min(sh.fat,maxF(sh));
+    if(ex){sh.sunk=$("#cfSunk").checked;sh.cap=$("#cfCap").checked}
+    if($("#cfFlag").checked){q.ships.forEach(x=>x.flag=false);sh.flag=true}else sh.flag=false;
+    if(!ex){q.ships.push(sh);log(`${sh.name} (${c.name}, ${sh.pts} pts) joins ${q.name}.`)}
+    if(S.example)S.example=false;save();closeSheet();render()};
+}
+document.addEventListener("change",e=>{const d=e.target.dataset;
+  if(d.ck!=null){S.checks[S.mode+d.ck]=e.target.checked;save();renderSetup()}
+  if(d.att!=null){S.attacker=+d.att;save()}});
+document.addEventListener("input",e=>{const d=e.target.dataset;
+  if(d.qn!=null){S.squads[+d.qn].name=e.target.value||"Squadron";S.example=false;save()}
+  if(d.qa!=null){S.squads[+d.qa].admiral=Math.max(0,+e.target.value||0);save()}});
+$("#modes").addEventListener("click",e=>{const b=e.target.closest("[data-mode]");if(!b||b.dataset.mode===S.mode)return;
+  snap();const wasQuick=MODES[S.mode].quick||S.example;S.mode=b.dataset.mode;
+  if(MODES[S.mode].quick){const c=S.checks;S=blankState("quick");S.checks=c}
+  else if(wasQuick){const c=S.checks,m=S.mode;S=blankState(m);S.checks=c}
+  save();render()});
+$("#startBtn").onclick=()=>{
+  snap();
+  S.squads.forEach(q=>{q.fortune=3;q.obj=0;q.ships.forEach(s=>Object.assign(s,{dmg:0,fat:0,sail:1,rp:false,rs:false,aground:false,ent:false,sunk:false,cap:false}))});
+  if(S.example){S.squads[0].name="Player A";S.squads[1].name="Player B";S.example=false}
+  Object.assign(S,{started:true,turn:1,phase:0,winner:null,log:[],remClosed:{}});
+  if(S.solo)Object.assign(S.solo,{next:null,nextFor:null,rev:null,orders:null,deployed:false,photoAt:null});
+  S.solo.hand.forEach(c=>c.gone=false);
+  log(`${SC()?SC().name:MODES[S.mode].name} begins. ${S.squads[S.attacker].name} attacks.`);
+  save();location.hash="play";render();
+};
+
+/* ---------- GUNNERY ---------- */
+const CM=[["broadside","Broadside"],["partial","Partial fire"],["close","Close combat"],["skill","Skill test"]];
+let C={mode:"broadside",att:"",tgt:"",bs:6,crew:2,fat:0,form:0,range:"cannon",side:"port",fort:2,stern:false,rake:false,contact:"side",bonus:0,skill:0};
+let R=null;
+function allShips(){return S.squads.flatMap((q,qi)=>q.ships.filter(s=>!s.sunk).map(s=>({s,q,qi})))}
+function renderCombat(){
+  $("#cMode").innerHTML=CM.map(([k,l])=>`<button type="button" data-cm="${k}" aria-pressed="${C.mode===k}">${l}</button>`).join("");
+  const opts=(sel)=>`<option value="">Custom values</option>`+S.squads.map((q,qi)=>`<optgroup label="${esc(q.name)}">${q.ships.filter(s=>!s.sunk).map(s=>`<option value="${s.id}" ${String(s.id)===String(sel)?"selected":""}>${esc(s.name)}</option>`).join("")}</optgroup>`).join("");
+  $("#cAtt").innerHTML=opts(C.att);$("#cTgt").innerHTML=opts(C.tgt);
+  $("#cAttLbl").textContent=C.mode==="skill"?"Testing ship":C.mode==="close"?"Attacking ship":"Firing ship";
+  $("#wTgt").hidden=C.mode==="skill";
+  const f=(id,label,val,extra="")=>`<div class="field"><label for="${id}">${label}</label><input id="${id}" data-c="${id.slice(1)}" type="number" inputmode="numeric" value="${val}" ${extra}></div>`;
+  const sel=(id,label,val,list)=>`<div class="field"><label for="${id}">${label}</label><select id="${id}" data-c="${id.slice(1)}">${list.map(([v,l])=>`<option value="${v}" ${v===val?"selected":""}>${l}</option>`).join("")}</select></div>`;
+  let h="",ck="";
+  if(C.mode==="broadside")h=f("ibs","Broadside",C.bs)+f("icrew","Crew",C.crew)+f("ifat","Fatigue",C.fat)+f("iform","Formation dice",C.form)+f("iskill","Skill re-rolls",C.skill)+
+    sel("irange","Range band",C.range,[["cannon","Cannon Shot"],["musket","Musket Shot"],["pistol","Pistol Shot"]])+sel("iside","Firing side",C.side,[["port","Port"],["stbd","Starboard"]])+f("ifort","Target Fortitude",C.fort);
+  if(C.mode==="partial")h=f("icrew","Crew",C.crew)+f("ifat","Fatigue",C.fat)+f("iform","Formation dice",C.form)+f("iskill","Skill re-rolls",C.skill)+
+    sel("irange","Range band",C.range==="cannon"?"musket":C.range,[["musket","Musket Shot"],["pistol","Pistol Shot"]])+f("ifort","Target Fortitude",C.fort);
+  if(C.mode==="close")h=f("icrew","Crew",C.crew)+f("ifat","Fatigue",C.fat)+f("ibonus","Bonus dice",C.bonus)+f("iskill","Skill re-rolls",C.skill)+
+    sel("icontact","Contact",C.contact,[["side","Side to side"],["bow","Bow or stern"],["lp","Landing parties"]]);
+  if(C.mode==="skill")h=f("ifat","Fatigue",C.fat)+f("iskill","Skill re-rolls",C.skill);
+  if(C.mode==="broadside")ck=`<label class="check"><input type="checkbox" data-c="rake" ${C.rake?"checked":""}> Raking shot (Musket Shot or closer)</label><label class="check"><input type="checkbox" data-c="stern" ${C.stern?"checked":""}> Through the stern (Fortitude counts as 1)</label>`;
+  $("#cInputs").innerHTML=h;$("#cChecks").innerHTML=ck;
+  updatePool();renderTray();
+}
+function hitSet(){
+  if(C.mode==="skill")return ["skull","sail"];
+  if(C.mode==="close")return C.contact==="bow"?["skull"]:["skull","pistol","sword"];
+  const r=C.mode==="partial"&&C.range==="cannon"?"musket":C.range;
+  return r==="cannon"?["skull","cannon"]:r==="musket"?["skull","cannon","musket"]:["skull","cannon","musket","pistol"];
+}
+function poolSize(){
+  const n=v=>+v||0;
+  if(C.mode==="broadside"){const raw=n(C.bs)-n(C.fat);const floor=Math.min(n(C.bs),n(C.crew));const base=Math.max(raw,floor);
+    return [Math.max(0,base)+n(C.form),`${C.bs} − ${C.fat} fatigue${raw<floor?`, floored at Crew ${C.crew}`:""}${n(C.form)?` + ${C.form} formation`:""}`]}
+  if(C.mode==="partial"){const base=Math.max(1,n(C.crew)-n(C.fat));return [base+n(C.form),`Crew ${C.crew} − ${C.fat} fatigue (min 1)${n(C.form)?` + ${C.form} formation`:""}`]}
+  if(C.mode==="close"){const base=Math.max(1,3+n(C.crew)-n(C.fat));return [base+n(C.bonus),`3 + Crew ${C.crew} − ${C.fat} fatigue${n(C.bonus)?` + ${C.bonus} bonus`:""}`]}
+  return [Math.max(1,5-n(C.fat)),`5 − ${C.fat} fatigue (min 1)`];
+}
+function updatePool(){
+  const [n,why]=poolSize();$("#poolN").textContent=n;$("#poolWhy").textContent=why;
+  const hs=hitSet();
+  $("#legend").innerHTML=FACES.map(f=>`<span class="${hs.includes(f)?"hit":""}">${icon(f)}${f}</span>`).join("")+`<span class="muted">· highlighted faces ${C.mode==="skill"?"pass":C.mode==="close"?"cause Fatigue":"hit"}</span>`;
+  $("#rollBtn").textContent=`Roll ${n} ${n===1?"die":"dice"}`;
+}
+function prefill(){
+  const a=C.att?findShip(+C.att):null,t=C.tgt?findShip(+C.tgt):null;
+  if(a){const s=a.s;if(s.bs!=null)C.bs=s.bs;if(s.crew!=null)C.crew=s.crew;C.fat=s.fat;C.bonus=(s.xcrew?1:0)+(a.qi===1&&SC()&&SC().aiCC?SC().aiCC:0);C.skill=s.skill||0;C.side=s.rp&&!s.rs?"stbd":"port"}
+  if(t&&t.s.fort!=null)C.fort=t.s.fort;
+}
+$("#cMode").addEventListener("click",e=>{const b=e.target.closest("[data-cm]");if(!b)return;C.mode=b.dataset.cm;R=null;renderCombat()});
+$("#cAtt").addEventListener("change",e=>{C.att=e.target.value;prefill();R=null;renderCombat()});
+$("#cTgt").addEventListener("change",e=>{C.tgt=e.target.value;prefill();R=null;renderCombat()});
+document.addEventListener("input",e=>{const k=e.target.dataset.c;if(!k||e.target.closest("#v-combat")==null)return;
+  C[k]=e.target.type==="checkbox"?e.target.checked:e.target.tagName==="SELECT"?e.target.value:e.target.value;
+  if(R&&R.done)R=null;updatePool();if(e.target.tagName==="SELECT"||e.target.type==="checkbox")renderTray()});
+document.addEventListener("change",e=>{const k=e.target.dataset.c;if(!k||!e.target.closest("#v-combat"))return;
+  C[k]=e.target.type==="checkbox"?e.target.checked:e.target.value;updatePool();renderTray()});
+const roll1=()=>FACES[Math.floor(Math.random()*6)];
+$("#rollBtn").onclick=()=>{
+  const [n]=poolSize();
+  if(C.mode==="broadside"&&C.att){const a=findShip(+C.att);if(a&&(C.side==="port"?a.s.rp:a.s.rs)){
+    $("#result").innerHTML=`<p class="callout">${esc(a.s.name)} has a reload marker on its ${C.side==="port"?"port":"starboard"} side. Reload in the movement phase or fire the other side.</p>`;return}}
+  R={dice:Array.from({length:n},()=>({f:roll1(),rr:false,pop:true})),skillLeft:+C.skill||0,fortune:false,crit:null,applied:false};
+  renderTray();
+};
+$("#tray").addEventListener("click",e=>{const b=e.target.closest("[data-die]");if(!b||!R||R.applied)return;const d=R.dice[+b.dataset.die];
+  if(d.rr||R.skillLeft<=0||hitSet().includes(d.f))return;d.f=roll1();d.rr=true;d.pop=true;R.skillLeft--;R.crit=null;renderTray()});
+$("#fortuneBtn").onclick=()=>{if(!R||R.fortune||R.applied)return;
+  const a=C.att?findShip(+C.att):null;if(a){if(a.q.fortune<=0){$("#skillLeft").textContent=`${a.q.name} has no Fortune left.`;return}snap();a.q.fortune--;log(`${a.q.name} spent a Fortune Point on a re-roll.`);save()}
+  R.dice=R.dice.map(()=>({f:roll1(),rr:true,pop:true}));R.fortune=true;R.crit=null;renderTray()};
+function renderTray(){
+  if(!R){$("#tray").innerHTML='<span class="muted" style="align-self:center">Dice appear here. Tap a missed die to spend a Skill re-roll.</span>';$("#rerollRow").hidden=true;$("#result").innerHTML="";return}
+  const hs=hitSet();
+  $("#tray").innerHTML=R.dice.map((d,i)=>`<button type="button" class="die ${hs.includes(d.f)?"hit":""} ${d.rr?"rr":""} ${d.pop?"pop":""}" data-die="${i}" aria-label="${d.f}${d.rr?" (re-rolled)":""}">${icon(d.f)}</button>`).join("");
+  R.dice.forEach(d=>d.pop=false);
+  $("#rerollRow").hidden=R.applied;
+  $("#skillLeft").textContent=`${R.skillLeft} Skill re-roll${R.skillLeft===1?"":"s"} left`;
+  $("#fortuneBtn").disabled=R.fortune;
+  renderResult();
+}
+/* Fortitude and Fatigue for a shot, using Small, Weight of Fire and Freeboard from the ships' cards */
+function shot(hits){
+  const t=C.tgt?findShip(+C.tgt):null,a=C.att?findShip(+C.att):null,notes=[];
+  const range=C.mode==="partial"&&C.range==="cannon"?"musket":C.range;
+  let fort=Math.max(1,+C.fort||1);
+  if(C.stern){fort=1;notes.push("Through the stern: Fortitude counts as 1")}
+  else{
+    if(t&&hasRule(t.s,"Small")&&range==="cannon"){fort++;notes.push("Small: +1 Fortitude at Cannon Shot")}
+    if(a&&C.mode==="broadside"&&hasRule(a.s,"Weight of Fire")&&range!=="cannon"){fort=Math.max(1,fort-1);notes.push("Weight of Fire: −1 Fortitude")}
+  }
+  const need=C.rake?1:(t?freeboard(t.s):1);
+  if(t&&freeboard(t.s)>1)notes.push(C.rake?"Raking ignores Freeboard":`${need===3?"Very High":"High"} Freeboard: needs ${need} hits to cause Fatigue`);
+  const dmg=Math.floor(hits/fort),fat=hits>0&&hits>=need?1+(C.rake?1:0):0;
+  return {fort,dmg,fat,notes};
+}
+function renderResult(){
+  const hs=hitSet(),hits=R.dice.filter(d=>hs.includes(d.f)).length,skulls=R.dice.filter(d=>d.f==="skull").length;
+  const tgt=C.tgt?findShip(+C.tgt):null,att=C.att?findShip(+C.att):null;
+  let h="";
+  if(C.mode==="skill"){
+    const pass=hits>0;
+    h=`<div class="result"><span class="verdict" style="color:var(--${pass?"good":"danger"})">${pass?"Passed":"Failed"}</span><span class="muted">${pass?"At least one skull or sail.":"No skull or sail. Re-roll a die with Skill, or spend Fortune."}</span></div>`;
+  } else if(C.mode==="close"){
+    h=`<div class="result"><span class="verdict">${hits} Fatigue</span><span class="muted">${C.contact==="bow"?"Bow or stern contact: skulls only.":"Each skull, pistol or sword adds 1 Fatigue."}</span>
+      ${tgt&&!R.applied?`<button class="btn primary" id="applyBtn" type="button">Apply ${hits} Fatigue to ${esc(tgt.s.name)}</button>`:""}${R.applied?'<span class="chip">Applied</span>':""}</div>`;
+  } else {
+    const {fort,dmg,fat,notes}=shot(hits);
+    let crit="";
+    if(skulls){
+      if(!R.crit)crit=`<div class="crit"><b>${skulls} skull${skulls>1?"s":""} rolled</b><span class="muted">Roll ${skulls} critical ${skulls>1?"dice":"die"}. Skulls, sails and swords trigger effects.</span><button class="btn sm" id="critBtn" type="button">Roll critical dice</button></div>`;
+      else{const c=R.crit,cnt=f=>c.filter(x=>x===f).length,sk=cnt("skull"),sa=cnt("sail"),sw=cnt("sword");
+        const fx=[];
+        if(sk===1)fx.push("Skull: +1 damage.");if(sk>=2)fx.push("Skulls: the target is Crippled (Out of Action if already Crippled).");
+        if(sa===1)fx.push("Sail: sail setting drops one step.");if(sa>=2)fx.push("Sails: masts lost. Sail setting drops and the ship goes Aground.");
+        if(sw===1)fx.push("Sword: +1 Fatigue.");if(sw>=2)fx.push("Swords: helm struck. Target makes a speed 2 full turn in the direction you choose; roll a die for its Admiral or Captain, sword or skull removes the card. +1 Fatigue.");
+        crit=`<div class="crit"><b>Critical dice</b><div class="tray" style="min-height:0;padding:6px">${c.map(f=>`<span class="die ${["skull","sail","sword"].includes(f)?"hit":""}">${icon(f)}</span>`).join("")}</div><span>${fx.length?fx.join(" "):"No critical effects."}</span></div>`}
+    }
+    h=`<div class="result"><span class="verdict">${hits} hit${hits===1?"":"s"}</span>
+      <div class="facts"><div><b>${dmg}</b><span>Damage</span></div><div><b>${fat}</b><span>Fatigue</span></div><div><b>${fort}</b><span>Fortitude</span></div></div>
+      <span class="muted" style="font-size:.9rem">Every ${fort} hit${fort>1?"s":""} deal${fort>1?"":"s"} 1 damage; leftovers do nothing.</span>${notes.length?`<span class="muted" style="font-size:.88rem">${notes.join(" · ")}</span>`:""}
+      ${crit}
+      ${tgt&&!R.applied&&(!skulls||R.crit)?`<button class="btn primary" id="applyBtn" type="button">Apply to ${esc(tgt.s.name)}</button>`:""}
+      ${R.applied?'<span class="chip">Applied to the fleet</span>':""}</div>`;
+  }
+  $("#result").innerHTML=h;
+  const cb=$("#critBtn");if(cb)cb.onclick=()=>{R.crit=Array.from({length:skulls},roll1);renderResult()};
+  const ab=$("#applyBtn");if(ab)ab.onclick=()=>applyResult(hits);
+}
+function applyResult(hits){
+  const t=findShip(+C.tgt);if(!t)return;snap();const s=t.s,a=C.att?findShip(+C.att):null;
+  const parts=[];
+  if(C.mode==="close"){addFat(s,hits);parts.push(`+${hits} Fatigue`)}
+  else{
+    let {dmg,fat}=shot(hits);
+    const c=R.crit||[],cnt=f=>c.filter(x=>x===f).length;
+    if(cnt("skull")===1)dmg++;
+    if(cnt("sword")>=1)fat++;
+    addDamage(s,dmg);addFat(s,fat);
+    if(cnt("skull")>=2){if(s.dmg<maxD(s))s.dmg=maxD(s);else s.fat=maxF(s);parts.push("Crippled by criticals")}
+    if(cnt("sail")>=1)s.sail=Math.min(3,s.sail+1);
+    if(cnt("sail")>=2){s.aground=true;parts.push("masts lost, Aground")}
+    if(cnt("sword")>=2)parts.push("helm struck");
+    parts.unshift(`${dmg} damage, +${fat} Fatigue`);
+    if(C.mode==="broadside"&&a){if(C.side==="port")a.s.rp=true;else a.s.rs=true}
+  }
+  log(`${a?a.s.name:"Attack"} → ${s.name}: ${parts.join(", ")}.`);
+  R.applied=true;save();renderTray();
+}
+
+/* ---------- RULES ---------- */
+const RULES=[
+ ["Playing solo",`<ul><li>You play your squadron as usual. The app plays the other one through an enemy captain with its own character.</li><li>At each decision point the Play tab asks for a photo of the table, taken from above with the <b>weather edge at the top</b>. The captain reads it and gives orders for every ship: where to deploy, how to move and turn, which actions to take, and what to fire at.</li><li>You carry out its orders on the table, roll its Skill Tests with the buttons, and roll its attacks in the Gunnery tab, just as you would for an opponent sitting across from you.</li><li>The captain chooses its initiative cards and keeps them hidden until the Initiative phase.</li><li>If Claude isn't available, the captain follows standing orders based on its character and the state of its ships.</li><li>Play fair: follow its orders as written, and where an order is impossible on the table, do the closest legal thing.</li></ul>`],
+ ["Turn sequence",`<ul><li><b>Initiative</b>: reveal cards, higher value goes first in every phase, choose next card.</li><li><b>Movement</b>: alternate ships; speed, up to two actions, move, wake marker.</li><li><b>Shooting</b>: alternate ships; Broadside or Partial Fire.</li><li><b>Close combat</b>: Entangled ships and Landing Parties.</li><li><b>End</b>: captures, withdrawal check, sinking, lost Admirals, return cards.</li></ul><p>The game ends when a squadron strikes, or after turn 10.</p>`],
+ ["The dice",`<p>Each custom die has one of each face: skull, cannon, musket, pistol, sword, sail.</p><div class="tbl"><table><tr><th>Roll</th><th>Success faces</th></tr><tr><td>Broadside / Partial at Cannon Shot</td><td>Skull, cannon</td></tr><tr><td>…at Musket Shot</td><td>Skull, cannon, musket</td></tr><tr><td>…at Pistol Shot</td><td>Skull, cannon, musket, pistol</td></tr><tr><td>Close combat, side contact</td><td>Skull, pistol, sword</td></tr><tr><td>Close combat, bow or stern</td><td>Skull</td></tr><tr><td>Skill Test</td><td>Skull or sail (one is enough)</td></tr><tr><td>Sinking roll</td><td>Sail or skull sinks the ship</td></tr></table></div>`],
+ ["Initiative cards",`<ul><li>Hand size is 5 + Admiral value. Max 2 cards of one value, no duplicate titles, at least 3 cards that aren't discarded.</li><li>Ties: event card, then higher Admiral, then Challenge Test.</li><li>Revealed cards stay face up for the turn and return to hand in the end phase unless they say otherwise.</li></ul>`],
+ ["Wind and points of sail",`<ul><li>The <b>weather edge</b> is the edge the wind blows from.</li><li><b>Large</b>: stern closer to the weather edge than the bow.</li><li><b>Windward</b>: bow closer to the weather edge.</li><li><b>In the Wind's Eye</b>: bow within 45° of the weather edge. The ship can't move forward but may turn with the speed 1 tool.</li><li>If a heading is ambiguous, its controller chooses.</li></ul>`],
+ ["Sail settings",`<div class="tbl"><table><tr><th>Setting</th><th>Effect</th></tr><tr><td>Full Sail</td><td>+1 speed. Can't Reload while at Full Sail.</td></tr><tr><td>Battle Sail</td><td>Printed speed. Default.</td></tr><tr><td>Minimal Sail</td><td>−1 speed.</td></tr><tr><td>Anchored</td><td>No movement.</td></tr></table></div><p>Change Sail Setting moves one step per action. Speed never exceeds 5; Crippled ships max 2.</p>`],
+ ["Actions",`<p>Up to two per activation, each type once per turn. Seamanship actions need a passed Skill Test.</p><ul><li><b>Change Heading</b>: turn with the speed 1 tool before moving.</li><li><b>Adjust Speed</b>: ±1 for this move.</li><li><b>Cut Free</b>: move Yard Arm directly away from entangled ships; speed max 1 this turn.</li><li><b>Reload</b>: remove one reload marker.</li><li><b>Rally</b>: remove 1 Fatigue.</li><li><b>Repair</b>: remove 1 damage (not when Crippled), or Skill Test to remove Aground.</li><li><b>Change Sail Setting</b>: one step up or down.</li><li><b>Board</b>: Skill Test, enemy within Yard Arm. Move directly toward it and lay edges flush; both become Entangled.</li><li><b>Row</b>: ships with sweeps make an extra speed 1 move, even Anchored or In the Wind's Eye.</li><li><b>Transfer Flag</b>: move the Admiral to a friendly ship within Pistol Shot.</li><li><b>Landing Party</b>: Anchored, not Shaken, within Pistol Shot of land. Place a token within Musket Shot.</li></ul>`],
+ ["Broadside",`<ul><li>One per side per turn. Target within Cannon Shot, partly in the broadside path, in line of sight, no reload marker on that side.</li><li>Dice = Broadside − Fatigue, but Fatigue can't take it below the ship's Crew value.</li><li>Any hit gives the target 1 Fatigue. Each full set of hits equal to Fortitude deals 1 damage.</li><li>Place a reload marker on the side that fired.</li></ul>`],
+ ["Partial fire",`<p>Line of sight from any edge, outside the broadside path allowed, up to Musket Shot. Ignores reload markers and places none. Dice = Crew − Fatigue (minimum 1).</p>`],
+ ["Critical hits",`<p>For each skull in an attack, roll one more die.</p><div class="tbl"><table><tr><th>Face</th><th>One</th><th>Two or more</th></tr><tr><td>Skull</td><td>+1 damage</td><td>Crippled (Out of Action if already Crippled)</td></tr><tr><td>Sail</td><td>Sail setting −1</td><td>Masts lost; Aground token</td></tr><tr><td>Sword</td><td>+1 Fatigue</td><td>Helm struck: speed 2 full turn chosen by the attacker; roll for Admiral or Captain</td></tr></table></div>`],
+ ["Line of sight and the broadside path",`<p><b>Line of sight</b>: a line from the midpoint of any edge of the firing ship to the midpoint of an edge and at least one corner of the target. Islands and land masses block it.</p><p><b>Broadside path</b>: two parallel lines extending from the firing side. The target must be at least partly between them.</p><p>Measure between the two closest points.</p>`],
+ ["Raking, rigging and crew",`<ul><li><b>Raking</b>: broadside at Musket Shot or closer across the target bow-to-stern. +1 Fatigue if the attack causes Fatigue. Through the stern, Fortitude counts as 1. Ignores High Freeboard.</li><li><b>Rigging or crew</b>: halve the dice (min 1) and roll as critical tests ignoring the excluded results. Rigging can't damage or Fatigue; crew shots max Pistol Shot and can't damage.</li></ul>`],
+ ["Formation",`<p>Two or more ships including the Flagship, each within Musket Shot of one other squadron ship and linked to only one. Each formation ship adds 1 die to Broadside and Partial Fire.</p>`],
+ ["Close combat",`<ul><li>Only Entangled ships and Landing Parties. Alternate from the initiative player; pick one target.</li><li>Dice = 3 + Crew − Fatigue, then bonuses.</li><li>Bow or stern contact: 1 Fatigue per skull. Side contact: 1 Fatigue per skull, pistol or sword.</li></ul>`],
+ ["Fatigue, damage and status",`<div class="tbl"><table><tr><th>Status</th><th>When</th><th>Effect</th></tr><tr><td>Fatigued</td><td>Each point</td><td>−1 die on tests and attacks (min 1). Max 7.</td></tr><tr><td>Shaken</td><td>7 Fatigue</td><td>No seamanship; Rally is the only action.</td></tr><tr><td>Crippled</td><td>7 damage</td><td>Max speed 2. More damage becomes Fatigue.</td></tr><tr><td>Out of Action</td><td>Crippled and Shaken</td><td>No movement, actions or attacks. Rolls to sink.</td></tr><tr><td>Entangled</td><td>Boarded or collided</td><td>Can't move; only Cut Free.</td></tr><tr><td>Aground</td><td>Collision or masts lost</td><td>Can't move until repaired.</td></tr></table></div>`],
+ ["Skill, Fortune and Challenge Tests",`<ul><li><b>Skill Test</b>: 5 dice minus Fatigue. Any skull or sail passes.</li><li><b>Skill value</b> (0–2): re-roll that many single dice per test or attack. A die can't be re-rolled twice unless with Fortune.</li><li><b>Fortune</b>: 3 per player. Spend one to re-roll every die in a test or attack, once per roll.</li><li><b>Challenge Test</b>: both Flagships roll; most skulls and sails wins, ties to higher Skill, then roll again.</li></ul>`],
+ ["Collisions and terrain",`<ul><li>Hitting an island, rock or land mass: 1 damage, Aground, sail to Anchored.</li><li>Ship-to-ship: the moving ship rolls dice equal to its speed; 1 damage to itself per skull; any sail Entangles. Otherwise the struck ship is pushed Yard Arm away.</li><li><b>Shoals</b>: after moving through, roll dice equal to Fortitude; any sail means Aground.</li><li><b>Fog banks</b>: shots into or through count one range band farther.</li><li>Any part of a base off the table removes the ship from the game.</li></ul>`],
+ ["Capture",`<p>In the end phase, a Shaken ship Entangled with an enemy can be captured or destroyed. A captured ship counts for its captor and can be retaken by Entangling it with a ship from its own squadron.</p>`],
+ ["Strike points and winning",`<ul><li>1 per Crippled ship that isn't Out of Action.</li><li>2 per ship sunk, captured or Out of Action.</li><li>Objective cards may add more. Recount every end phase.</li><li>A squadron whose Strike Points exceed its ships still fighting (not Aground, not Out of Action) strikes and loses.</li><li>Both over: fewer Strike Points wins; equal means play on.</li><li>After turn 10: fewer Strike Points wins; a tie goes to the defender.</li></ul>`],
+ ["Squadron building",`<div class="tbl"><table><tr><th>Size</th><th>Ships</th><th>Points</th><th>Table</th></tr><tr><td>Patrol</td><td>2–4</td><td>50</td><td>3' × 3'</td></tr><tr><td>Skirmish</td><td>3–8</td><td>100</td><td>3' × 3'</td></tr><tr><td>Engagement</td><td>4–10</td><td>200</td><td>3' × 4'</td></tr></table></div><p>One Flagship with an Admiral. Each ship: 1 Captain, up to 2 upgrades. Cards must match your nationality or be unaligned. No Ships of the Line in Patrol.</p>`]
+];
+function renderRules(q=""){
+  q=q.trim().toLowerCase();
+  const re=q?new RegExp("("+q.replace(/[.*+?^${}()|[\]\\]/g,"\\$&")+")","gi"):null;
+  const hl=h=>re?h.replace(/>([^<]+)</g,(m,t)=>">"+t.replace(re,"<mark>$1</mark>")+"<"):h;
+  const list=RULES.filter(([t,h])=>!q||(t+" "+h.replace(/<[^>]+>/g," ")).toLowerCase().includes(q));
+  $("#rules").innerHTML=list.map(([t,h])=>`<details class="rule" ${q?"open":""}><summary>${t}</summary><div class="body">${hl("<div>"+h+"</div>")}</div></details>`).join("");
+  $("#ruleHint").hidden=list.length>0;
+}
+$("#ruleSearch").addEventListener("input",e=>renderRules(e.target.value));
+
+/* ---------- SHIP STATUS ---------- */
+function statCell(label,printed,now,unit=""){
+  const p=printed==null?"—":printed,changed=printed!=null&&now!=null&&now!==printed;
+  return `<div class="sc"><span class="sl">${label}</span><b class="sv">${p}</b>${changed?`<span class="snow ${now<printed?"down":"up"}">now ${now}${unit}</span>`:`<span class="snow"> </span>`}</div>`;
+}
+function shipCard(s,q,qi){
+  const out=s.sunk||s.cap||ooa(s);
+  const status=s.sunk?'<span class="chip dead">Sunk</span>':s.cap?'<span class="chip dead">Captured</span>':ooa(s)?'<span class="chip dead">Out of action</span>':
+    [crippled(s)?'<span class="chip bad">Crippled · max speed 2</span>':"",shaken(s)?'<span class="chip bad">Shaken · Rally only</span>':"",
+     s.ent?'<span class="chip warn">Entangled</span>':"",s.aground?'<span class="chip warn">Aground</span>':""].join("")||'<span class="chip ok">Ready</span>';
+  const track=(k,lim,v,label)=>`<div class="trk"><span class="sl">${label}<span class="num"> ${v}/${lim}</span></span><div class="pips ${k}" style="grid-template-columns:repeat(${lim},1fr)">${Array.from({length:lim},(_,i)=>`<button type="button" class="${i<v?"on":""}" data-pip="${s.id},${k},${i+1}" aria-label="${label} ${i+1}">${i+1}</button>`).join("")}</div></div>`;
+  const noStats=s.fort==null&&s.bs==null&&s.spdW==null;
+  return `<article class="scard ${out?"out":""}" aria-label="${esc(s.name)}">
+    <header class="sch">
+      <div class="pts" title="Points">${s.pts??"–"}</div>
+      <div style="min-width:0;flex:1"><h3>${s.flag?'<svg class="flag" aria-label="Flagship"><use href="#i-flag"/></svg>':""}<span>${esc(s.name)}</span></h3>
+        <span class="cls">${esc(s.cls||"Class not set")}${s.card&&CARD[s.card]&&CARD[s.card].nat?" · "+esc(CARD[s.card].nat):""}${s.flag?" · Flagship":""}</span></div>
+      <button class="btn sm ghost edit" data-edit="${s.id}" type="button">Edit</button>
+    </header>
+    <div class="sbody">
+      <div class="toggles">${status}</div>
+      ${noStats?`<p class="callout" style="font-size:.9rem">Copy the stats from the printed card with Edit.</p>`:""}
+      <div class="sgrid">
+        ${statCell("Windward",s.spdW,speedNow(s,s.spdW))}
+        ${statCell("Large",s.spdL,speedNow(s,s.spdL))}
+        ${statCell("Fortitude",s.fort,s.fort)}
+        ${statCell("Broadside",s.bs,bsNow(s)," dice")}
+        ${statCell("Crew",s.crew,partialNow(s)," dice")}
+        ${statCell("Skill",s.skill||0,s.skill||0)}
+      </div>
+      ${s.crew!=null?`<p class="sl" style="text-transform:none;letter-spacing:0">Close combat <b class="num">${closeNow(s)}</b> dice · Partial fire <b class="num">${partialNow(s)}</b> dice</p>`:""}
+      <div class="sailseg" role="group" aria-label="Sail setting">${SAILS.map((n,i)=>`<button type="button" data-setsail="${s.id},${i}" aria-pressed="${s.sail===i}">${n.replace(" Sail","")}</button>`).join("")}</div>
+      <div class="toggles">
+        <button type="button" class="tg" data-tg="${s.id},rp" aria-pressed="${s.rp}">Reload port</button>
+        <button type="button" class="tg" data-tg="${s.id},rs" aria-pressed="${s.rs}">Reload stbd</button>
+        <button type="button" class="tg" data-tg="${s.id},ent" aria-pressed="${s.ent}">Entangled</button>
+        <button type="button" class="tg" data-tg="${s.id},aground" aria-pressed="${s.aground}">Aground</button>${escBtn(s)}
+      </div>
+      ${track("dmg",maxD(s),s.dmg,"Damage")}
+      ${track("fat",maxF(s),s.fat,"Fatigue")}
+      <dl class="srules">
+        ${s.flag?`<div><dt>Admiral</dt><dd>Value ${q.admiral||0}</dd></div>`:""}
+        <div><dt>Captain</dt><dd>${esc(s.captain)||'<span class="muted">None</span>'}</dd></div>
+        <div><dt>Special rules</dt><dd>${rulesHtml(s.rules,ruleDict(s))||'<span class="muted">None listed</span>'}</dd></div>
+        <div><dt>Upgrades</dt><dd>${rulesHtml([s.upgrades,s.xcrew&&!/additional crew/i.test(s.upgrades||"")?"Additional Crew":""].filter(Boolean).join(", "),UPGTEXT)||'<span class="muted">None</span>'}</dd></div>
+      </dl>
+    </div>
+  </article>`;
+}
+function renderShips(){
+  const keep=[...document.querySelectorAll(".deck")].map(d=>d.scrollLeft);
+  $("#v-ships").innerHTML=`<div class="stack"><h2>Ship status</h2><p class="muted">Swipe through each squadron. Changes here update the Play tab and Gunnery too.</p></div>`+
+    S.squads.map((q,qi)=>{const sp=strike(q),af=afloat(q);
+      return `<div class="stack" style="gap:8px">
+        <div class="row between"><h3 class="squadname">${esc(q.name)}</h3><span class="muted" style="font-size:.86rem"><b class="num ${sp>af?"tdanger":""}">${sp}</b> strike pts · ${af} fighting · <span class="coin">F</span> ${q.fortune}</span></div>
+        ${q.ships.length?`<div class="deck" data-q="${qi}" tabindex="0" aria-label="${esc(q.name)} ships">${q.ships.map(s=>shipCard(s,q,qi)).join("")}</div>
+        <div class="dots" data-q="${qi}">${q.ships.map((s,i)=>`<button type="button" data-dot="${qi},${i}" aria-label="Show ${esc(s.name)}"></button>`).join("")}</div>`:
+        `<p class="muted">No ships yet. Add them in <a href="#setup">Setup</a>.</p>`}
+      </div>`}).join("");
+  document.querySelectorAll(".deck").forEach((deck,i)=>{
+    if(keep[i])deck.scrollLeft=keep[i];
+    const dots=document.querySelectorAll(`.dots[data-q="${deck.dataset.q}"] button`);
+    const mark=()=>{const w=deck.firstElementChild?deck.firstElementChild.offsetWidth+12:1;const n=Math.round(deck.scrollLeft/w);dots.forEach((d,j)=>d.setAttribute("aria-current",j===n?"true":"false"))};
+    deck.addEventListener("scroll",()=>requestAnimationFrame(mark),{passive:true});mark();
+  });
+}
+
+/* ---------- REMINDERS ---------- */
+const gapDays=()=>S.lastPlayed?Math.floor((Date.now()-S.lastPlayed)/864e5):null;
+const gapText=d=>d<1?"today":d===1?"yesterday":d<14?`${d} days ago`:d<60?`${Math.round(d/7)} weeks ago`:`${Math.round(d/30)} months ago`;
+const forgetGrid=list=>`<div class="forget">${list.map(([t,s])=>`<div><b>${t}</b><span>${s}</span></div>`).join("")}</div>`;
+/* sections: [id, title, bodyHtml, extraHtml] — a notes section is always added last */
+function remPage(lead,sections){
+  const closed=S.remClosed||{},d=gapDays();
+  const sec=(id,title,body,link="")=>`<details class="rem" data-sec="${id}" ${closed[id]?"":"open"}><summary><h3>${title}</h3><span class="chev" aria-hidden="true"></span></summary><div class="rembody">${link}${body}</div></details>`;
+  sections=[...sections,["notes","Our notes",`<p class="muted" style="font-size:.9rem">House rules, rulings you agreed on, things you got wrong last time. Saved on this device.</p>
+    <textarea class="notes" id="notes" aria-label="Our notes" placeholder="Anything you want to remember next time">${esc(S.notes||"")}</textarea>`]];
+  const anyClosed=Object.values(closed).some(Boolean);
+  $("#v-reminders").innerHTML=`<div class="stack">
+      <div class="row between"><h2>Getting back into it</h2><button class="btn sm ghost" id="remAll" type="button">${anyClosed?"Expand all":"Collapse all"}</button></div>
+      <p class="muted">${d!=null?`Your last game was ${gapText(d)}. `:""}${lead} Tap a heading to fold away what you've done; everything opens again when you start a new game.</p>
+    </div>${sections.map(s=>sec(...s)).join("")}`;
+  $("#notes").addEventListener("input",e=>{S.notes=e.target.value;save()});
+  document.querySelectorAll("details.rem").forEach(el=>el.addEventListener("toggle",()=>{
+    S.remClosed=S.remClosed||{};S.remClosed[el.dataset.sec]=!el.open;save();
+    $("#remAll").textContent=Object.values(S.remClosed).some(Boolean)?"Expand all":"Collapse all"}));
+  $("#remAll").onclick=()=>{const close=!Object.values(S.remClosed||{}).some(Boolean);
+    S.remClosed={};document.querySelectorAll("details.rem").forEach(el=>{S.remClosed[el.dataset.sec]=close});save();renderReminders()};
+}
+const FORGET=[
+ ["Full distance","Ships always move the full distance of their speed tool, with one turn at the start or the end."],
+ ["In the Wind's Eye","Bow within 45° of the weather edge: no forward move, only a turn with the speed 1 tool."],
+ ["Two actions","Up to two actions per activation, and each action type only once per turn."],
+ ["Reloading","A broadside leaves a reload marker on that side. A ship at Full Sail can't Reload."],
+ ["Fatigue","Each point removes a die, but a broadside never drops below the ship's Crew value."],
+ ["Hits to damage","Any hit adds 1 Fatigue. Damage is 1 per full set of hits equal to the target's Fortitude."],
+ ["Skulls","Each skull in an attack means one extra critical die: skull, sail and sword faces do something."],
+ ["Seven is the line","7 damage: Crippled, max speed 2. 7 Fatigue: Shaken, Rally only. Both: Out of Action."],
+ ["Striking","A squadron strikes when its Strike Points exceed its ships still fighting. Recount every end phase."],
+ ["Fortune","Re-rolls every die in one test or attack. One per roll, three per game."]
+];
+function renderReminders(){
+  const m=MODES[S.mode];
+  remPage(`This is a ${m.name} game.`,[
+    ["setup","Setting up",`<ol class="steps">${setupSteps().map(([t,d])=>`<li><b>${t}.</b> ${d}</li>`).join("")}</ol>`,'<a class="btn sm" href="#setup" style="align-self:flex-start">Open setup</a>'],
+    ["round","A turn",`<div class="flow">
+        <div><b>1 · Initiative</b><span>Reveal cards; higher value goes first in every phase. Pick next turn's card face down.</span></div>
+        <div><b>2 · Movement</b><span>Alternate ships. Point of sail and sail setting give speed. Up to two actions, move, drop a Wake marker.</span></div>
+        <div><b>3 · Shooting</b><span>Alternate ships. A broadside from each side, or a Partial Fire.</span></div>
+        <div><b>4 · Close combat</b><span>Entangled ships and landing parties fight. Causes Fatigue.</span></div>
+        <div><b>5 · End</b><span>Captures, strike check, sinking rolls, lost Admirals, return initiative cards.</span></div>
+      </div>
+      <div class="tbl"><table><tr><th>Range</th><th>Broadside hits on</th></tr>
+        <tr><td>Cannon Shot</td><td>Skull, cannon</td></tr>
+        <tr><td>Musket Shot</td><td>Skull, cannon, musket</td></tr>
+        <tr><td>Pistol Shot</td><td>Skull, cannon, musket, pistol</td></tr></table></div>`],
+    ["forget","Easy to forget",forgetGrid(FORGET)],
+    ["mode","This game",`<div class="spec">${[[m.table,"Table"],[m.points,"Points"],[m.ships,"Ships each"],["3","Fortune each"],["10","Turn limit"]].map(([v,l])=>`<div><b>${v}</b><span>${l}</span></div>`).join("")}</div>
+      ${m.note?`<p class="muted" style="font-size:.92rem">${m.note}</p>`:""}
+      <ul class="steps" style="list-style:none;padding:0">${S.squads.map(q=>`<li><b>${esc(q.name)}</b>: Admiral ${q.admiral||0}, so ${5+(q.admiral||0)} initiative cards in hand. ${q.ships.length} ship${q.ships.length===1?"":"s"}${q.ships.some(s=>s.fort==null)?", some still missing stats":""}.</li>`).join("")}</ul>`]
+  ]);
+}
+function renderGap(v){
+  const d=gapDays();
+  $("#gapBox").innerHTML=d!=null&&d>=14&&v!=="reminders"?`<div class="gapnote"><span>Your last game was ${gapText(d)}. Need a refresher?</span><a class="btn sm primary" href="#reminders">Open reminders</a></div>`:"";
+}
+
+/* ---------- SOLO: the enemy captain ---------- */
+const BRIEF=`OAK & IRON RULES BRIEF
+- Turn: Initiative, Movement, Shooting, Close Combat, End. Sides alternate activating one ship at a time; the initiative holder goes first in each phase.
+- Wind: the weather edge is the table edge the wind blows FROM. A ship is "Large" when its stern is closer to the weather edge than its bow, "Windward" when its bow is closer. "In the Wind's Eye": the bow points within 45 degrees of straight at the weather edge; the ship cannot move forward and may only turn using the speed 1 tool.
+- Speed: the card's Windward or Large value. Full Sail +1, Battle Sail +0, Minimal Sail -1, Anchored no movement. Maximum 5. Crippled ships maximum 2. A ship always moves the FULL distance of its speed tool straight ahead, with at most one turn, made at the start or the end of the move using the angled end of the tool (a partial turn is allowed).
+- Actions: up to two per activation, each type once per turn. Seamanship actions need a Skill Test (5 dice minus Fatigue, passes on any skull or sail): Change Heading (turn with the speed 1 tool before moving; not In the Wind's Eye), Adjust Speed (+1 or -1 for this move), Board (an enemy within Yard Arm: both ships become Entangled), Cut Free. Crew actions need no test: Reload (remove the reload marker from one side; not at Full Sail), Rally (remove 1 Fatigue), Repair (remove 1 damage; not when Crippled), Change Sail Setting (one step), Row (ships with Sweeps: extra move at speed 1), Transfer Flag.
+- Shaken ships (Fatigue track full) may only Rally. Entangled ships cannot move except by Cut Free.
+- Shooting: each ship may fire one Broadside from EACH side (port = left, starboard = right, looking from stern to bow) that has no reload marker, at an enemy at least partly inside that side's broadside path (straight out from the side), in line of sight, within Cannon Shot. Or instead one Partial Fire from any edge at an enemy within Musket Shot (crew dice, ignores reload markers). Firing a broadside puts a reload marker on that side.
+- Range bands, shortest to longest: Yard Arm, Pistol Shot, Musket Shot, Cannon Shot. Closer is deadlier: at Cannon Shot only skulls and cannons hit, Musket Shot adds muskets, Pistol Shot adds pistols. Every full set of hits equal to the target's Fortitude deals 1 damage. Any hit adds 1 Fatigue (High Freeboard needs 2 hits, Very High Freeboard 3). Fatigue removes dice. A broadside that crosses the target from bow to stern at Musket Shot or closer is a raking shot: +1 Fatigue, and through the stern the target's Fortitude counts as 1.
+- Close Combat: Entangled ships fight and cause Fatigue. A Shaken ship Entangled with an enemy in the End phase can be captured.
+- Damage: a full damage track means Crippled (max speed 2). Crippled and Shaken means Out of Action; it may sink.
+- Victory: Strike Points are 1 per Crippled ship and 2 per sunk, captured or Out of Action ship. A squadron whose Strike Points exceed its ships still fighting withdraws and loses.
+- Terrain: islands and land masses block movement and line of sight; touching islands or rocks runs a ship aground. A ship that leaves the table is removed.`;
+
+let SAMPLE=null,IMG=false,aiCtl=null,PHOTO=null,PHOTO_URL="",aiBusy=false,aiMsg="";
+(async()=>{
+  for(let i=0;i<30&&!(window.claude&&window.claude.use);i++)await new Promise(r=>setTimeout(r,100));
+  try{SAMPLE=window.claude&&window.claude.use?await window.claude.use("sample"):null}catch(e){SAMPLE=null}
+  if(SAMPLE){try{const l=await SAMPLE.limits();IMG=!!(l&&l.images)}catch(e){IMG=false}}
+  if(view()==="play"||view()==="setup")render();
+})();
+const aiOK=()=>!!SAMPLE&&!S.solo.noAI;
+const aiShips=()=>S.squads[1].ships;
+const youShips=()=>S.squads[0].ships;
+function shipBrief(s){
+  return {id:s.id,name:s.name,class:CARD[s.card]?CARD[s.card].name:s.cls,marker:s.mark||"",flagship:!!s.flag,sail:SAILS[s.sail],
+    speed_windward:s.spdW,speed_large:s.spdL,fortitude:s.fort,broadside:s.bs,crew:s.crew,skill:s.skill||0,
+    damage:`${s.dmg}/${maxD(s)}`,fatigue:`${s.fat}/${maxF(s)}`,reload_marker_port:!!s.rp,reload_marker_starboard:!!s.rs,
+    entangled:!!s.ent,aground:!!s.aground,crippled:crippled(s),shaken:shaken(s),out_of_action:ooa(s),sunk:!!s.sunk,captured:!!s.cap,
+    merchant:!!s.merchant,special_rules:s.rules||""};
+}
+const SCHEMA={
+  deploy:`{"plan":"one sentence","orders":[{"ship":12,"place":"where on the table to put it","facing":"which way the bow points","sail":"Battle Sail"}],"notes":""}`,
+  move:`{"plan":"one sentence","activation_order":[12,13],"orders":[{"ship":12,"sail":"no change | Full Sail | Battle Sail | Minimal Sail | Anchored","turn":"none | port | starboard","turn_at":"start | end","turn_amount":"slight | half | full","speed_adjust":0,"actions":["Reload port"],"instruction":"one or two sentences for the human","if_test_fails":"what to do if a Skill Test fails, or empty","why":"short reason"}],"notes":""}`,
+  shoot:`{"plan":"one sentence","orders":[{"ship":12,"attack":"broadside | partial | none","side":"port | starboard","target":3,"range":"cannon | musket | pistol","raking":false,"why":"short reason"}],"notes":""}`
+};
+const TASK={
+  deploy:"Deploy your squadron for the start of the game. The human's ships are already on the table. Your deployment area: DEPLOY. Give a placement for every one of your ships, relative to table edges, terrain and enemy ships, a facing that is not In the Wind's Eye, and a starting sail setting.",
+  move:"Plan this Movement phase for every one of your ships that can act. Respect the movement rules exactly: full-distance moves, one turn at the start or end, the Wind's Eye, at most two actions of different types. Allowed action names: Change Heading, Adjust Speed, Board, Cut Free, Reload port, Reload starboard, Rally, Repair, Change Sail Setting, Row, Transfer Flag. Set yourself up so loaded broadsides will bear in the Shooting phase. Give a sensible activation_order.",
+  shoot:"Choose attacks for every one of your ships. List a ship twice to fire both broadsides. Only fire a side without a reload marker, at an enemy inside that side's broadside path. If no broadside bears, consider a Partial Fire within Musket Shot, otherwise attack \"none\". Give your best estimate of the range band; the human will measure it."
+};
+function aiPrompt(kind,notes){
+  const sc=SC(),P=PERS[S.solo.pers],ai=S.squads[1],me=S.squads[0];
+  const st={turn:S.turn,turn_limit:turnLimit(),phase:PHASES[S.phase],initiative_holder:S.squads[S.initiative].name,
+    your_squadron:{name:ai.name,admiral:ai.admiral,fortune:ai.fortune,strike_points:strike(ai),ships:ai.ships.filter(s=>!s.sunk&&!s.cap).map(shipBrief)},
+    enemy_squadron:{name:me.name,strike_points:strike(me),ships:me.ships.filter(s=>!s.sunk&&!s.esc).map(shipBrief)}};
+  const marks=list=>list.filter(s=>!s.sunk).map(s=>`${s.name} (${CARD[s.card]?CARD[s.card].name:s.cls||"ship"}${s.mark?", marked "+s.mark:""})`).join("; ");
+  const photo=PHOTO&&IMG?`PHOTO: a photo of the table taken from above is attached. The WEATHER EDGE (where the wind blows from) is the TOP edge of the photo. Your ships: ${marks(ai.ships)}. Enemy ships: ${marks(me.ships)}. Identify ships by model shape, size and any ID token or marker. ${S.solo.photoAt&&(S.solo.photoAt.turn!==S.turn||S.solo.photoAt.phase!==S.phase)?"Warning: the photo was taken earlier in the game, so some ships may have moved since.":""}`
+    :"NO PHOTO this time. Rely on the game state and the player's notes, and keep orders general (for example \"turn toward the nearest enemy\").";
+  return [
+    `You are the enemy captain in a solo game of Oak & Iron, the age-of-sail miniatures game by Firelock Games. A human plays the other side and will move your ships and roll your dice exactly as you instruct. Play to win within the rules, and play fair: decide only from what the photo, the game state and the notes show.`,
+    BRIEF,
+    `SCENARIO: ${sc.name}. ${sc.blurb} Victory: ${sc.victory}${sc.special.length?" Special rules: "+sc.special.join(" "):""}`,
+    `YOUR CHARACTER: ${P.name}. ${P.prompt}`,
+    photo,
+    `GAME STATE (JSON):\n${JSON.stringify(st)}`,
+    notes?`THE PLAYER ADDS: ${notes}`:"",
+    `TASK: ${TASK[kind].replace("DEPLOY",(sc.ai&&sc.ai.deploy)||"your own table edge")}`,
+    `Reply with only JSON in this shape:\n${SCHEMA[kind]}\nUse the numeric ship "id" values from GAME STATE for "ship" and "target". Write instructions as plain sentences a player can carry out on the table, naming enemy ships and terrain. Never invent ships. If the photo is unclear or a ship can't be found in it, say so in "notes" and give the safest sensible order.`
+  ].filter(Boolean).join("\n\n");
+}
+function normOrders(kind,raw,fallback){
+  const find=(list,ref)=>list.find(s=>String(s.id)===String(ref))||list.find(s=>s.name.toLowerCase()===String(ref||"").toLowerCase());
+  let list=(Array.isArray(raw&&raw.orders)?raw.orders:[]).map(o=>{const a=find(aiShips(),o.ship||o.sid);const t=find(youShips(),o.target||o.tid);
+    return {...o,sid:a?a.id:(o.sid??null),tid:t?t.id:(o.tid??null)}}).filter(o=>o.sid!=null);
+  if(kind==="move"&&Array.isArray(raw.activation_order)){const ord=raw.activation_order.map(String);list.sort((a,b)=>{const ia=ord.indexOf(String(a.sid)),ib=ord.indexOf(String(b.sid));return (ia<0?99:ia)-(ib<0?99:ib)})}
+  return {kind,turn:S.turn,phase:S.phase,plan:String(raw.plan||""),notes:String(raw.notes||""),list,done:{},tests:{},fallback:!!fallback,at:Date.now()};
+}
+function fallbackOrders(kind){
+  const P=PERS[S.solo.pers],sc=SC(),live=aiShips().filter(s=>!s.sunk&&!s.cap&&!ooa(s));
+  if(kind==="deploy")return normOrders(kind,{plan:"Deploy ready to fight.",orders:live.map(s=>({ship:s.id,place:`Spread out ${(sc.ai&&sc.ai.deploy)||"along your own table edge"}, about Pistol Shot apart, Flagship in the middle.`,facing:"Bow toward the enemy but not into the Wind's Eye.",sail:"Battle Sail"}))},true);
+  if(kind==="move")return normOrders(kind,{plan:P.move,orders:live.map(s=>{
+      const acts=[];
+      if(shaken(s))acts.push("Rally");
+      else{if(s.rp)acts.push("Reload port");if(s.rs&&acts.length<2)acts.push("Reload starboard");if(acts.length<2&&s.fat>=3)acts.push("Rally");if(acts.length<2&&s.dmg>=3&&!crippled(s))acts.push("Repair")}
+      const crip=crippled(s)&&S.solo.pers!=="aggressive";
+      return {ship:s.id,sail:"no change",turn:"none",actions:acts.slice(0,2),
+        instruction:s.ent?"Entangled: stay put and fight it out. Cut Free instead if this ship is Crippled.":shaken(s)?"Shaken: move straight ahead and Rally.":crip?"Crippled: turn away from the nearest enemy and open the range.":`${P.move} Sail setting: ${P.sail}.`,
+        why:"Standing orders"}})},true);
+  return normOrders(kind,{plan:`Fire every loaded broadside that bears. Target ${P.target}. If no broadside bears, Partial Fire at the closest enemy within Musket Shot.`,
+    orders:live.filter(s=>!shaken(s)).map(s=>({ship:s.id,attack:"standing",why:`Target ${P.target}.`}))},true);
+}
+const AIERR={not_granted:"Claude isn't allowed for this app, so the enemy is using standing orders.",sampling_disabled:"Claude isn't available on this account, so the enemy is using standing orders.",
+  rate_limited:"Too many requests just now. Wait a minute and try again, or use standing orders.",image_rejected:"That photo couldn't be used. Try another photo.",
+  invalid_json:"The enemy's reply came back garbled. Try again.",refused:"Claude wouldn't answer that. Try again with a different photo or notes.",
+  session_expired:"Sign in to Claude again, then retry.",upstream_error:"The connection dropped. Try again.",empty_completion:"No answer came back. Try again."};
+async function askAI(kind){
+  if(aiBusy)return;
+  const notes=($("#aiNotes")&&$("#aiNotes").value.trim())||"";
+  S.solo.notes=notes;
+  if(!aiOK()){S.solo.orders=fallbackOrders(kind);aiMsg="";save();renderPlay();return}
+  aiBusy=true;aiMsg="";aiCtl=new AbortController();renderAI();
+  try{
+    const opts={signal:aiCtl.signal,cache:false,modelTier:S.solo.tier==="complex"?"complex":"default"};
+    if(PHOTO&&IMG)opts.images=[PHOTO];
+    const raw=await SAMPLE.json(aiPrompt(kind,notes),opts);
+    S.solo.orders=normOrders(kind,raw||{},false);
+    if(!S.solo.orders.list.length)aiMsg="The enemy gave no usable orders. Try again, or add a note about where its ships are.";
+    log(`${S.squads[1].name} issued ${kind==="deploy"?"deployment":kind==="move"?"movement":"shooting"} orders.`);
+  }catch(e){
+    const c=e&&e.code;
+    if(c!=="cancelled")aiMsg=AIERR[c]||"Something went wrong. Try again.";
+    if(["not_granted","sampling_disabled","not_declared","capability_disabled","capability_removed"].includes(c)){S.solo.noAI=true;S.solo.orders=fallbackOrders(kind)}
+    if(c==="images_unavailable"){IMG=false;aiMsg="Photos can't be sent from here. Add notes about the board and ask again."}
+  }finally{aiBusy=false;aiCtl=null;save();renderPlay()}
+}
+async function pickCard(){
+  const so=S.solo,open=so.hand.map((c,i)=>({...c,i})).filter(c=>!c.gone&&c.i!==so.rev);
+  if(!open.length){aiMsg="The enemy has no cards to choose from. Add its hand in Setup.";renderAI();return null}
+  let pick=open[Math.floor(Math.random()*open.length)].i;
+  if(aiOK()){
+    aiBusy=true;aiCtl=new AbortController();renderAI();
+    try{
+      const r=await SAMPLE.json(`You are the enemy captain (${PERS[so.pers].name}: ${PERS[so.pers].prompt}) in a game of Oak & Iron. Choose one initiative card from your hand to play face down for next turn. Higher values usually win initiative (moving and shooting first); some cards also have effects named in their titles.\nTurn ${S.turn} of ${turnLimit()}. Your Strike Points ${strike(S.squads[1])}, the human's ${strike(S.squads[0])}.\nHand: ${JSON.stringify(open.map(c=>({index:c.i,value:c.v,title:c.t})))}\nReply with only JSON: {"card": index, "why": "short reason"}`,
+        {signal:aiCtl.signal,cache:false,modelTier:"quick"});
+      if(r&&open.some(c=>c.i===+r.card))pick=+r.card;
+    }catch(e){if(e&&["not_granted","sampling_disabled"].includes(e.code))S.solo.noAI=true}
+    finally{aiBusy=false;aiCtl=null}
+  }
+  return pick;
+}
+/* Skill Test for the enemy: 5 dice minus Fatigue, re-roll failures with Skill */
+function aiSkillTest(s){
+  const n=Math.max(1,5-s.fat);let d=Array.from({length:n},roll1);
+  const ok=f=>f==="skull"||f==="sail";
+  if(!d.some(ok))for(let k=0;k<(s.skill||0)&&k<d.length;k++)d[k]=roll1();
+  return {dice:d,pass:d.some(ok)};
+}
+function applyMove(o){
+  const s=findShip(o.sid);if(!s)return;const sh=s.s;
+  const si=SAILS.findIndex(x=>x.toLowerCase()===String(o.sail||"").toLowerCase());if(si>=0)sh.sail=si;
+  (o.actions||[]).forEach(a=>{const t=String(a).toLowerCase();
+    if(/reload\s*(port)/.test(t))sh.rp=false;
+    else if(/reload\s*(starboard|stbd)/.test(t))sh.rs=false;
+    else if(/rally/.test(t))sh.fat=Math.max(0,sh.fat-1);
+    else if(/repair/.test(t)&&!crippled(sh))sh.dmg=Math.max(0,sh.dmg-1)});
+}
+const needsTest=o=>(o.actions||[]).some(a=>/change heading|adjust speed|board|cut free/i.test(a))||(o.speed_adjust&&+o.speed_adjust!==0);
+function aiFire(o){
+  C.mode=o.attack==="partial"?"partial":o.attack==="close"?"close":"broadside";C.att=String(o.sid);C.tgt=o.tid!=null?String(o.tid):"";
+  prefill();
+  if(o.side==="starboard")C.side="stbd";else if(o.side==="port")C.side="port";
+  if(["cannon","musket","pistol"].includes(o.range))C.range=C.mode==="partial"&&o.range==="cannon"?"musket":o.range;
+  C.rake=!!o.raking;C.stern=false;if(C.mode==="close")C.contact="side";R=null;location.hash="combat";
+}
+function shipName(id){const f=findShip(id);return f?f.s.name:"?"}
+function orderCard(o,i,kind){
+  const ord=S.solo.orders,done=!!ord.done[i],s=findShip(o.sid),t=ord.tests[i];
+  const nm=s?esc(s.s.name):"?",chips=[];let body="",btns="";
+  if(kind==="deploy"){
+    body=`<p><b>Place:</b> ${esc(o.place||"")}</p>${o.facing?`<p><b>Facing:</b> ${esc(o.facing)}</p>`:""}`;
+    if(o.sail)chips.push(esc(o.sail));
+    btns=`<button class="btn sm ${done?"":"primary"}" type="button" data-aido="${i}">${done?"Placed ✓":"Placed"}</button>`;
+  } else if(kind==="move"){
+    if(o.sail&&!/no change/i.test(o.sail))chips.push(esc(o.sail));
+    if(o.speed_adjust&&+o.speed_adjust!==0)chips.push(`Adjust speed ${+o.speed_adjust>0?"+":""}${+o.speed_adjust}`);
+    if(o.turn&&o.turn!=="none")chips.push(`${esc(o.turn_amount||"")} turn to ${esc(o.turn)} at the ${esc(o.turn_at||"end")}`.trim());
+    (o.actions||[]).forEach(a=>chips.push(esc(a)));
+    body=`<p>${esc(o.instruction||"")}</p>${o.if_test_fails?`<p class="muted" style="font-size:.88rem">If a test fails: ${esc(o.if_test_fails)}</p>`:""}`;
+    if(t)body+=`<div class="skt">${t.dice.map(f=>`<span class="die mini ${f==="skull"||f==="sail"?"hit":""}">${icon(f)}</span>`).join("")}<b class="${t.pass?"ok":"tdanger"}">${t.pass?"Passed":"Failed"}</b></div>`;
+    btns=`${needsTest(o)&&!t?`<button class="btn sm" type="button" data-aitest="${i}">Roll Skill Test</button>`:""}<button class="btn sm ${done?"":"primary"}" type="button" data-aido="${i}">${done?"Moved ✓":"Done"}</button>`;
+  } else {
+    if(o.attack==="standing"){body=`<p>${esc(ord.plan)}</p>`;btns=`<button class="btn sm primary" type="button" data-aifire="${i}">Open Gunnery</button>`}
+    else if(o.attack==="none"){body=`<p>Holds fire.</p>`;btns=`<button class="btn sm" type="button" data-aido="${i}">${done?"✓":"OK"}</button>`}
+    else{
+      body=`<p><b>${o.attack==="partial"?"Partial Fire":`Broadside, ${esc(o.side||"")}`}</b> at <b>${esc(o.tid!=null?shipName(o.tid):"nearest enemy")}</b>${o.range?` · ${esc(o.range)} shot (estimate, measure it)`:""}${o.raking?" · raking":""}</p>`;
+      btns=`<button class="btn sm ${done?"":"primary"}" type="button" data-aifire="${i}">${done?"Fired ✓":"Roll attack"}</button>`;
+    }
+  }
+  return `<div class="aord ${done?"done":""}"><div class="row between" style="gap:6px"><b class="aship">${nm}</b><span class="row" style="gap:6px">${btns}</span></div>
+    ${chips.length?`<div class="toggles">${chips.map(c=>`<span class="chip">${c}</span>`).join("")}</div>`:""}${body}${o.why&&o.why!=="Standing orders"?`<p class="awhy">${esc(o.why)}</p>`:""}</div>`;
+}
+function photoBlock(){
+  const so=S.solo,stale=PHOTO&&so.photoAt&&(so.photoAt.turn!==S.turn||so.photoAt.phase!==S.phase);
+  if(!aiOK())return "";
+  return `<div class="photo">
+    ${PHOTO_URL?`<img src="${PHOTO_URL}" alt="Your latest board photo">`:`<div class="nophoto">No photo yet</div>`}
+    <div class="stack" style="gap:6px;min-width:0">
+      ${IMG?`<div class="row" style="gap:6px"><label class="btn sm" for="aiCam">Take photo</label><label class="btn sm ghost" for="aiPick">Choose photo</label></div>
+      <input id="aiCam" type="file" accept="image/*" capture="environment" hidden><input id="aiPick" type="file" accept="image/*" hidden>
+      <span class="muted" style="font-size:.84rem">${stale?"<b class=\"tdanger\">This photo is from an earlier phase.</b> Take a new one if ships have moved.":"From above, whole table, weather edge at the top."}</span>`
+      :`<span class="muted" style="font-size:.86rem">Photos can't be sent from this view. Describe where the enemy ships are in the notes instead.</span>`}
+    </div></div>
+    <div class="field"><label for="aiNotes">Anything the photo can't show (optional)</label><input id="aiNotes" value="${esc(so.notes||"")}" placeholder="e.g. Kestrel is hidden behind the island; Swallow is aground"></div>`;
+}
+function askBlock(kind,label){
+  return `${photoBlock()}
+    <div class="row" style="gap:8px">${aiBusy?`<button class="btn" type="button" id="aiStop">Stop</button><span class="muted">The enemy captain is studying the board. This can take up to a minute.</span>`:
+      `<button class="btn primary" type="button" data-aiask="${kind}">${label}</button>${aiOK()?`<button class="btn sm ghost" type="button" data-aistanding="${kind}">Use standing orders</button>`:""}`}</div>
+    ${aiMsg?`<p class="callout">${esc(aiMsg)}</p>`:""}`;
+}
+function renderAI(){
+  const box=$("#aiBox");if(!box)return;
+  if(!S.solo){box.innerHTML="";return}
+  const so=S.solo,sc=SC(),ai=S.squads[1],P=PERS[so.pers];
+  const ord=so.orders&&so.orders.turn===S.turn&&so.orders.phase===S.phase?so.orders:null;
+  let h="";
+  const head=`<header class="aih"><div style="min-width:0"><span class="eyebrow">Enemy captain</span><h3>${esc(ai.name)}</h3></div><span class="chip">${esc(P.name)}</span></header>`;
+  const status=!aiOK()?`<p class="callout" style="font-size:.9rem">${SAMPLE===null?"Claude isn't reachable from this view, so":"Claude is off for this game, so"} the enemy follows standing orders based on its character and the ships' condition.</p>`:"";
+  const orderList=kind=>ord&&ord.kind===kind?`${ord.plan?`<p class="aplan">“${esc(ord.plan)}”</p>`:""}${ord.notes?`<p class="muted" style="font-size:.88rem">Note from the captain: ${esc(ord.notes)}</p>`:""}
+      <div class="stack" style="gap:8px">${ord.list.map((o,i)=>orderCard(o,i,kind)).join("")||'<p class="muted">No orders.</p>'}</div>
+      ${ord.fallback?"":`<button class="btn sm ghost" type="button" data-aiask="${kind}" ${aiBusy?"disabled":""}>Ask again</button>`}`:"";
+  const remind=(sc.special||[]).filter(x=>/Letters from the Dead/.test(x)&&S.phase===1);
+  if(S.turn===1&&S.phase===0&&!so.deployed){
+    h=`<p>Set up your own ships first, then photograph the table and let the enemy deploy.</p>
+      ${ord&&ord.kind==="deploy"?orderList("deploy")+`<button class="btn primary" type="button" id="aiDeployed">Enemy is deployed</button>`:askBlock("deploy","Deploy the enemy")}`;
+  } else if(S.phase===0){
+    const c=so.rev!=null?so.hand[so.rev]:null;
+    h=`<div class="cards">
+      <div class="icard ${c?"":"down"}">${c?`<span class="iv num">${c.v}</span><span class="it">${esc(c.t||"Initiative card")}</span>`:`<span class="it">${so.next!=null?"Face down":"No card yet"}</span>`}</div>
+      <div class="stack" style="gap:8px;min-width:0">
+        ${c?`<p>The enemy reveals <b>${esc(c.t||"a card")}</b>, value <b class="num">${c.v}</b>. It is entered in the initiative form above.</p>
+          ${so.nextFor===S.turn+1?`<p class="muted">Next turn's card is chosen and face down.</p>`:`<button class="btn sm primary" type="button" id="aiNext" ${aiBusy?"disabled":""}>${aiBusy?"Choosing…":"Enemy picks next turn's card"}</button>`}
+          <button class="btn sm ghost" type="button" id="aiDiscard">${so.hand[so.rev].gone?"Card discarded":"Discard this card (if it says so)"}</button>`
+        :so.next!=null?`<button class="btn sm primary" type="button" id="aiReveal">Reveal the enemy's card</button>`
+        :so.hand.length?`<button class="btn sm primary" type="button" id="aiFirst" ${aiBusy?"disabled":""}>${aiBusy?"Choosing…":"Enemy picks its card"}</button>`
+        :`<p class="muted">The enemy has no initiative hand. Add its cards in Setup, or type its value into the form above.</p>`}
+      </div></div>${aiMsg?`<p class="callout">${esc(aiMsg)}</p>`:""}`;
+  } else if(S.phase===1){
+    h=`${remind.length?`<p class="callout">${esc(remind[0])}</p>`:""}${ord&&ord.kind==="move"?orderList("move"):`<p>When it's the enemy's turn to activate, follow its orders one ship at a time, alternating with your own ships.</p>${askBlock("move","Get movement orders")}`}`;
+  } else if(S.phase===2){
+    h=`${ord&&ord.kind==="shoot"?orderList("shoot"):`<p>Take a fresh photo after movement so the enemy can see what bears.</p>${askBlock("shoot","Get shooting orders")}`}
+      <p class="muted" style="font-size:.88rem">Enemy Fortune: ${ai.fortune}. It spends a Fortune Point to re-roll an attack that does no damage, keeping the last one for its Flagship.</p>`;
+  } else if(S.phase===3){
+    const ent=ai.ships.filter(s=>s.ent&&!s.sunk&&!s.cap&&!ooa(s));
+    h=ent.length?`<p>The enemy fights with every Entangled ship${sc.aiCC?`, adding ${sc.aiCC} die for its pirate crews`:""}. Roll each one:</p><div class="stack" style="gap:8px">${ent.map(s=>`<div class="aord"><div class="row between"><b class="aship">${esc(s.name)}</b><button class="btn sm primary" type="button" data-aiclose="${s.id}">Roll close combat</button></div></div>`).join("")}</div>`
+      :`<p class="muted">None of the enemy's ships are Entangled. Nothing to do.</p>`;
+  } else {
+    const flag=ai.ships.find(s=>s.flag),best=ai.ships.filter(s=>!s.flag&&!s.sunk&&!s.cap&&!ooa(s)&&!s.ent).sort((a,b)=>(b.crew||0)-(a.crew||0))[0];
+    const caps=youShips().filter(s=>shaken(s)&&s.ent&&!s.cap&&!s.sunk);
+    h=`<ul class="steps" style="list-style:disc">
+      <li>${caps.length?`The enemy captures ${caps.map(s=>`<b>${esc(s.name)}</b>`).join(", ")} if still Entangled with one of its ships. It always captures rather than destroys.`:"No Shaken ship of yours is Entangled with the enemy, so there is nothing to capture."}</li>
+      <li>${flag&&ooa(flag)?(ai.fortune>0&&best?`Its Flagship is Out of Action: the enemy spends a Fortune Point to move the Admiral to <b>${esc(best.name)}</b>. <button class="btn sm" type="button" id="aiFlag">Do it</button>`:"Its Flagship is Out of Action and it can't transfer the flag: name a new Flagship with Admiral 0."):"The enemy Flagship is still fighting."}</li>
+      <li>The enemy keeps its initiative cards in hand unless a card says to discard it.</li></ul>`;
+  }
+  box.innerHTML=`<div class="aipanel">${head}<div class="aibody">${status}${h}</div></div>`;
+  const iv=$("#iv1");if(iv&&so.rev!=null){iv.value=so.hand[so.rev].v;iv.readOnly=true}
+  wireAI();
+}
+function setPhoto(f){if(!f)return;if(PHOTO_URL)URL.revokeObjectURL(PHOTO_URL);PHOTO=f;PHOTO_URL=URL.createObjectURL(f);S.solo.photoAt={turn:S.turn,phase:S.phase};aiMsg="";save();renderAI()}
+function wireAI(){
+  const so=S.solo;
+  ["#aiCam","#aiPick"].forEach(id=>{const el=$(id);if(el)el.onchange=e=>setPhoto(e.target.files[0])});
+  const st=$("#aiStop");if(st)st.onclick=()=>aiCtl&&aiCtl.abort();
+  const nt=$("#aiNotes");if(nt)nt.oninput=e=>{so.notes=e.target.value;save()};
+  document.querySelectorAll("[data-aiask]").forEach(b=>b.onclick=()=>askAI(b.dataset.aiask));
+  document.querySelectorAll("[data-aistanding]").forEach(b=>b.onclick=()=>{so.orders=fallbackOrders(b.dataset.aistanding);aiMsg="";save();renderPlay()});
+  const ord=so.orders;
+  document.querySelectorAll("[data-aido]").forEach(b=>b.onclick=()=>{const i=+b.dataset.aido,o=ord.list[i];snap();
+    if(!ord.done[i]){ord.done[i]=true;if(ord.kind==="move")applyMove(o);if(ord.kind==="deploy")applyMove({sid:o.sid,sail:o.sail})}else ord.done[i]=false;save();renderPlay()});
+  document.querySelectorAll("[data-aitest]").forEach(b=>b.onclick=()=>{const i=+b.dataset.aitest,o=ord.list[i],f=findShip(o.sid);if(!f)return;
+    const r=aiSkillTest(f.s);ord.tests[i]=r;log(`${f.s.name} Skill Test: ${r.pass?"passed":"failed"}.`);
+    if(r.pass&&(o.actions||[]).some(a=>/board/i.test(a))){f.s.ent=true;log(`${f.s.name} boards and is Entangled.`)}save();renderPlay()});
+  document.querySelectorAll("[data-aifire]").forEach(b=>b.onclick=()=>{const i=+b.dataset.aifire,o=ord.list[i];ord.done[i]=true;save();
+    aiFire(o.attack==="standing"?{sid:o.sid,attack:"broadside"}:o)});
+  document.querySelectorAll("[data-aiclose]").forEach(b=>b.onclick=()=>{const tgt=youShips().find(s=>s.ent&&!s.sunk&&!s.cap);aiFire({sid:+b.dataset.aiclose,tid:tgt?tgt.id:null,attack:"close"})});
+  const dp=$("#aiDeployed");if(dp)dp.onclick=()=>{snap();so.deployed=true;log(`${S.squads[1].name} is deployed.`);save();renderPlay()};
+  const rv=$("#aiReveal");if(rv)rv.onclick=()=>{snap();so.rev=so.next;so.next=null;const c=so.hand[so.rev];log(`${S.squads[1].name} reveals ${c.t||"a card"} (${c.v}).`);save();renderPlay()};
+  const fi=$("#aiFirst");if(fi)fi.onclick=async()=>{const p=await pickCard();if(p==null)return;snap();so.rev=p;const c=so.hand[p];log(`${S.squads[1].name} plays ${c.t||"a card"} (${c.v}).`);save();renderPlay()};
+  const nx=$("#aiNext");if(nx)nx.onclick=async()=>{const p=await pickCard();if(p==null){renderPlay();return}snap();so.next=p;so.nextFor=S.turn+1;log(`${S.squads[1].name} places a card face down for turn ${S.turn+1}.`);save();renderPlay()};
+  const dc=$("#aiDiscard");if(dc)dc.onclick=()=>{const c=so.hand[so.rev];c.gone=!c.gone;save();renderAI()};
+  const fl=$("#aiFlag");if(fl)fl.onclick=()=>{const ai=S.squads[1],best=ai.ships.filter(s=>!s.flag&&!s.sunk&&!s.cap&&!ooa(s)&&!s.ent).sort((a,b)=>(b.crew||0)-(a.crew||0))[0];if(!best)return;
+    snap();ai.ships.forEach(s=>s.flag=false);best.flag=true;ai.fortune--;log(`${ai.name} spends Fortune and moves the Admiral to ${best.name}.`);save();renderPlay()};
+}
+/* Scenario win checks beyond strike points */
+function scnWin(){
+  const sc=SC();if(!sc)return null;
+  const m=youShips().filter(s=>s.merchant);
+  if(sc.escapeSP&&m.length&&m.every(s=>s.esc))return {w:0,t:"Every merchant escaped. You win."};
+  return null;
+}
+const escBtn=s=>{const f=findShip(s.id);return SC()&&SC().escapeSP&&f&&f.qi===0?`<button type="button" class="tg" data-tg="${s.id},esc" aria-pressed="${!!s.esc}">Escaped</button>`:""};
+
+/* ---------- SOLO: setup screen ---------- */
+let scnPreview=null;
+function renderScn(){
+  const so=S.solo,cur=so.scn;scnPreview=scnPreview||cur;const p=SCN[scnPreview];
+  $("#scnBox").innerHTML=`<div class="stack">
+      <h2>Solo scenario</h2>
+      <p class="muted">Play against an enemy captain that reads photos of your table. These scenarios were written for this app; they are not official Oak &amp; Iron scenarios.</p>
+      <div class="modes">${Object.entries(SCN).map(([k,s])=>`<button class="mode" type="button" data-scn="${k}" aria-pressed="${k===scnPreview}"><b>${s.name}</b><small>${s.level}${k===cur?" · in use":""}</small></button>`).join("")}</div>
+      <div class="panel stack">
+        <div class="row between"><h3 style="font-size:1.3rem">${p.name}</h3><span class="chip">${p.level}</span></div>
+        <p>${p.blurb}</p>
+        ${p.custom?"":`<div class="spec">${[[MODES[p.size].name,"Size"],[p.table,"Table"],[p.turns,"Turns"],[p.attacker?"Enemy":"You","Attacker"]].map(([v,l])=>`<div><b>${v}</b><span>${l}</span></div>`).join("")}</div>
+        <div class="mu2"><div><span class="eyebrow">You</span><p>${p.you.ships.map(d=>esc(d.name)+` <span class="muted">(${CARD[d.c].name})</span>`).join(", ")}</p></div>
+          <div><span class="eyebrow">Enemy · ${PERS[p.ai.pers].name}</span><p>${p.ai.ships.map(d=>esc(d.name)+` <span class="muted">(${CARD[d.c].name})</span>`).join(", ")}</p></div></div>`}
+        ${p.special.length?`<div><span class="eyebrow">Special rules</span><ul class="steps" style="list-style:disc">${p.special.map(x=>`<li>${esc(x)}</li>`).join("")}</ul></div>`:""}
+        <p><b>Victory.</b> ${esc(p.victory)}</p>
+        ${scnPreview===cur?'<span class="chip ok" style="align-self:flex-start">This scenario is set up below</span>':`<button class="btn primary" type="button" id="scnUse">Set up ${esc(p.name)}</button><p class="muted" style="font-size:.86rem">This replaces both squadrons and the enemy's hand.</p>`}
+      </div></div>`;
+  $("#sizeBox").hidden=!SCN[cur].custom;
+  document.querySelectorAll("[data-scn]").forEach(b=>b.onclick=()=>{scnPreview=b.dataset.scn;renderScn()});
+  const u=$("#scnUse");if(u)u.onclick=()=>{snap();const keep={mode:S.mode,pers:S.solo.pers,tier:S.solo.tier};S=newSolo(scnPreview,keep);uid=1+Math.max(0,...S.squads.flatMap(q=>q.ships.map(s=>s.id)));save();render();window.scrollTo(0,0)};
+  renderAISetup();
+}
+function renderAISetup(){
+  const so=S.solo,ai=S.squads[1];
+  $("#aiSetup").innerHTML=`<h2>Enemy captain</h2>
+    <div class="panel stack">
+      <span class="eyebrow">How it fights</span>
+      <div class="persl">${Object.entries(PERS).map(([k,p])=>`<label class="upg"><input type="radio" name="pers" data-pers="${k}" ${so.pers===k?"checked":""}><span><b>${p.name}</b><br><span class="muted">${p.desc}</span></span></label>`).join("")}</div>
+      <span class="eyebrow">Thinking</span>
+      <div class="seg"><button type="button" data-tier="default" aria-pressed="${so.tier!=="complex"}">Standard</button><button type="button" data-tier="complex" aria-pressed="${so.tier==="complex"}">Thorough · slower</button></div>
+      <p class="muted" style="font-size:.88rem">${SAMPLE?(IMG?"The enemy reads your board photos through Claude, on your account. Each set of orders uses some of your Claude usage.":"The enemy thinks through Claude, but photos can't be sent from this view; you'll describe the board in notes."):"Claude isn't reachable from this view, so the enemy will follow standing orders."}</p>
+      <label class="check"><input type="checkbox" id="noAI" ${so.noAI?"checked":""}> Use standing orders only (no Claude)</label>
+    </div>
+    <div class="panel stack">
+      <div class="row between"><span class="eyebrow">Enemy initiative hand</span><span class="muted" style="font-size:.86rem">Deal ${5+(ai.admiral||0)} cards (5 + Admiral ${ai.admiral||0})</span></div>
+      <p class="muted" style="font-size:.88rem">Deal the enemy its cards face down without looking, then turn them over once to enter them here. The app keeps its choice hidden until it reveals.</p>
+      <div class="stack" style="gap:6px">${so.hand.map((c,i)=>`<div class="hrow"><input type="number" inputmode="numeric" data-hv="${i}" value="${c.v}" aria-label="Card ${i+1} value"><input data-ht="${i}" value="${esc(c.t)}" placeholder="Card title" aria-label="Card ${i+1} title"><button class="btn sm ghost" type="button" data-hdel="${i}" aria-label="Remove card ${i+1}">✕</button></div>`).join("")||'<p class="muted">No cards yet.</p>'}</div>
+      <button class="btn sm" type="button" id="hAdd" style="align-self:flex-start">Add card</button>
+    </div>
+    <div class="panel stack">
+      <span class="eyebrow">Taking board photos</span>
+      <ul class="steps" style="list-style:disc;font-size:.94rem">
+        <li>Shoot from directly above, with the whole table in frame.</li>
+        <li>Always hold the phone so the <b>weather edge is at the top</b> of the photo.</li>
+        <li>Put Ship ID tokens or coloured markers by each ship, and note them on each ship (Edit in your squadron lists).</li>
+      </ul>
+    </div>`;
+  document.querySelectorAll("[data-pers]").forEach(r=>r.onchange=()=>{so.pers=r.dataset.pers;save();renderSetup()});
+  document.querySelectorAll("[data-tier]").forEach(b=>b.onclick=()=>{so.tier=b.dataset.tier;save();renderAISetup()});
+  $("#noAI").onchange=e=>{so.noAI=e.target.checked;save()};
+  document.querySelectorAll("[data-hv]").forEach(el=>el.oninput=()=>{so.hand[+el.dataset.hv].v=+el.value||0;save()});
+  document.querySelectorAll("[data-ht]").forEach(el=>el.oninput=()=>{so.hand[+el.dataset.ht].t=el.value;save()});
+  document.querySelectorAll("[data-hdel]").forEach(b=>b.onclick=()=>{so.hand.splice(+b.dataset.hdel,1);so.next=null;so.rev=null;save();renderAISetup()});
+  $("#hAdd").onclick=()=>{so.hand.push({v:0,t:""});save();renderAISetup();const els=document.querySelectorAll("[data-hv]");const el=els[els.length-1];if(el){el.focus();el.select()}};
+}
+
+/* ---------- SCREEN LAYOUT (per device) ---------- */
+const LKEY=KEY+"-layout",MQ=matchMedia("(min-width: 900px) and (orientation: landscape)");
+let LAY={mode:"auto",awake:false},WAKE=null;
+try{Object.assign(LAY,JSON.parse(localStorage.getItem(LKEY))||{})}catch(e){}
+function saveLay(){try{localStorage.setItem(LKEY,JSON.stringify(LAY))}catch(e){}}
+function applyLayout(){const t=LAY.mode==="tablet"||(LAY.mode==="auto"&&MQ.matches);document.documentElement.classList.toggle("tab",t);return t}
+async function keepAwake(){
+  if(!LAY.awake||document.visibilityState!=="visible"||WAKE)return;
+  try{WAKE=await navigator.wakeLock.request("screen");WAKE.addEventListener("release",()=>{WAKE=null})}catch(e){WAKE=null}
+}
+document.addEventListener("visibilitychange",keepAwake);
+MQ.addEventListener?MQ.addEventListener("change",()=>{applyLayout();renderLayoutBox()}):MQ.addListener(()=>{applyLayout();renderLayoutBox()});
+function renderLayoutBox(){
+  const box=$("#layoutBox");if(!box)return;const t=document.documentElement.classList.contains("tab");
+  box.innerHTML=`<div class="layoutbar"><span class="eyebrow">Screen layout</span>
+    <div class="seg" role="group" aria-label="Screen layout">${[["auto","Auto"],["phone","Phone"],["tablet","Tablet"]].map(([k,l])=>`<button type="button" data-lay="${k}" aria-pressed="${LAY.mode===k}">${l}</button>`).join("")}</div>
+    <span class="muted" style="font-size:.86rem">${LAY.mode==="auto"?`Auto uses the tablet layout on wide landscape screens. Now: ${t?"tablet":"phone"}.`:t?"Side rail and two columns.":"One column, tabs along the bottom."}</span>
+    <label class="check"><input type="checkbox" id="lAwake" ${LAY.awake?"checked":""}> Keep the screen awake${LAY.awake&&!WAKE&&"wakeLock" in navigator===false?" (not supported here)":""}</label></div>`;
+  box.querySelectorAll("[data-lay]").forEach(b=>b.onclick=()=>{LAY.mode=b.dataset.lay;saveLay();applyLayout();renderLayoutBox()});
+  $("#lAwake").onchange=async e=>{LAY.awake=e.target.checked;saveLay();if(LAY.awake)await keepAwake();else if(WAKE){WAKE.release().catch(()=>{});WAKE=null}renderLayoutBox()};
+}
+applyLayout();keepAwake();
+
+/* ---------- ROUTER ---------- */
+function view(){const h=location.hash.slice(1);if(["setup","play","ships","combat","reminders","rules"].includes(h))return h;
+  const d=gapDays();return d!=null&&d>=14?"reminders":S.started?"play":"setup"}
+function render(){
+  const v=view(),m=MODES[S.mode];
+  document.querySelectorAll("section.view").forEach(s=>s.hidden=s.id!=="v-"+v);
+  document.querySelectorAll("nav.tabs a").forEach(a=>{if(a.dataset.v===v)a.setAttribute("aria-current","page");else a.removeAttribute("aria-current")});
+  $("#modeLine").textContent=`${m.name}${typeof m.points==="number"?` · ${m.points} pts`:""}`;
+  if(v==="play")renderPlay();if(v==="setup")renderSetup();if(v==="reminders")renderReminders();if(v==="ships")renderShips();renderGap(v);if(v==="combat")renderCombat();
+}
+window.addEventListener("hashchange",()=>{render();window.scrollTo(0,0)});
+renderRules();render();
+</script>
+<script>if("serviceWorker" in navigator&&location.protocol!=="file:")addEventListener("load",()=>navigator.serviceWorker.register("../sw.js",{scope:"../"}).catch(()=>{}));</script>
+</body>
+</html>

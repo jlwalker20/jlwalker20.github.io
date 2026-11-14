@@ -1,0 +1,97 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#1a1d1f">
+<title>Tabletop Companions</title>
+<meta name="description" content="Companion apps for Malediction, Oak & Iron and Grimdark Future: Firefight.">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icons/icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="icons/icon-192.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Oxanium:wght@500;700&family=Barlow:wght@400;500;700&display=swap">
+<style>
+/* Layout: one column of game groups; each app is a full-width tappable card */
+:root{
+  --bg:#e9eae7;--surface:#f7f7f5;--sunk:#dcdeda;--fg:#1b1e1f;--muted:#5d6462;--line:#c7cbc6;--accent:#b86b00;--accent-ink:#ffffff;--good:#2b7a47;--net:#2f5f8f;
+  --display:"Oxanium",system-ui,sans-serif;--body:"Barlow","Segoe UI",system-ui,sans-serif;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#111314;--surface:#1a1d1f;--sunk:#0b0d0e;--fg:#e6e8e6;--muted:#9aa29f;--line:#2c3134;--accent:#f2a93b;--accent-ink:#1a1206;--good:#6fd29a;--net:#7fb0e0;color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#111314;--surface:#1a1d1f;--sunk:#0b0d0e;--fg:#e6e8e6;--muted:#9aa29f;--line:#2c3134;--accent:#f2a93b;--accent-ink:#1a1206;--good:#6fd29a;--net:#7fb0e0;color-scheme:dark}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+body{margin:0;background:var(--bg);color:var(--fg);font:16.5px/1.45 var(--body);
+  padding:max(20px,env(safe-area-inset-top,0px)) max(16px,env(safe-area-inset-right,0px)) max(32px,env(safe-area-inset-bottom,0px)) max(16px,env(safe-area-inset-left,0px))}
+main{max-width:860px;margin:0 auto;display:flex;flex-direction:column;gap:28px}
+h1,h2,h3{font-family:var(--display);margin:0;text-wrap:balance}
+h1{font-size:2rem;text-transform:uppercase;letter-spacing:.04em;line-height:1.05}
+h1 span{color:var(--accent)}
+h2{font-size:1.15rem;letter-spacing:.02em}
+p{margin:0}
+.eyebrow{font-size:.72rem;text-transform:uppercase;letter-spacing:.14em;color:var(--muted);font-weight:700}
+header{display:flex;justify-content:space-between;align-items:flex-end;gap:12px;flex-wrap:wrap}
+.btn{font:inherit;font-weight:700;border:1px solid var(--accent);background:var(--accent);color:var(--accent-ink);border-radius:4px;padding:8px 14px;min-height:40px;cursor:pointer}
+.group{display:flex;flex-direction:column;gap:10px}
+.cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:10px}
+a.card{display:flex;flex-direction:column;gap:6px;text-decoration:none;color:inherit;background:var(--surface);border:1px solid var(--line);border-left:4px solid var(--accent);border-radius:6px;padding:14px 16px;min-height:120px}
+a.card:hover{border-color:var(--accent)}
+a.card:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+a.card h3{font-size:1.15rem}
+a.card p{font-size:.94rem;color:var(--muted);flex:1}
+.tags{display:flex;gap:6px;flex-wrap:wrap}
+.tag{font-size:.7rem;font-weight:700;text-transform:uppercase;letter-spacing:.06em;border:1px solid var(--line);border-radius:3px;padding:1px 7px;color:var(--muted)}
+.tag.off{border-color:var(--good);color:var(--good)}
+.tag.net{border-color:var(--net);color:var(--net)}
+.tag.save{border-color:var(--accent);color:var(--accent)}
+footer{font-size:.85rem;color:var(--muted);border-top:1px solid var(--line);padding-top:14px;display:flex;flex-direction:column;gap:6px}
+</style>
+</head>
+<body>
+<main>
+  <header>
+    <div><div class="eyebrow">walkerwagoner.com</div><h1>Tabletop<span>/</span>Companions</h1></div>
+    <button class="btn" id="install" type="button" hidden>Install on this device</button>
+  </header>
+
+  <section class="group">
+    <h2>Malediction</h2>
+    <div class="cards">
+      <a class="card" href="malediction/" data-key="malediction-companion-v1"><h3>Companion</h3><p>Setup guide, turn reminders, score keeping and the rules reference.</p><div class="tags"><span class="tag off">Works offline</span></div></a>
+    </div>
+  </section>
+
+  <section class="group">
+    <h2>Oak &amp; Iron</h2>
+    <div class="cards">
+      <a class="card" href="oak-and-iron/" data-key="oak-iron-companion-v1"><h3>Companion</h3><p>Fleet setup, ship cards with the full roster, gunnery, turn flow and rules.</p><div class="tags"><span class="tag off">Works offline</span></div></a>
+      <a class="card" href="oak-and-iron-solo/" data-key="oak-iron-solo-v1"><h3>Solo</h3><p>Play against a computer captain with solo scenarios. Here the enemy follows standing orders.</p><div class="tags"><span class="tag off">Works offline</span></div></a>
+    </div>
+  </section>
+
+  <section class="group">
+    <h2>Grimdark Future: Firefight</h2>
+    <div class="cards">
+      <a class="card" href="firefight-solo/" data-key="firefight-solo-v1"><h3>Solo, Co-op &amp; Horde</h3><p>Play against OPR's AI decision tree, alone or with friends, or hold out in Horde Mode. v3.6 rules.</p><div class="tags"><span class="tag off">Works offline</span></div></a>
+      <a class="card" href="firefight/" data-key="firefight-companion-v1"><h3>Companion</h3><p>Two-player games with Army Forge import, attack rolls and a rules reference. Built on the v3.5 rules.</p><div class="tags"><span class="tag off">Works offline</span></div></a>
+      <a class="card" href="campaign/"><h3>Campaigns</h3><p>Shared campaigns: armies, XP, casualties, treasury and missions. Anyone can follow; the password unlocks editing.</p><div class="tags"><span class="tag net">Online · shared</span></div></a>
+    </div>
+  </section>
+
+  <footer>
+    <p>Games in progress are saved on each device. Campaigns are kept online so everyone sees the same thing.</p>
+    <p>Rules summaries come from the publishers' free rules. Support the designers: buy the games.</p>
+  </footer>
+</main>
+<script>
+document.querySelectorAll("a.card[data-key]").forEach(a=>{let has=false;try{has=!!localStorage.getItem(a.dataset.key)}catch(e){}
+  if(has){const t=document.createElement("span");t.className="tag save";t.textContent="Saved game";a.querySelector(".tags").appendChild(t)}});
+let promptEvt=null;const ib=document.getElementById("install");
+addEventListener("beforeinstallprompt",e=>{e.preventDefault();promptEvt=e;ib.hidden=false});
+ib.onclick=async()=>{if(!promptEvt)return;promptEvt.prompt();try{await promptEvt.userChoice}catch(e){}promptEvt=null;ib.hidden=true};
+addEventListener("appinstalled",()=>{ib.hidden=true});
+if("serviceWorker" in navigator&&location.protocol!=="file:")addEventListener("load",()=>navigator.serviceWorker.register("sw.js").catch(()=>{}));
+</script>
+</body>
+</html>
