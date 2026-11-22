@@ -79,6 +79,7 @@ local def = { addon = "PartyFramesImproved", options = {
     Opt("icons", "PVP_ALWAYS", { type = "toggle", label = "Faction icon always (gray when not flagged)" }),
     Opt("icons", "PVP_GRAY_ALPHA", { type = "slider", label = "Gray icon opacity", min = 0.1, max = 1, step = 0.05, format = "%.2f" }),
     Opt("icons", "NAME_PAD", { type = "slider", label = "Name padding (with nothing)", min = 0, max = 12, step = 1 }),
+    Opt("icons", "NAME_RIGHT_PAD", { type = "slider", label = "Room right of the name", desc = "Long names stop this many pixels from the right edge, so debuff icons there aren't covered. 0 = Blizzard's spot.", min = 0, max = 50, step = 2 }),
     Opt("icons", "LEADER", { type = "toggle", label = "Leader crown" }),
     Opt("icons", "MARKER", { type = "toggle", label = "Target marker" }),
     Opt("icons", "LEADER_SIZE", { type = "slider", label = "Crown size", min = 8, max = 24, step = 1, reload = true }),

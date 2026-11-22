@@ -1,4 +1,5 @@
--- HideChatButtons 0.3
+-- HideChatButtons 0.4
+-- 0.4: hidden parts stay hidden instantly (no pop-in when Blizzard or ChatFade fades them back)
 -- 0.3: each part can be switched in Jaff's Better Forever UI (/jaffs); saved
 -- Hides the buttons stacked on the left side of the chat window. Each one can
 -- be turned on or off below (true = hidden).
@@ -33,22 +34,38 @@ local DB
 local function Say(m) print("|cff9999ffHideChatButtons:|r " .. m) end
 
 local saved = {}   -- button -> { alpha, mouse } before we hid it
+-- other addons (ChatFade) can ask whether a part is ours to keep hidden
+function HideChatButtons_IsHidden(f) return saved[f] ~= nil end
+
+local guard = false
+-- once we hide something, any later attempt to make it visible again (Blizzard's
+-- fade-in on mouse-over or new messages, ChatFade waking the chat) is undone in
+-- the same moment, so it never shows for a frame
+local function Pin(f)
+    if f.hcbPinned or not f.SetAlpha then return end
+    f.hcbPinned = true
+    hooksecurefunc(f, "SetAlpha", function(self, a)
+        if guard or not saved[self] then return end
+        local okA, visible = pcall(function() return type(a) == "number" and a > 0 end)
+        if okA and visible then guard = true; pcall(self.SetAlpha, self, 0); guard = false end
+    end)
+end
 
 local function Hide(f)
     if not saved[f] then
-        local okA, a = pcall(f.GetAlpha, f)
         local okM, m = pcall(function() return f.IsMouseEnabled and f:IsMouseEnabled() end)
-        saved[f] = { alpha = (okA and a) or 1, mouse = okM and m }
+        saved[f] = { alpha = 1, mouse = okM and m }
     end
-    local okA, a = pcall(f.GetAlpha, f)
-    if not (okA and a == 0) then pcall(f.SetAlpha, f, 0) end
+    Pin(f)
+    guard = true; pcall(f.SetAlpha, f, 0); guard = false
     if f.EnableMouse and f.IsMouseEnabled and f:IsMouseEnabled() then pcall(f.EnableMouse, f, false) end
 end
 
 local function Unhide(f)
     local s = saved[f]
     if not s then return end
-    pcall(f.SetAlpha, f, s.alpha or 1)
+    saved[f] = nil
+    guard = true; pcall(f.SetAlpha, f, s.alpha or 1); guard = false
     if s.mouse and f.EnableMouse then pcall(f.EnableMouse, f, true) end
     saved[f] = nil
 end

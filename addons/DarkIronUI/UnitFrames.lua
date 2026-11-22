@@ -512,6 +512,7 @@ local function UnitOfChain(obj)
 end
 
 local nameTexts = {}   -- FontString -> true once known to be a unit name
+local levelTexts = {}  -- target/focus level numbers (kept in the default font)
 local function KnownNameTexts()
     local list = { _G.PlayerName, TargetFrame and rawget(TargetFrame, "name"), FocusFrame and rawget(FocusFrame, "name"),
         _G.TargetFrameTextureFrameName, _G.FocusFrameTextureFrameName }
@@ -535,7 +536,6 @@ local function IsNameText(fs)
     return false
 end
 
-local levelTexts = {}   -- target/focus level numbers (kept in the default font)
 local function IsLevelText(fs)
     if levelTexts[fs] then return true end
     local unit = UnitOfChain(fs)
@@ -1132,11 +1132,89 @@ local function Debug()
     if #skipped == 0 then Say("no player/target/focus frames found.") end
 end
 
+-- Skull targets (10+ levels above you, or bosses): Blizzard shows the skull
+-- and expects it to cover the old level number. Lifting the PvP flag's frame
+-- above the level circle also lifted that number above the skull, so while the
+-- skull is up we make the number invisible (opacity only).
+local skullHidden = {}
+local skullNote = "not run"
+
+-- walk a dotted path of child keys from a global ("TargetFrame.TargetFrameContent.X")
+local function SkullPath(path)
+    local cur
+    for part in path:gmatch("[^%.]+") do
+        if cur == nil then cur = _G[part] else cur = (type(cur) == "table") and rawget(cur, part) or nil end
+        if cur == nil then return nil end
+    end
+    return cur
+end
+
+local SKULL_PARTS = {
+    target = {
+        level = { "TargetFrame.TargetFrameContent.TargetFrameContentMain.LevelText", "TargetFrame.levelText",
+                  "TargetFrameTextureFrameLevelText", "TargetLevelText" },
+        skull = { "TargetFrame.TargetFrameContent.TargetFrameContentContextual.HighLevelTexture",
+                  "TargetFrame.TargetFrameContent.TargetFrameContentMain.HighLevelTexture",
+                  "TargetFrameTextureFrameHighLevelTexture", "TargetHighLevelTexture" },
+    },
+    focus = {
+        level = { "FocusFrame.TargetFrameContent.TargetFrameContentMain.LevelText", "FocusFrame.levelText",
+                  "FocusFrameTextureFrameLevelText", "FocusLevelText" },
+        skull = { "FocusFrame.TargetFrameContent.TargetFrameContentContextual.HighLevelTexture",
+                  "FocusFrame.TargetFrameContent.TargetFrameContentMain.HighLevelTexture",
+                  "FocusFrameTextureFrameHighLevelTexture", "FocusHighLevelTexture" },
+    },
+}
+
+local function First(list)
+    for _, p in ipairs(list) do
+        local o = SkullPath(p)
+        if type(o) == "table" then return o, p end
+    end
+end
+
+local function SkullCheck()
+    local notes = {}
+    for unit, parts in pairs(SKULL_PARTS) do
+        local fs, fsPath = First(parts.level)
+        local sk = First(parts.skull)
+        -- also any level text found while scanning that belongs to this unit
+        local list = {}
+        if fs then list[fs] = true end
+        for t in pairs(levelTexts) do
+            local okU, u = pcall(UnitOfChain, t); if okU and u == unit then list[t] = true end
+        end
+        local skullUp = false
+        if sk and sk.IsShown then local ok, v = pcall(sk.IsShown, sk); skullUp = ok and v == true end
+        if not skullUp and UnitExists and UnitExists(unit) then
+            local okL, lv = pcall(UnitLevel, unit)
+            if okL and not (issecretvalue and issecretvalue(lv)) and type(lv) == "number" and lv <= 0 then skullUp = true end
+        end
+        local hide = DB and DB.enabled and skullUp
+        local n = 0
+        for t in pairs(list) do
+            n = n + 1
+            if hide then pcall(t.SetAlpha, t, 0); skullHidden[t] = true
+            elseif skullHidden[t] then pcall(t.SetAlpha, t, 1); skullHidden[t] = nil end
+        end
+        notes[#notes + 1] = ("%s: level text %s, skull %s%s"):format(unit, fsPath or (n > 0 and "found by scan" or "NOT FOUND"),
+            sk and (skullUp and "showing" or "hidden") or "not found", hide and " -> number hidden" or "")
+    end
+    skullNote = table.concat(notes, "; ")
+end
+local skullEvents = CreateFrame("Frame")
+for _, e in ipairs({ "PLAYER_TARGET_CHANGED", "PLAYER_FOCUS_CHANGED", "UNIT_LEVEL", "PLAYER_ENTERING_WORLD", "PLAYER_LEVEL_UP" }) do
+    pcall(skullEvents.RegisterEvent, skullEvents, e)
+end
+skullEvents:SetScript("OnEvent", function() SkullCheck(); C_Timer.After(0, SkullCheck); C_Timer.After(0.3, SkullCheck) end)
+
 SLASH_FLATUNITFRAMES1 = "/uff"
 SlashCmdList["FLATUNITFRAMES"] = function(msg)
     local cmd = (msg or ""):lower():match("^%s*(%S*)")
     local sub, num = (msg or ""):lower():match("^%s*%S+%s+(%S+)%s*(%S*)")
-    if cmd == "debug" then
+    if cmd == "skull" then
+        SkullCheck(); Say(skullNote)
+    elseif cmd == "debug" then
         Debug()
     elseif cmd == "elite" then
         local n = tonumber(num) or 2
@@ -1149,6 +1227,7 @@ SlashCmdList["FLATUNITFRAMES"] = function(msg)
         DB.enabled = not DB.enabled
         if DB.enabled then Scan() else Restore() end
         UpdateElite()
+        SkullCheck()
         Say("flat look " .. (DB.enabled and "on" or "off"))
     end
 end

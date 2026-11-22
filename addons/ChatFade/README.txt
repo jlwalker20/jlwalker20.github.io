@@ -1,4 +1,4 @@
-ChatFade 1.2
+ChatFade 1.3
 ============
 Fades the chat window out after 30 seconds with no new message, and
 brings it back to full opacity the moment a new line arrives. That

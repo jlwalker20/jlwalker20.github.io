@@ -23,6 +23,8 @@ local CONFIG = {
     --   "none" = nothing: the name moves flush left
     LEFT_SLOT    = "pvp",
     NAME_PAD     = 3,     -- left padding for the name in "none" (pixels)
+    NAME_RIGHT_PAD = 20,  -- room kept free at the right end of the name (Blizzard's debuff
+                          -- icons sit there and can't be raised above it); 0 = Blizzard's spot
 
 }
 
@@ -190,50 +192,68 @@ end
 
 -- the name: flush left in "none"; given back to Blizzard otherwise
 local nameMoved, nameHooked, nameBusy, nameSaved = {}, {}, false, {}
+local function SaveBlizzard(n)
+    local list, ok = {}, true
+    local okN, cnt = pcall(n.GetNumPoints, n)
+    if okN and type(cnt) == "number" and not Secret(cnt) then
+        for i = 1, cnt do
+            local okP, p, rel, rp, x, y = pcall(n.GetPoint, n, i)
+            if not okP or Secret(p) or Secret(rel) or Secret(rp) or Secret(x) or Secret(y) then ok = false; break end
+            list[#list + 1] = { p, rel, rp, x or 0, y or 0 }
+        end
+    else ok = false end
+    nameSaved[n] = ok and list or false
+end
+
+-- The name is placed by us when the top-left slot is empty ("none": flush left)
+-- or when NAME_RIGHT_PAD leaves room on the right (so Blizzard's debuff icons
+-- there aren't covered by long names). Otherwise Blizzard's own spot is used.
 local function PlaceName(f)
     local n = rawget(f, "name")
     local hb = rawget(f, "healthBar")
     if type(n) ~= "table" or not n.SetPoint or (n.IsForbidden and n:IsForbidden()) then return end
     if type(hb) ~= "table" then hb = f end
-    if Slot() == "none" then
-        if InCombat() then return end
-        if not nameHooked[n] then
-            nameHooked[n] = true
-            -- Blizzard re-places the name when roles change; put it back right after
-            hooksecurefunc(n, "SetPoint", function()
-                if nameBusy then return end
-                if nameMoved[n] and Slot() == "none" and not InCombat() then
-                    C_Timer.After(0, function() PlaceName(f) end)
-                elseif not nameMoved[n] then
-                    nameSaved[n] = nil   -- Blizzard chose a new spot; re-read it next time
-                end
-            end)
-        end
-        -- remember Blizzard's own spot for the name, the first time only
-        if nameSaved[n] == nil and not nameMoved[n] then
-            local list, ok = {}, true
-            local okN, cnt = pcall(n.GetNumPoints, n)
-            if okN and type(cnt) == "number" and not Secret(cnt) then
-                for i = 1, cnt do
-                    local okP, p, rel, rp, x, y = pcall(n.GetPoint, n, i)
-                    if not okP or Secret(p) or Secret(rel) or Secret(rp) or Secret(x) or Secret(y) then ok = false; break end
-                    list[#list + 1] = { p, rel, rp, x or 0, y or 0 }
-                end
-            else ok = false end
-            nameSaved[n] = ok and list or false
-        end
+    if InCombat() then return end
+    if not nameHooked[n] then
+        nameHooked[n] = true
+        hooksecurefunc(n, "SetPoint", function()
+            if nameBusy then return end
+            -- Blizzard placed the name: that's its new spot; re-apply ours right after
+            nameSaved[n] = nil; nameMoved[n] = nil
+            if not InCombat() then C_Timer.After(0, function() PlaceName(f) end) end
+        end)
+    end
+    local pad = tonumber(CONFIG.NAME_RIGHT_PAD) or 0
+    local manage = (Slot() == "none") or pad > 0
+    if manage then
+        local key = Slot() .. ":" .. pad .. ":" .. tostring(CONFIG.NAME_PAD)
+        if nameMoved[n] == key then return end   -- already where it should be
+        if nameSaved[n] == nil and not nameMoved[n] then SaveBlizzard(n) end
+        local saved = nameSaved[n]
         nameBusy = true
         pcall(function()
             n:ClearAllPoints()
-            n:SetPoint("TOPLEFT", hb, "TOPLEFT", CONFIG.NAME_PAD, -2)
-            n:SetPoint("TOPRIGHT", hb, "TOPRIGHT", -3, -2)
+            if Slot() == "none" then
+                n:SetPoint("TOPLEFT", hb, "TOPLEFT", CONFIG.NAME_PAD, -2)
+            else
+                -- keep Blizzard's left edge (just after the role icon's spot)
+                local left
+                if type(saved) == "table" then
+                    for _, pt in ipairs(saved) do if pt[1] == "TOPLEFT" or pt[1] == "LEFT" then left = pt; break end end
+                end
+                if left then n:SetPoint(left[1], left[2], left[3], left[4], left[5])
+                else
+                    local r = rawget(f, "roleIcon")
+                    n:SetPoint("TOPLEFT", r or hb, r and "TOPRIGHT" or "TOPLEFT", r and 0 or 16, -1)
+                end
+            end
+            n:SetPoint("TOPRIGHT", hb, "TOPRIGHT", -math.max(3, pad), -2)
         end)
         nameBusy = false
-        nameMoved[n] = true
+        nameMoved[n] = key
     elseif nameMoved[n] then
-        if InCombat() then return end
         nameMoved[n] = nil
-        -- put the name back exactly where Blizzard had it (saved before we moved it)
+        -- put the name back exactly where Blizzard had it
         local saved = nameSaved[n]
         nameBusy = true
         pcall(function()

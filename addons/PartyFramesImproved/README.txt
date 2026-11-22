@@ -1,4 +1,4 @@
-PartyFramesImproved 3.0 (test)
+PartyFramesImproved 3.1 (test)
 ==============================
 Party Frames Improved: one addon for Blizzard's raid-style party/raid frames.
 Replaces PartyGrowUp, PartyLevels and DispelGlow: delete those three folders

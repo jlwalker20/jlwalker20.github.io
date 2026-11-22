@@ -1,4 +1,5 @@
--- ChatFade 1.2
+-- ChatFade 1.3
+-- 1.3: leaves parts HideChatButtons keeps hidden alone
 -- 1.2: settings saved and changeable in Jaff's Better Forever UI (/jaffs)
 -- Fades the chat window out after IDLE_SECONDS with no new chat line, and
 -- brings it straight back to full opacity when a line arrives. That
@@ -69,8 +70,9 @@ end
 local parts = {}
 
 local function ApplyAlpha(a)
+    local hcb = HideChatButtons_IsHidden
     for _, f in ipairs(parts) do
-        f:SetAlpha(a)
+        if not (hcb and hcb(f)) then f:SetAlpha(a) end
     end
 end
 

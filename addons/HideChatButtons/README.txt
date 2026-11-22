@@ -1,4 +1,4 @@
-HideChatButtons 0.3
+HideChatButtons 0.4
 ===================
 Hides the buttons stacked on the left side of the chat window:
 social (friends), chat channels, the chat menu (speech bubble),

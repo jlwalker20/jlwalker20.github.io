@@ -2,7 +2,7 @@
 ## Title: SquareMinimap
 ## Notes: Square minimap with a border built from Blizzard's own metal frame pieces, in DarkIronUI gray.
 ## Author: You
-## Version: 0.7
+## Version: 0.10
 ## SavedVariables: SquareMinimapDB
 
 SquareMinimap.lua

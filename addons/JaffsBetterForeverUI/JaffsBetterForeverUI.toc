@@ -2,7 +2,7 @@
 ## Title: Jaff's Better Forever UI
 ## Notes: One options panel for all of Jaff's Forever addons. /jaffs to open (works as a gamepad macro), or from the minimap's addon button.
 ## Author: Jaff
-## Version: 0.4
+## Version: 0.5
 ## SavedVariables: JaffsUIDB
 ## IconTexture: Interface\Icons\INV_Misc_Gear_01
 ## AddonCompartmentFunc: JaffsUI_Toggle

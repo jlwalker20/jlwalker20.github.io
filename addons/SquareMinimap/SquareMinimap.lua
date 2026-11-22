@@ -1,4 +1,8 @@
--- SquareMinimap 0.7 (test)
+-- SquareMinimap 0.10 (test)
+-- 0.10: the edge-file borders (Dialog, Thin) overlap the map more by default, closing the gap
+-- 0.9: border scaled to match the map (it lives outside the map's cluster since 0.4,
+--      which left a 1-2 px gap when the minimap is scaled)
+-- 0.8: hides the round quest-area glow ring (the area outline stays)
 -- 0.7: settings changeable in Jaff's Better Forever UI (/jaffs)
 -- 0.6: /sqm frames lists the minimap's buttons; /sqm sun <number> picks the sun/moon
 -- 0.5: sun-button move turned off (it was moving the calendar button)
@@ -24,6 +28,8 @@ local CONFIG = {
     SCALE      = 0.5,     -- size of the corner pieces (1 = Blizzard's full size)
     INSET      = 2,       -- how far the border overlaps the map edge
     HIDE_ROUND = true,    -- hide the round ring art
+    HIDE_BLOB_RING = true, -- hide the round glow ring shown when you're inside a quest area
+                           -- (the quest area's own outline on the map stays)
     NORTH      = true,    -- keep the north arrow, moved to the top of the square
     NORTH_Y    = 2,       -- how far above the top edge its center sits
     ZOOM       = true,    -- move the zoom buttons under the map, bottom right, side by side
@@ -41,8 +47,8 @@ local STYLES = {
                   "UI-Frame-DiamondMetal-CornerBottomLeft", "UI-Frame-DiamondMetal-CornerBottomRight" },
       edges = { "_UI-Frame-DiamondMetal-EdgeTop", "_UI-Frame-DiamondMetal-EdgeBottom",
                 "!UI-Frame-DiamondMetal-EdgeLeft", "!UI-Frame-DiamondMetal-EdgeRight" } },
-    { key = "dialog", label = "Dialog box edge", file = "Interface\\DialogFrame\\UI-DialogBox-Border", edgeSize = 24 },
-    { key = "thin", label = "Thin tooltip edge", file = "Interface\\Tooltips\\UI-Tooltip-Border", edgeSize = 14 },
+    { key = "dialog", label = "Dialog box edge", file = "Interface\\DialogFrame\\UI-DialogBox-Border", edgeSize = 24, inset = 6 },
+    { key = "thin", label = "Thin tooltip edge", file = "Interface\\Tooltips\\UI-Tooltip-Border", edgeSize = 14, inset = 4 },
     { key = "generic", label = "Generic metal",
       corners = { "UI-Frame-GenericMetal-Corner", "UI-Frame-GenericMetal-Corner",
                   "UI-Frame-GenericMetal-Corner", "UI-Frame-GenericMetal-Corner" },
@@ -81,6 +87,7 @@ end
 
 -- ---------------------------------------------------------------- the border frame
 local border
+local MatchScale
 local function Tint(t)
     if CONFIG.DESATURATE and t.SetDesaturated then t:SetDesaturated(true) end
     t:SetVertexColor(CONFIG.TINT[1], CONFIG.TINT[2], CONFIG.TINT[3])
@@ -101,6 +108,7 @@ local function BuildBorder(style)
         border = CreateFrame("Frame", "SquareMinimapBorder", UIParent, BackdropTemplateMixin and "BackdropTemplate" or nil)
         border:SetFrameStrata(Minimap:GetFrameStrata())
         border:SetFrameLevel((Minimap:GetFrameLevel() or 1) + 5)
+        MatchScale()
         -- the border isn't part of the map any more, so follow the map's visibility
         if not border.followHooked and Minimap.HookScript then
             border.followHooked = true
@@ -110,7 +118,9 @@ local function BuildBorder(style)
         if Minimap.IsShown and not Minimap:IsShown() then border:Hide() end
     end
     ClearBorder()
-    local inset = CONFIG.INSET
+    -- each style's art has its own transparent margin; the panel's "Border overlap"
+    -- (saved as INSET) overrides the style's own default
+    local inset = (DB and DB.cfg and DB.cfg.INSET) or style.inset or CONFIG.INSET
     border:ClearAllPoints()
     if style.file then
         local e = style.edgeSize
@@ -143,7 +153,7 @@ local function BuildBorder(style)
         t:SetSize(w, h)
         cs[i] = { t = t, w = w, h = h }
     end
-    local o = CONFIG.INSET
+    local o = inset
     local tl, tr, bl, br = cs[1], cs[2], cs[3], cs[4]
     border.outer = math.max(bl.h, br.h) / 2 - o
     tl.t:SetPoint("TOPLEFT", border, "TOPLEFT", -tl.w / 2 + o, tl.h / 2 - o)
@@ -344,6 +354,41 @@ local function PlaceZoom()
     end
 end
 
+-- ---------------------------------------------------------------- quest-area glow ring
+-- The engine draws a round glow ring at the map's edge while you stand in a
+-- quest / task / dig-site area. These calls switch just the ring off.
+local ringNote = "not checked"
+local function BlobRings(hide)
+    local done, missing = {}, {}
+    local calls = {
+        { "SetQuestBlobRingAlpha", 0, 1 }, { "SetQuestBlobRingScalar", 0, 1 },
+        { "SetTaskBlobRingAlpha", 0, 1 },  { "SetTaskBlobRingScalar", 0, 1 },
+        { "SetArchBlobRingAlpha", 0, 1 },  { "SetArchBlobRingScalar", 0, 1 },
+    }
+    for _, c in ipairs(calls) do
+        local f = Minimap[c[1]]
+        if type(f) == "function" then
+            if pcall(f, Minimap, hide and c[2] or c[3]) then done[#done + 1] = c[1] end
+        else missing[#missing + 1] = c[1] end
+    end
+    ringNote = (#done > 0) and ((hide and "hidden" or "shown") .. " (" .. #done .. " settings)")
+        or "no ring settings on this client"
+end
+
+-- ---------------------------------------------------------------- scale
+-- The border hangs off UIParent (so DarkIronUI leaves it alone), but the map
+-- may be drawn at a different scale (the minimap cluster's own scale). Give the
+-- border the map's scale so its pieces line up with the map's edges exactly.
+MatchScale = function()
+    if not (border and Minimap and Minimap.GetEffectiveScale and UIParent and UIParent.GetEffectiveScale) then return end
+    local okM, ms = pcall(Minimap.GetEffectiveScale, Minimap)
+    local okU, us = pcall(UIParent.GetEffectiveScale, UIParent)
+    if okM and okU and type(ms) == "number" and type(us) == "number" and us > 0 then
+        local want = ms / us
+        if math.abs((border:GetScale() or 1) - want) > 0.001 then border:SetScale(want) end
+    end
+end
+
 -- ---------------------------------------------------------------- apply
 local function CurrentStyle()
     local avail = Available()
@@ -360,6 +405,7 @@ local function Apply()
         ClearBorder(); if border then border:Hide() end
         HideRound(false)
         PlaceNorth(false)
+        BlobRings(false)
         return
     end
     pcall(Minimap.SetMaskTexture, Minimap, "Interface\\Buttons\\WHITE8X8")
@@ -369,6 +415,13 @@ local function Apply()
     local s = CurrentStyle()
     if s then
         BuildBorder(s); border:Show()
+        MatchScale()
+        if not border.scaleHooked then
+            border.scaleHooked = true
+            for _, f in ipairs({ MinimapCluster, Minimap }) do
+                if f and f.SetScale then hooksecurefunc(f, "SetScale", function() C_Timer.After(0, MatchScale) end) end
+            end
+        end
         border:SetFrameStrata(Minimap:GetFrameStrata())
         border:SetFrameLevel((Minimap:GetFrameLevel() or 1) + 5)
         -- the border isn't part of the map any more, so follow the map's visibility
@@ -382,12 +435,15 @@ local function Apply()
     if CONFIG.NORTH then PlaceNorth(true) end
     if CONFIG.SUN or (DB and DB.sunPick) then PlaceSun() end
     if CONFIG.ZOOM then PlaceZoom() end
+    BlobRings(CONFIG.HIDE_BLOB_RING)
 end
 
 local ADDON = ...
 local ev = CreateFrame("Frame")
 ev:RegisterEvent("ADDON_LOADED")
 ev:RegisterEvent("PLAYER_ENTERING_WORLD")
+pcall(ev.RegisterEvent, ev, "UI_SCALE_CHANGED")
+pcall(ev.RegisterEvent, ev, "DISPLAY_SIZE_CHANGED")
 ev:SetScript("OnEvent", function(_, event, a1)
     if event == "ADDON_LOADED" then
         if a1 == ADDON then SquareMinimapDB = SquareMinimapDB or {}; DB = SquareMinimapDB end
@@ -502,6 +558,7 @@ SlashCmdList["SQUAREMINIMAP"] = function(msg)
         #names > 0 and table.concat(names, ", ") or "nothing"))
     Say("  north: " .. northNote)
     Say("  zoom buttons: " .. zoomNote)
+    Say("  quest-area glow ring: " .. ringNote)
     Say("  sun button: " .. sunNote)
     Say("type /sqm help for commands")
 end
@@ -569,11 +626,14 @@ local def = { addon = "SquareMinimap", options = {
           end
       end },
     Opt({ type = "slider", label = "Corner size", min = 0.2, max = 1, step = 0.05, format = "%.2f" }, "SCALE"),
-    Opt({ type = "slider", label = "Border overlap", min = -4, max = 10, step = 1 }, "INSET"),
+    { type = "slider", label = "Border overlap", desc = "How far the border reaches over the map's edge. Raise it if there's a gap.", min = -4, max = 14, step = 1,
+      get = function() local st = CurrentStyle(); return (JDB and JDB.INSET) or (st and st.inset) or CONFIG.INSET end,
+      set = function(v) CONFIG.INSET = v; if JDB then JDB.INSET = v end; JChanged() end },
     { type = "slider", label = "Border gray", desc = "0 is black, 1 is white.", min = 0.1, max = 1, step = 0.05, format = "%.2f",
       get = function() return CONFIG.TINT[1] end,
       set = function(v) CONFIG.TINT = { v, v, v }; if JDB then JDB.tint = v end; JChanged() end },
     Opt({ type = "toggle", label = "Keep the north arrow" }, "NORTH"),
+    Opt({ type = "toggle", label = "Hide the quest-area glow ring", desc = "The round glow at the edge while you're inside a quest area. The area's outline on the map stays." }, "HIDE_BLOB_RING"),
     { type = "header", label = "Zoom buttons" },
     Opt({ type = "toggle", label = "Move them under the map", reload = true }, "ZOOM"),
     Opt({ type = "slider", label = "Up / down", min = -20, max = 20, step = 1 }, "ZOOM_Y"),

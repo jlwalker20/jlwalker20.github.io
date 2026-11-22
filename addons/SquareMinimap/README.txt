@@ -1,4 +1,4 @@
-SquareMinimap 0.7 (test)
+SquareMinimap 0.10 (test)
 ========================
 Makes the minimap square and replaces the round ring with a square border
 built from Blizzard's own metal frame pieces (sharp corners, stretched edges),
@@ -27,7 +27,7 @@ COMMANDS (macros "SQM Style" and "SQM Debug" if you have free slots)
   /sqm help    this list
 
 SETTINGS (top of SquareMinimap.lua)
-  TINT, DESATURATE, SCALE (corner size), INSET, HIDE_ROUND, NORTH, NORTH_Y,
+  TINT, DESATURATE, SCALE (corner size), INSET, HIDE_ROUND, HIDE_BLOB_RING, NORTH, NORTH_Y,
   ZOOM, ZOOM_GAP, ZOOM_X, ZOOM_Y
 
 Built for WoW: Forever, client 1.60.1 (live build 70790).

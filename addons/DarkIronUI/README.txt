@@ -1,4 +1,4 @@
-DarkIronUI 1.17 - for World of Warcraft: Forever (client 1.60.1)
+DarkIronUI 1.19 - for World of Warcraft: Forever (client 1.60.1)
 =================================================================
 
 One addon that recolors the default Blizzard UI from gold/brown to a
