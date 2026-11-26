@@ -1,16 +1,19 @@
--- ManaRegen 0.4 (test)
+-- ManaRegen 0.7 (test)
+-- 0.7: shows MP5 (mana per 5 seconds); shorter labels ("5-sec", "full"); the box fits its text
+-- 0.6: only casts you start count; spells the game puts on you by itself (zone effects) are ignored
+-- 0.5: mounting up no longer starts the five-second rule
 -- 0.4: casts that cost no mana (wand, fishing, gathering, crafting, items) no longer start the five-second rule
 -- 0.3: last-tick line removed: just regen and the five-second rule
 -- 0.2: hidden numbers in combat read just "Combat"
 -- A small movable readout:
---   Regen  12.5 /s       what you're regenerating right now (casting rate while the
+--   MP5  62              mana you're regenerating per 5 seconds right now (casting rate while the
 --                        five-second rule is on, full rate once it's over)
---   5-sec rule  3.1      counting down after you spend mana, or "full regen"
+--   5-sec  3.1           counting down after you spend mana, or "full"
 -- The rate comes from the game (GetManaRegen).
 -- Move it: Edit Mode unlocks it, or /mr unlock (drag), or /mr up|down|left|right.
 
 local CONFIG = {
-    UNIT        = "sec",   -- "sec" per second, "mp5" per 5 seconds, "tick" per 2-second tick
+    UNIT        = "mp5",   -- always mana per 5 seconds
     SHOW_FSR    = true,    -- the five-second rule line
     SHOW_BOTH   = false,   -- also show the other rate in brackets (casting / full)
     HIDE_FULL   = false,   -- hide the readout while your mana is full
@@ -28,7 +31,7 @@ local function InCombat() return InCombatLockdown and InCombatLockdown() end
 
 -- ---------------------------------------------------------------- frame
 local box = CreateFrame("Frame", "ManaRegenFrame", UIParent)
-box:SetSize(150, 50)
+box:SetSize(90, 50)
 box:SetMovable(true)
 box:SetClampedToScreen(true)
 box:RegisterForDrag("LeftButton")
@@ -77,7 +80,7 @@ local function Layout()
         local on = (i == 1) or (i == 2 and CONFIG.SHOW_FSR)
         if on then fs:Show(); y = y - (size + 4); shown = shown + 1 else fs:Hide() end
     end
-    box:SetSize(math.max(150, size * 12), shown * (size + 4) + 10)
+    box:SetHeight(shown * (size + 4) + 10)
 end
 
 -- ---------------------------------------------------------------- state
@@ -101,15 +104,14 @@ end
 
 local function Scale(v)
     if not v then return nil end
-    if CONFIG.UNIT == "mp5" then return v * 5, "/5s" end
+    if CONFIG.UNIT == "mp5" then return v * 5, "" end
     if CONFIG.UNIT == "tick" then return v * 2, "/tick" end
     return v, "/s"
 end
 
 local function Fmt(v)
-    if v >= 100 then return ("%d"):format(math.floor(v + 0.5)) end
-    if v >= 10 then return ("%.1f"):format(v) end
-    return ("%.2f"):format(v)
+    if v >= 10 then return ("%d"):format(math.floor(v + 0.5)) end
+    return ("%.1f"):format(v)
 end
 
 -- ---------------------------------------------------------------- watching mana
@@ -157,15 +159,41 @@ local function FreeByName(name)
     return false
 end
 
+local function IsMountSpell(id)
+    if type(id) ~= "number" or Secret(id) then return false end
+    if C_MountJournal and C_MountJournal.GetMountFromSpell then
+        local ok, m = pcall(C_MountJournal.GetMountFromSpell, id)
+        if ok and m ~= nil and not Secret(m) then return true end
+    end
+    return false
+end
+local function Mounted() local ok, m = pcall(IsMounted); return ok and m == true end
+
+local sentCasts = {}   -- castGUID -> time, for casts you started
+
 local function OnCast(id)
     local readable = Mana() ~= nil
     local costs = CostsMana(id)
     local name = SpellName(id)
     local reset
     if readable then reset = false                       -- mana drop does the work
+    elseif IsMountSpell(id) then reset = false; costs = false
     elseif costs ~= nil then reset = costs
     else reset = not FreeByName(name) end
-    if reset then fsrUntil = GetTime() + 5 end
+    if reset then
+        local before = fsrUntil
+        fsrUntil = GetTime() + 5
+        -- a mount the game didn't name as one: if we're mounted a moment later, undo it
+        if C_Timer and C_Timer.After then
+            local was = Mounted()
+            C_Timer.After(0.3, function()
+                if not was and Mounted() then
+                    fsrUntil = before
+                    if debugCasts then Say((name or "that") .. " was a mount: 5-sec rule undone") end
+                end
+            end)
+        end
+    end
     if debugCasts then
         Say(("%s (%s): mana %s, costs mana %s -> %s"):format(name or "?", tostring(id),
             readable and "readable" or "hidden", costs == nil and "unknown" or (costs and "yes" or "no"),
@@ -175,12 +203,13 @@ end
 
 local ev = CreateFrame("Frame")
 for _, e in ipairs({ "ADDON_LOADED", "PLAYER_ENTERING_WORLD", "UNIT_POWER_FREQUENT", "UNIT_POWER_UPDATE",
-                     "UNIT_SPELLCAST_SUCCEEDED", "UNIT_DISPLAYPOWER" }) do pcall(ev.RegisterEvent, ev, e) end
+                     "UNIT_SPELLCAST_SUCCEEDED", "UNIT_SPELLCAST_SENT", "UNIT_DISPLAYPOWER" }) do pcall(ev.RegisterEvent, ev, e) end
 ev:SetScript("OnEvent", function(_, event, a1, a2, ...)
     if event == "ADDON_LOADED" then
         if a1 == ADDON then
             ManaRegenDB = ManaRegenDB or {}
             DB = ManaRegenDB
+            if DB.cfg then DB.cfg.UNIT = nil end   -- MP5 from 0.7 on
             DB.cfg = DB.cfg or {}
             for k, v in pairs(DB.cfg) do if CONFIG[k] ~= nil then CONFIG[k] = v end end
             LoadPosition(); Layout()
@@ -191,9 +220,30 @@ ev:SetScript("OnEvent", function(_, event, a1, a2, ...)
         if a1 == "player" and (a2 == nil or a2 == "MANA") then pcall(OnPower) end
         return
     end
+    if event == "UNIT_SPELLCAST_SENT" then
+        -- args: unit, target, castGUID, spellID: you started this cast
+        local guid = ...
+        if a1 == "player" and type(guid) == "string" and not Secret(guid) then sentCasts[guid] = GetTime() end
+        return
+    end
     if event == "UNIT_SPELLCAST_SUCCEEDED" then
         -- args: unit, castGUID, spellID
-        if a1 == "player" then local id = ...; pcall(OnCast, id) end
+        if a1 ~= "player" then return end
+        local id = ...
+        local mine
+        if type(a2) == "string" and not Secret(a2) then
+            mine = sentCasts[a2] ~= nil
+            sentCasts[a2] = nil
+        else
+            -- cast id hidden: count it only if it's a spell you know
+            local ok, k = pcall(IsPlayerSpell or IsSpellKnown or function() return true end, id)
+            mine = ok and k == true
+        end
+        -- tidy up casts that never finished
+        local now = GetTime()
+        for g, t in pairs(sentCasts) do if now - t > 30 then sentCasts[g] = nil end end
+        if mine then pcall(OnCast, id)
+        elseif debugCasts then Say(("%s (%s): not cast by you -> ignored"):format(SpellName(id) or "?", tostring(id))) end
         return
     end
     lastMana = nil; pcall(OnPower)
@@ -219,19 +269,28 @@ box:SetScript("OnUpdate", function(_, el)
     local L1
     if base then
         local v, unit = Scale(inFSR and casting or base)
-        L1 = ("|cff4fd8c4Regen|r  %s %s"):format(Fmt(v), unit)
+        L1 = ("|cff4fd8c4MP5|r  %s"):format(Fmt(v))
         if CONFIG.SHOW_BOTH then
             local o = Scale(inFSR and base or casting)
-            L1 = L1 .. ("  |cff888888(%s %s)|r"):format(Fmt(o), inFSR and "full" or "casting")
+            L1 = L1 .. ("  |cff888888(%s %s)|r"):format(Fmt(o), inFSR and "full" or "cast")
         end
     else
-        L1 = "|cff4fd8c4Regen|r  " .. (GetManaRegen and "Combat" or "not on this client")
+        L1 = "|cff4fd8c4MP5|r  " .. (GetManaRegen and "Combat" or "n/a")
     end
     box.lines[1]:SetText(L1)
     if inFSR then
-        box.lines[2]:SetText(("|cff4fd8c45-sec rule|r  |cffffd24d%.1f|r"):format(fsrUntil - now))
+        box.lines[2]:SetText(("|cff4fd8c45-sec|r  |cffffd24d%.1f|r"):format(fsrUntil - now))
     else
-        box.lines[2]:SetText("|cff4fd8c45-sec rule|r  |cff88ff88full regen|r")
+        box.lines[2]:SetText("|cff4fd8c45-sec|r  |cff88ff88full|r")
+    end
+    -- fit the box to the widest line
+    local w = 0
+    for i, fs in ipairs(box.lines) do
+        if fs:IsShown() then local ok, sw = pcall(fs.GetStringWidth, fs); if ok and Num(sw) and sw > w then w = sw end end
+    end
+    if w > 0 then
+        w = math.ceil(w) + 14
+        if math.abs((box:GetWidth() or 0) - w) >= 1 then box:SetWidth(w) end
     end
 end)
 
@@ -283,7 +342,6 @@ local def = { addon = "ManaRegen", options = {
     { type = "button", label = "Nudge right", button = "Right", func = function() SlashCmdList["MANAREGEN"]("right") end },
     { type = "button", label = "Position", button = "Reset", func = function() SlashCmdList["MANAREGEN"]("reset") end },
     { type = "header", label = "What it shows" },
-    Opt({ type = "choice", label = "Regen shown", choices = { { "sec", "Per second" }, { "mp5", "Per 5 seconds (MP5)" }, { "tick", "Per tick (2 s)" } } }, "UNIT"),
     Opt({ type = "toggle", label = "Also show the other rate", desc = "Casting rate while at full regen, and the other way round." }, "SHOW_BOTH"),
     Opt({ type = "toggle", label = "Five-second rule line" }, "SHOW_FSR"),
     Opt({ type = "toggle", label = "Hide while mana is full" }, "HIDE_FULL"),

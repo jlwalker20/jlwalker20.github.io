@@ -1,4 +1,7 @@
--- WeakenedSoulTracker 0.7 (test)
+-- WeakenedSoulTracker 0.9 (test)
+-- 0.9: if your talents can't be read, Renewed Hope assumes 5/5; /ws heals reports each heal it sees
+-- 0.8: Renewed Hope: your Flash Heal, Lesser Heal, Heal, Greater Heal and Penance on someone
+--      with Weakened Soul take time off their icon (1 sec per talent point, read from your talents)
 -- 0.7: settings changeable in Jaff's Better Forever UI (/jaffs)
 -- 0.6: names in class color
 -- 0.5: /ws help
@@ -35,6 +38,11 @@ local CONFIG = {
     NAME_LENGTH   = 6,
     FONT          = "Fonts\\FRIZQT__.TTF",
     NUDGE         = 5,        -- pixels per nudge macro press
+    -- Renewed Hope (Discipline talent): these heals shorten Weakened Soul on their target
+    RH_SPELLS     = { "Flash Heal", "Lesser Heal", "Heal", "Greater Heal", "Penance" },
+    RH_PER_RANK   = 1,        -- seconds per talent point (5/5 = 5 sec, from the tooltip)
+    RH_OVERRIDE   = -1,       -- -1 = read from your talents; 0-5 = use this many seconds
+    PENANCE_TICKS = 1,        -- Penance counts once per cast (seen in game)
 }
 
 local ADDON = ...
@@ -287,9 +295,11 @@ end
 
 -- ---------------------------------------------------------------- your casts
 local pendingTarget = {}    -- castGUID -> target name
+local pendingHeal = {}      -- castGUID -> { target, spell } for Renewed Hope heals
+local channelTarget         -- who Penance is channelling on
 local lastNote = "no shield cast seen yet"
 
-local function IsShield(spellID)
+local function SpellNameOf(spellID)
     if spellID == nil or Secret(spellID) then return nil end
     local name
     if C_Spell and C_Spell.GetSpellInfo then
@@ -300,14 +310,74 @@ local function IsShield(spellID)
         local ok, n = pcall(GetSpellInfo, spellID)
         name = ok and Str(n)
     end
+    return name
+end
+
+local function IsShield(spellID)
+    local name = SpellNameOf(spellID)
     if not name then return nil end
     for _, s in ipairs(CONFIG.SHIELD_NAMES) do if name == s then return true end end
     return false
 end
 
+local function RHSpell(spellID)
+    local name = SpellNameOf(spellID)
+    if not name then return nil end
+    for _, s in ipairs(CONFIG.RH_SPELLS) do if name == s then return name end end
+end
+
+-- ---------------------------------------------------------------- Renewed Hope
+local rhRank, rhMax, rhNote = nil, nil, "not read yet"
+local function ReadRenewedHope()
+    rhRank, rhMax = nil, nil
+    if not (GetNumTalentTabs and GetNumTalents and GetTalentInfo) then rhNote = "talent list not available"; return end
+    local okT, tabs = pcall(GetNumTalentTabs)
+    if not okT or type(tabs) ~= "number" then rhNote = "talent list not available"; return end
+    for t = 1, tabs do
+        local okN, n = pcall(GetNumTalents, t)
+        for i = 1, (okN and type(n) == "number") and n or 0 do
+            local ok, name, _, _, _, rank, maxRank = pcall(GetTalentInfo, t, i)
+            if ok and Str(name) == "Renewed Hope" then
+                rhRank, rhMax = tonumber(rank) or 0, tonumber(maxRank) or 5
+                rhNote = ("Renewed Hope %d/%d"):format(rhRank, rhMax)
+                return
+            end
+        end
+    end
+    rhRank = 0
+    rhNote = "Renewed Hope not found in your talents"
+end
+
+local function RHSeconds()
+    if CONFIG.RH_OVERRIDE and CONFIG.RH_OVERRIDE >= 0 then return CONFIG.RH_OVERRIDE end
+    if rhRank == nil then ReadRenewedHope() end
+    if rhRank == nil or (rhRank == 0 and rhMax == nil) then
+        -- talents unreadable (or the talent wasn't in the list): assume 5/5; set it by hand in /jaffs if not
+        rhNote = rhNote .. ", assuming 5/5"
+        rhRank = 5
+    end
+    return rhRank * CONFIG.RH_PER_RANK
+end
+local healReport = false   -- /ws heals
+
+local Reduce   -- defined after the icons code below
+Reduce = function(name, secs, why)
+    if not name or not secs or secs <= 0 then return end
+    for i, e in ipairs(icons) do
+        if e.key == name and not e.test then
+            e.expires = e.expires - secs
+            if e.expires <= GetTime() then Remove(i); Layout()
+            else e.frame.cd:SetCooldown(e.expires - e.duration, e.duration) end
+            lastNote = ("%s took %ss off %s"):format(why, secs, name)
+            return true
+        end
+    end
+end
+
 local ev = CreateFrame("Frame")
 for _, e in ipairs({ "ADDON_LOADED", "PLAYER_ENTERING_WORLD", "UNIT_SPELLCAST_SENT", "UNIT_SPELLCAST_SUCCEEDED",
-                     "UNIT_AURA", "PLAYER_REGEN_ENABLED" }) do pcall(ev.RegisterEvent, ev, e) end
+                     "UNIT_AURA", "PLAYER_REGEN_ENABLED",
+                     "UNIT_SPELLCAST_CHANNEL_STOP", "CHARACTER_POINTS_CHANGED", "PLAYER_TALENT_UPDATE", "SPELLS_CHANGED" }) do pcall(ev.RegisterEvent, ev, e) end
 ev:SetScript("OnEvent", function(_, event, a1, a2, a3, a4)
     if event == "ADDON_LOADED" then
         if a1 == ADDON then
@@ -321,7 +391,9 @@ ev:SetScript("OnEvent", function(_, event, a1, a2, a3, a4)
     if event == "UNIT_SPELLCAST_SENT" then
         -- unit, target name, castGUID, spellID
         if a1 ~= "player" then return end
-        if IsShield(a4) == false then return end
+        local shield = IsShield(a4)
+        local heal = RHSpell(a4)
+        if shield == false and not heal then return end
         local guid = (not Secret(a3)) and a3 or nil
         local target = Str(a2)
         if target == "" or target == nil then
@@ -332,6 +404,11 @@ ev:SetScript("OnEvent", function(_, event, a1, a2, a3, a4)
                 local okP, me = pcall(UnitName, "player"); target = okP and Str(me) or nil
             end
         end
+        if heal then
+            if guid and target then pendingHeal[guid] = { target = target, spell = heal } end
+            if healReport then Say(("%s started on %s%s"):format(heal, tostring(target), guid and "" or " (cast id hidden: can't follow it)")) end
+            return
+        end
         if guid then pendingTarget[guid] = target end
         lastNote = "shield sent at " .. tostring(target)
         return
@@ -339,9 +416,46 @@ ev:SetScript("OnEvent", function(_, event, a1, a2, a3, a4)
     if event == "UNIT_SPELLCAST_SUCCEEDED" then
         -- unit, castGUID, spellID
         if a1 ~= "player" then return end
+        local guid = (not Secret(a2)) and a2 or nil
+        local h = guid and pendingHeal[guid]
+        if h then
+            pendingHeal[guid] = nil
+            local secs = RHSeconds()
+            if healReport then
+                local has = false
+                for _, e in ipairs(icons) do if e.key == h.target then has = true end end
+                Say(("%s landed on %s: %ss off; %s"):format(h.spell, h.target, tostring(secs),
+                    has and "icon found" or "no icon with that name"))
+            end
+            if secs > 0 then
+                if h.spell == "Penance" then
+                    -- each Penance heal counts; the first now, the rest a second apart while the channel lasts
+                    channelTarget = h.target
+                    Reduce(h.target, secs, "Penance")
+                    for k = 1, (CONFIG.PENANCE_TICKS or 1) - 1 do
+                        C_Timer.After(k, function() if channelTarget == h.target then Reduce(h.target, secs, "Penance") end end)
+                    end
+                else
+                    Reduce(h.target, secs, h.spell)
+                end
+                C_Timer.After(0.3, function()
+                    if InCombatLockdown and InCombatLockdown() then return end
+                    local before
+                    for _, e in ipairs(icons) do if e.key == h.target then before = e.expires end end
+                    local ok = Correct(h.target)
+                    if healReport then
+                        local after
+                        for _, e in ipairs(icons) do if e.key == h.target then after = e.expires end end
+                        Say(ok and ("real Weakened Soul read: %.1fs left%s"):format((after or 0) - GetTime(),
+                            (before and after and math.abs(before - after) > 0.5) and (" (corrected by %.1fs)"):format(after - before) or "")
+                            or "couldn't read the real Weakened Soul on them")
+                    end
+                end)
+            end
+            return
+        end
         local shield = IsShield(a3)
         if shield == false then return end
-        local guid = (not Secret(a2)) and a2 or nil
         local target = guid and pendingTarget[guid]
         if guid then pendingTarget[guid] = nil end
         if shield == nil and not target then lastNote = "a cast's spell was hidden by the game"; return end
@@ -349,6 +463,14 @@ ev:SetScript("OnEvent", function(_, event, a1, a2, a3, a4)
         Start(target)
         lastNote = "shield landed on " .. target .. " (" .. (shield and "spell read" or "spell hidden, matched by cast") .. ")"
         C_Timer.After(0.3, function() Correct(target) end)
+        return
+    end
+    if event == "UNIT_SPELLCAST_CHANNEL_STOP" then
+        if a1 == "player" then C_Timer.After(0.15, function() channelTarget = nil end) end
+        return
+    end
+    if event == "CHARACTER_POINTS_CHANGED" or event == "PLAYER_TALENT_UPDATE" or event == "SPELLS_CHANGED" then
+        rhRank = nil
         return
     end
     if event == "UNIT_AURA" or event == "PLAYER_REGEN_ENABLED" then
@@ -383,6 +505,7 @@ local HELP = {
     "/ws name <name>   rename the spot you're on",
     "/ws test          three sample icons",
     "/ws clear         remove all icons",
+    "/ws heals         report each heal it sees (Renewed Hope check)",
 }
 
 SLASH_WEAKENEDSOULTRACKER1 = "/ws"
@@ -452,10 +575,14 @@ SlashCmdList["WEAKENEDSOULTRACKER"] = function(raw)
         Say("three sample icons")
         return
     end
+    if msg:find("^heal") then healReport = not healReport; Say("heal report " .. (healReport and "on: heal someone with Weakened Soul and watch chat" or "off")); return end
     if msg:find("clear") then for i = #icons, 1, -1 do Remove(i) end; Say("cleared"); return end
     Say(("debug: spot %d (%s); %d active; growing %s; duration %ss%s; last cast: %s; %s"):format(DB and DB.active or 1, DB and S().name or "?", #icons, Grow():lower(), tostring(CONFIG.DURATION),
         (DB and DB.lastRead) and " (read from the real debuff)" or " (default)", lastNote,
         bar.unlocked and "unlocked" or "locked"))
+    local secs = RHSeconds()
+    Say(("Renewed Hope: %s; heals take %ss off%s"):format(rhNote, tostring(secs),
+        (CONFIG.RH_OVERRIDE or -1) >= 0 and " (set by hand)" or ""))
     Say("type /ws help for the list of commands")
 end
 
@@ -513,6 +640,10 @@ local def = { addon = "WeakenedSoulTracker", options = {
     { type = "button", label = "Nudge right", button = "Right", func = function() SlashCmdList["WEAKENEDSOULTRACKER"]("right") end },
     { type = "button", label = "Position", button = "Reset", func = function() SlashCmdList["WEAKENEDSOULTRACKER"]("reset") end },
     { type = "button", label = "Sample icons", button = "Show test", func = function() SlashCmdList["WEAKENEDSOULTRACKER"]("test") end },
+    { type = "header", label = "Renewed Hope" },
+    { type = "note", label = "Flash Heal, Lesser Heal, Heal, Greater Heal and Penance on someone with Weakened Soul take time off their icon. Normally read from your talents (1 sec per point)." },
+    Opt({ type = "slider", label = "Seconds per heal (-1 = from talents)", min = -1, max = 5, step = 1 }, "RH_OVERRIDE"),
+    Opt({ type = "slider", label = "Penance heals per cast", min = 1, max = 3, step = 1 }, "PENANCE_TICKS"),
     { type = "header", label = "Look" },
     Opt({ type = "slider", label = "Icon size", min = 20, max = 64, step = 2, reload = true }, "ICON_SIZE"),
     Opt({ type = "slider", label = "Spacing", min = 0, max = 20, step = 1 }, "SPACING"),

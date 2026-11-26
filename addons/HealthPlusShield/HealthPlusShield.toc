@@ -1,0 +1,8 @@
+## Interface: 16001
+## Title: HealthPlusShield
+## Notes: Your player frame's health text as "health + shield": your health plus what's left of your Power Word: Shield, Divine Aegis and other absorbs.
+## Author: You
+## Version: 0.6
+## SavedVariables: HealthPlusShieldDB
+
+HealthPlusShield.lua

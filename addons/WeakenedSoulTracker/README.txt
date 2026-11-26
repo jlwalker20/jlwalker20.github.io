@@ -1,4 +1,4 @@
-WeakenedSoulTracker 0.7 (test)
+WeakenedSoulTracker 0.9 (test)
 ==============================
 A cooldown-style icon for each player you Power Word: Shield: their portrait,
 a cooldown sweep and a countdown until Weakened Soul wears off and you can
@@ -9,6 +9,14 @@ HOW IT KNOWS
   player it landed on. It doesn't need to read auras (Forever hides those from
   addons in combat). Out of combat it reads the real Weakened Soul time and
   corrects the timer, and remembers that duration for next time.
+
+RENEWED HOPE
+  With the Discipline talent Renewed Hope, your Flash Heal, Lesser Heal, Heal,
+  Greater Heal and Penance on someone with Weakened Soul take time off their
+  icon: 1 second per talent point (5/5 = 5 sec). The rank is read from your
+  talents; /ws shows what it found.
+  Penance counts once per cast, like the other heals (checked in game).
+  "Seconds per heal" in /jaffs overrides the talent read (-1 = from talents).
 
 INSTALL
   Copy the WeakenedSoulTracker folder into:

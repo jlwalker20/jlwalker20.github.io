@@ -2,7 +2,7 @@
 ## Title: ManaRegen
 ## Notes: A small movable readout of your mana regen right now, the five-second rule, and your last mana tick.
 ## Author: Jaff
-## Version: 0.4
+## Version: 0.7
 ## SavedVariables: ManaRegenDB
 
 ManaRegen.lua

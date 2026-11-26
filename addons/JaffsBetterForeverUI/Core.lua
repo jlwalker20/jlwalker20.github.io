@@ -31,7 +31,10 @@ J.PACKAGE = {
     { section = "Quality of life", addons = {
         { name = "ShortChannels" }, { name = "ChatFade" }, { name = "TargetClassColors" }, { name = "PartyFramesImproved" },
         { name = "QuestMarks" }, { name = "FlightTimer" }, { name = "GatheringLevels" }, { name = "HideChatButtons" },
-        { name = "WeakenedSoulTracker" }, { name = "ManaRegen" },
+        { name = "ManaRegen" },
+    } },
+    { section = "Priest", addons = {
+        { name = "WeakenedSoulTracker" }, { name = "HealthPlusShield" }, { name = "ShadowCast" },
     } },
     { section = "Gamepad", addons = {
         { name = "ShowTotemBar" }, { name = "HideCrosshairs" }, { name = "HideChatLegend" },

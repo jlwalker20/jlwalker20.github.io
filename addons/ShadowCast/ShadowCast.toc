@@ -1,0 +1,8 @@
+## Interface: 16001
+## Title: ShadowCast
+## Notes: While you're in Shadowform, puts a dark blue-purple layer over the healing spells on your action bars.
+## Author: You
+## Version: 0.2
+## SavedVariables: ShadowCastDB
+
+ShadowCast.lua
